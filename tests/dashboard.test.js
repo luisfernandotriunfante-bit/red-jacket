@@ -52,7 +52,9 @@ test('layout desloca canvas e respeita movimento reduzido',()=>{
   assert.match(css,/--accent:#0000FF/);
 });
 
-test('uploads locais têm somente os grupos e slots pedidos',()=>{assert.match(main,/historySlots=\['Movimentações antigas 1','Movimentações antigas 2','Movimentações antigas 3','ERP anterior 1','ERP anterior 2','ERP atual — meses passados','De-para'\]/);assert.match(main,/uploadGroups=\['Movimentações','Clientes','Produtos','Chegada de NFs'\]/);assert.match(main,/type="file" data-upload/);assert.match(main,/localFiles\.set\(input\.dataset\.upload,files\)/);assert.doesNotMatch(main,/fetch\(|firebase|localStorage\.setItem\('red-jacket-upload/)});
+test('uploads locais têm somente os grupos e slots pedidos',()=>{assert.match(main,/historySlots=\['Movimentações antigas 1','Movimentações antigas 2','Movimentações antigas 3','ERP anterior 1','ERP anterior 2','ERP atual — meses passados','De-para'\]/);assert.match(main,/uploadGroups=\['Histórico','Movimentações','Clientes','Produtos','Chegada de NFs'\]/);assert.match(main,/type="file" data-upload/);assert.match(main,/localFiles\.set\(id,\[\.\.\.input\.files\]\)/);assert.doesNotMatch(main,/fetch\(|firebase|localStorage\.setItem\('red-jacket-upload/)});
 test('auditoria não mostra dados ou exportação fictícios',()=>{assert.match(main,/class="audit-view" aria-label="Inconsistências"/);assert.doesNotMatch(main,/Exportar IA|Baixar CSV|inconsistências encontradas/)});
 
 test('clique de ponteiro em aba principal estabiliza o layout antes da subaba',()=>{assert.match(main,/source==='side'&&!state\.keyboard/);assert.match(main,/\.canvas'\)\.focus\(\);openSidebar\(false\)/)});
+
+test('uploads usa um painel e confirma substituição local',()=>{assert.match(main,/class="motor-nav"/);assert.match(main,/class="history-row"/);assert.match(main,/data-open-destinations/);assert.match(main,/window\.confirm\('Substituir /);assert.match(main,/selecionado nesta sessão/);assert.doesNotMatch(main,/lastModified|savedAt|progress/)});

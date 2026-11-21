@@ -2,10 +2,13 @@ import './style.css';
 import {tabs,subtabs,nextIndex,preferredTheme} from './shell-state.js';
 
 const historySlots=['Movimentações antigas 1','Movimentações antigas 2','Movimentações antigas 3','ERP anterior 1','ERP anterior 2','ERP atual — meses passados','De-para'];
-const uploadGroups=['Movimentações','Clientes','Produtos','Chegada de NFs'];
+const uploadGroups=['Histórico','Movimentações','Clientes','Produtos','Chegada de NFs'];
 const localFiles=new Map();
-const uploadField=(label,id,multiple=false)=>'<div class="upload-field"><span class="upload-label">'+label+'</span><label class="file-picker"><span>'+(multiple?'Adicionar arquivos':'Selecionar arquivo')+'</span><input type="file" data-upload="'+id+'" '+(multiple?'multiple':'')+' aria-label="'+label+'" /></label><span class="file-selection" data-selection="'+id+'">Nenhum arquivo selecionado</span></div>';
-const uploadView=()=>'<div class="settings-content"><section class="upload-section" aria-labelledby="history-title"><h2 id="history-title">Histórico</h2><div class="history-grid">'+historySlots.map((label,i)=>uploadField(label,'history-'+i)).join('')+'</div></section>'+uploadGroups.map((label,i)=>'<section class="upload-section" aria-labelledby="group-'+i+'"><h2 id="group-'+i+'">'+label+'</h2>'+uploadField('Arquivos de '+label.toLowerCase(),'group-'+i,true)+'</section>').join('')+'</div>';
+let activeMotor=0;
+const historyRow=(label,i)=>'<div class="history-row"><span class="row-name">'+label+'</span><span class="row-state" data-selection="history-'+i+'">Sem arquivo</span><button type="button" class="row-action" data-pick="history-'+i+'">Selecionar arquivo</button><input class="visually-hidden" type="file" data-upload="history-'+i+'" aria-label="'+label+'"></div>';
+const historyView=()=>'<div class="motor-heading"><h2>Histórico</h2><button type="button" class="add-file" data-open-destinations aria-expanded="false">Adicionar arquivo</button><div class="slot-chooser" hidden><span class="chooser-label">Destino</span>'+historySlots.map((label,i)=>'<button type="button" data-pick="history-'+i+'">'+label+'</button>').join('')+'</div></div><div class="history-list">'+historySlots.map(historyRow).join('')+'</div>';
+const groupView=()=>'<div class="motor-heading"><h2>'+uploadGroups[activeMotor]+'</h2><button type="button" class="add-file" data-pick="group-'+activeMotor+'">Adicionar arquivo</button><input class="visually-hidden" type="file" multiple data-upload="group-'+activeMotor+'" aria-label="Arquivos de '+uploadGroups[activeMotor]+'"></div><div class="group-files" data-selection="group-'+activeMotor+'"></div>';
+const uploadView=()=>'<div class="settings-content"><nav class="motor-nav" aria-label="Motores de uploads">'+uploadGroups.map((name,i)=>'<button type="button" data-motor="'+i+'" aria-current="'+(i===activeMotor?'page':'false')+'">'+name+'</button>').join('')+'</nav><section class="motor-panel" aria-label="'+uploadGroups[activeMotor]+'">'+(activeMotor===0?historyView():groupView())+'</section></div>';
 const paths={
   chart:'<path d="M4 19V7m5 12V4m5 15v-8m5 8V6"/>',
   box:'<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 10h16M10 10v10"/>',
@@ -46,7 +49,16 @@ function positionIndicator(){
   indicator.style.width=box.width+'px';
   indicator.style.transform='translateX('+(box.left-parent.left)+'px)';
 }
-function renderCanvas(){const canvas=document.querySelector('.canvas');if(tabs[state.main].id!=='settings'){canvas.innerHTML='';canvas.setAttribute('aria-label','Área de trabalho vazia');return}if(state.sub===0){canvas.innerHTML=uploadView();for(const [id,files] of localFiles){const output=canvas.querySelector('[data-selection="'+id+'"]');if(output)output.textContent=files.map(file=>file.name).join(', ')}canvas.setAttribute('aria-label','Uploads')}else{canvas.innerHTML='<section class="audit-view" aria-label="Inconsistências"></section>';canvas.setAttribute('aria-label','Auditoria')}}
+function renderCanvas(){
+  const canvas=document.querySelector('.canvas');
+  if(tabs[state.main].id!=='settings'){canvas.innerHTML='';canvas.setAttribute('aria-label','Área de trabalho vazia');return}
+  if(state.sub===0){
+    canvas.innerHTML=uploadView();
+    for(const [id,files] of localFiles){const output=canvas.querySelector('[data-selection="'+id+'"]');if(output&&files.length)output.textContent=files.map(file=>file.name).join(', ')+' · selecionado nesta sessão'}
+    for(const button of canvas.querySelectorAll('.history-row .row-action'))button.textContent=localFiles.get(button.dataset.pick)?.length?'Substituir':'Selecionar arquivo';
+    canvas.setAttribute('aria-label','Uploads');
+  }else{canvas.innerHTML='<section class="audit-view" aria-label="Inconsistências"></section>';canvas.setAttribute('aria-label','Auditoria')}
+}
 function selectMain(index,source){
   state.main=index;state.sub=0;
   document.querySelectorAll('[data-main]').forEach(button=>{
@@ -82,7 +94,20 @@ profileMenu.addEventListener('keydown',event=>{const items=[...profileMenu.query
 profileMenu.querySelectorAll('[role="menuitem"]').forEach(button=>button.addEventListener('click',()=>{closeProfile()}));
 themeSwitch.addEventListener('click',()=>{state.theme=state.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=state.theme;themeSwitch.setAttribute('aria-checked',String(state.theme==='dark'));themeSwitch.querySelector('svg').outerHTML=icon(state.theme==='dark'?'sun':'moon');try{localStorage.setItem('red-jacket-theme',state.theme)}catch{}themeSwitch.focus()});
 document.addEventListener('keydown',event=>{if(event.key!=='Escape')return;if(state.profile){closeProfile();return}if(state.drawer){closeDrawer();return}if(state.sidebarOpen){openSidebar(false);document.querySelector('.canvas').focus()}});
-document.querySelector('.canvas').addEventListener('change',event=>{const input=event.target.closest('input[type="file"][data-upload]');if(!input)return;const output=document.querySelector('[data-selection="'+input.dataset.upload+'"]');if(output){const files=[...input.files];localFiles.set(input.dataset.upload,files);output.textContent=files.length?files.map(file=>file.name).join(', '):'Nenhum arquivo selecionado'}});
+document.querySelector('.canvas').addEventListener('click',event=>{
+  const motor=event.target.closest('[data-motor]');
+  if(motor){activeMotor=Number(motor.dataset.motor);renderCanvas();document.querySelector('[data-motor="'+activeMotor+'"]')?.focus();return}
+  const opener=event.target.closest('[data-open-destinations]');
+  if(opener){const chooser=document.querySelector('.slot-chooser');chooser.hidden=!chooser.hidden;opener.setAttribute('aria-expanded',String(!chooser.hidden));if(!chooser.hidden)chooser.querySelector('button')?.focus();return}
+  const picker=event.target.closest('[data-pick]');
+  if(picker){document.querySelector('input[data-upload="'+picker.dataset.pick+'"]')?.click()}
+});
+document.querySelector('.canvas').addEventListener('change',event=>{
+  const input=event.target.closest('input[type="file"][data-upload]');if(!input||!input.files.length)return;
+  const id=input.dataset.upload,existing=localFiles.get(id);
+  if(id.startsWith('history-')&&existing?.length&&!window.confirm('Substituir '+historySlots[Number(id.slice(8))]+'?')){input.value='';return}
+  localFiles.set(id,[...input.files]);renderCanvas();
+});
 window.addEventListener('resize',positionIndicator);
 showSubtabs();
 renderCanvas();
