@@ -32,6 +32,8 @@ test('shell contém só navegação e canvas vazio',()=>{
   assert.match(main,/role="switch"/);
   assert.match(main,/class="canvas" role="tabpanel"/);
   assert.match(main,/aria-label="Tema escuro"/);
+  assert.doesNotMatch(main,/expand-trigger|Expandir menu/);
+  assert.match(main,/<div class="subtab-items"><span class="tab-indicator"/);
   assert.doesNotMatch(main,/class="notice"|Disponível após configurar autenticação/);
   assert.doesNotMatch(main,/<(?:h1|h2|h3|table|progress)\b/);
   assert.doesNotMatch(main,/R\$\s*\d/);
@@ -43,4 +45,5 @@ test('layout desloca canvas e respeita movimento reduzido',()=>{
   assert.match(css,/\.subtabs\.entering \.subtab-items\{animation:tab-in 320ms/);
   assert.match(css,/prefers-reduced-motion:reduce/);
   assert.match(css,/--bg:#000/);
+  assert.match(css,/--accent:#FF0000/);
 });
