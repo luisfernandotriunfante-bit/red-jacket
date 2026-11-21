@@ -31,6 +31,9 @@ jobs:
           name: package-lock
           path: package-lock.json
 
+      - name: Testes de fluxo e componentes
+        run: npm test
+
       - name: Build
         run: npm run build
 
