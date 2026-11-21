@@ -1,33 +1,58 @@
 # Escopo — Red Jacket
 
-## Objetivo e público
-Criar no repositório indicado pelo usuário uma aplicação web para análise comercial, com página inicial navegável que estabeleça o padrão visual do produto. Interface em português para uso do responsável comercial. Não copiar código, dados ou arquivos de outros projetos.
+## Objetivo
 
-## Entregas
-- T-000: base Vite e hospedagem Firebase Hosting, validadas por CI do GitHub.
-- T-001: design system navegável e painel demonstrativo com dados fictícios.
-- T-002: configurar projeto Firebase e políticas, após aprovação explícita das escolhas e custos.
-- T-003: revisão independente de QA por PR e CI.
-- T-004: autenticação real via Firebase Authentication, após T-002.
+Aplicação web de análise comercial em português, com dados empresariais consolidados em motores independentes. Cada motor é a fonte única de verdade do assunto e todas as telas devem consumir seus dados tratados.
 
-## Padrão visual de T-001
-- Temas claro e escuro; superfícies preto/branco e acentos vermelho/azul.
-- Componentes consistentes: botões, filtros, listas, gráficos, tabelas, linhas, tipografia, números, KPIs com bordas coloridas e efeito de vidro, indicadores e barras.
-- Sidebar recolhida por padrão: abre quando o ponteiro entra pela lateral e fecha após breve atraso ao sair; foco de teclado expande, Escape recolhe; botão acessível oferece controle por teclado/toque e opção de fixar.
-- Subabas centralizadas: Visão geral, Vendas, Produtos e Clientes.
-- Tema salvo localmente; primeira visita respeita preferência do sistema, com claro como fallback.
-- Gráfico sintético de tendência com alternativa textual/tabela; tabela horizontal rolável em 360 px.
-- Acesso ilustrativo sem coleta de credenciais; login real em T-004.
+## Navegação e padrão visual aprovado
 
-## Fora de escopo
-- Dados comerciais reais, importação, integrações e cálculos.
-- Criar projeto Firebase, habilitar provedores, definir regras de acesso ou billing sem aprovação explícita.
-- Deploy/publicação nesta fase.
-- Copiar código, estilos, dados ou documentação de outros projetos.
+- Navegação principal nesta ordem: Sell out, Estoque, Clientes, Campanhas, Configurações.
+- Sell out: Painel, Gerencial, Clientes. Configurações: Uploads, Auditoria.
+- O canvas fica vazio até o usuário pedir conteúdo específico.
+- Tema claro usa destaque azul vibrante; escuro usa fundo preto absoluto e destaque vermelho vibrante.
+- Ícones monocromáticos, controles arredondados e padronizados, subabas com transição visível; sem texto, dados, avisos ou decoração não solicitados.
+- Toda nova tela/ação visual consulta o Designer e segue os componentes existentes.
 
-## Qualidade e execução
-- Teclado e toque, semântica acessível, foco visível, contraste WCAG AA; estado não pode depender só de cor.
-- Conferir 360, 768 e 1280 px e respeitar prefers-reduced-motion.
-- Dependências de runtime/teste precisam de aprovação do gerente.
-- Toda criação, revisão, build e auditoria acontece no GitHub; nada de execução local.
-- Sem merge ou deploy sem autorização explícita.
+## Motores
+
+A aba Configurações > Uploads terá cinco motores independentes, construídos individualmente sob um contrato comum:
+
+1. Histórico
+2. Movimentações
+3. Clientes
+4. Produtos
+5. Chegada de NFs
+
+Cada base/arquivo ocupa um slot identificável. A substituição atualiza somente aquele slot; as demais bases continuam ativas. Um arquivo novo é processado em staging; somente após validação substitui a base ativa. Falha mantém a base anterior. Depois de uma substituição bem-sucedida, o payload de dados antigo é descartado; metadados mínimos de auditoria permanecem. O original binário é descartado após o processamento, conforme aceito pelo usuário; persistem os dados extraídos, normalizados e versionados por base.
+
+Os formatos, esquemas, slots e regras de cada motor serão definidos a partir de amostras reais. Datas, decimais, textos e identificadores devem ser tratados conforme regras brasileiras, sem suposições silenciosas.
+
+### Primeiro piloto: Histórico
+
+O exemplo informado pelo usuário usa três arquivos antigos de movimentação, dois arquivos do ERP anterior, dados dos meses passados do ERP atual e um de-para de itens antigos para o cadastro atual. O parser precisa resolver a origem correta para cada período e item, manter a proveniência e sinalizar lacunas, sobreposições ou itens sem correspondência, sem descartar linhas nem criar métricas falsas.
+
+### Auditoria
+
+Configurações > Auditoria centraliza inconsistências com descrição direta, origem/linha/campo quando disponível e ajuste recomendado. A exportação será estruturada e legível por IA. Aplicar correções à base será uma ação separada e confirmada; exportar um diagnóstico não altera dados.
+
+## Arquitetura proposta sem upgrade de plano
+
+- Firebase Authentication e Cloud Firestore no plano Spark; parsing, validação, consolidação e geração dos arquivos ocorrem no navegador.
+- Cloud Firestore guarda os dados normalizados separados por motor/base, metadados de importação, auditoria e mapeamentos. O original do Excel não é persistido.
+- Excel sanitizado e JSON são exportados pelo navegador a partir dos dados ativos armazenados.
+- Não usar Firebase Storage, Cloud Functions, Cloud Run ou Cloud Billing nesta arquitetura proposta.
+- Documentos e regras de acesso só serão implementados após aprovar provedor de autenticação, localização da base Firestore e amostras/volume.
+- Cotas gratuitas são limites, não garantia de capacidade para qualquer volume. Se a carga ultrapassar cotas, a operação deve falhar sem substituir a base ativa; não ampliar o plano automaticamente.
+
+## Fora de escopo até autorização/dados
+
+- Alterar o plano Firebase, associar billing, criar recursos pagos, habilitar serviço de armazenamento de binários ou contratar outro provedor.
+- Implementar parser específico antes de receber amostras e regras do negócio.
+- Inventar colunas, dados, métricas, períodos, contagens ou avisos.
+
+## Qualidade e processo
+
+- Testar atualização isolada de slot, falha sem troca da base ativa, consolidação repetível, proveniência, normalização pt-BR, auditoria e exportação XLSX/JSON.
+- Conferir teclado, foco, toque, temas, movimento reduzido e larguras 360/768/1280 px.
+- Trabalho, documentação, revisão e checks apenas pelo GitHub; sem execução ou cópias locais.
+- Sem merge ou publicação em produção sem autorização explícita.

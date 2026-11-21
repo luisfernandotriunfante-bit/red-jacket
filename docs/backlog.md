@@ -3,16 +3,21 @@
 | ID | Título | Status | Responsável | Dependências |
 |---|---|---|---|---|
 | T-000 | Base Vite + Firebase Hosting e ADR | QA aprovado; PR #1 draft, sem merge | Backend/Gerente | Nenhuma |
-| T-001 | Página navegável de padrão visual comercial | Código e suíte aprovados pela QA; CI verde; QA visual aguarda preview | Frontend | T-000 |
-| T-002 | Configurar projeto Firebase e políticas de acesso | Bloqueada por decisões/ação do usuário | Usuário/gerente | Aprovar projeto, plano, provedor e políticas |
-| T-003 | Revisão independente e verificação integrada | QA de código e suíte de T-001 aprovadas; navegador/capturas pendentes | Revisor QA | T-000; depois T-001 e T-004 |
-| T-004 | Implementar autenticação real | Bloqueada até T-002 | Backend | T-000 e T-002 |
+| T-001 | Casca de navegação e padrão visual | Prévia em PR #4; checks verdes; sem merge | Frontend | T-000 |
+| T-002 | Configurar autenticação e acesso no Firebase Spark | Pendente de provedor, política de usuários e região Firestore; sem upgrade | Usuário/gerente | T-000 |
+| T-003 | Revisão integrada de qualidade | Aplicada a cada PR de implementação | Revisor QA | Cartão correspondente |
+| T-004 | Autenticação real | Pendente das escolhas de T-002 | Backend | T-000 e T-002 |
+| T-005 | Arquitetura gratuita dos motores | Proposta registrada; limites de volume e localização pendentes | Backend/Gerente | T-002; amostras para dimensionar |
+| T-006 | Slots independentes e substituição segura de bases | Planejado; sem Storage/Functions, precisa de amostras e Auth | Backend/Frontend | T-004 e T-005 |
+| T-007 | Motor Histórico piloto | Bloqueado por amostras, de-para e regras de período | Backend | T-006 |
+| T-008 | Auditoria de inconsistências e exportação IA | Regras e esquema do ajuste pendentes | Backend/Frontend | T-006 e motores |
+| T-009 | Especificar motores Movimentações, Clientes, Produtos e Chegada de NFs | Um motor por vez após receber arquivos e regras | Backend/Frontend | T-006 e amostras por motor |
 
-## Estado
-- Todo trabalho de criação e revisão ocorre no GitHub; sem cópias de trabalho ou execuções locais.
-- O usuário escolheu Firebase Hosting e quer autenticação real; login depende do projeto e da política em T-002 antes de T-004.
-- Nenhum projeto Firebase, domínio, provedor, regra, credencial, faturamento ou deploy foi configurado.
-- T-000 recebeu aprovação QA; PR #1 permanece draft e sem merge.
-- T-001 está na PR dependente #3; código/documentação foram aprovados no HEAD de0af5b e a suíte no HEAD 287281c. CI de testes/build/audit passou.
-- QA visual em navegador, capturas e medidas 360/768/1280 ainda aguardam projeto Firebase e autorização explícita de preview publicado.
-- Não fazer merge ou deploy sem aprovação explícita.
+## Regras atuais do produto
+
+- O usuário prefere opções sem custo e proibiu alteração do plano Firebase. Não associar billing nem habilitar serviços pagos.
+- Bases tratadas persistem por slot no Firestore; trocar uma base não afeta os demais slots. Apenas a versão ativa e candidata de uma base coexistem durante validação; depois da troca bem-sucedida, o payload anterior é descartado e ficam metadados mínimos. Retenção completa para rollback é uma decisão futura.
+- O original binário enviado é descartado após o parsing. O usuário confirmou que aceita isso desde que cada base possa ser atualizada individualmente.
+- Parsing client-side é uma proposta; capacidade depende do tamanho real dos arquivos e das cotas Firestore. Cota gratuita insuficiente deve gerar falha explícita e manter a base ativa, nunca ativar um upgrade.
+- Motor Histórico será o primeiro piloto; não implementar parser com colunas/regras inventadas.
+- Toda a construção continua no GitHub. Não fazer merge ou deploy live sem autorização explícita.
