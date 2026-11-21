@@ -23,17 +23,17 @@ A aba Configurações > Uploads terá cinco motores independentes, construídos 
 4. Produtos
 5. Chegada de NFs
 
-Cada base/arquivo ocupa um slot identificável. A substituição atualiza somente aquele slot; as demais bases continuam ativas. Um arquivo novo é processado em staging; somente após validação substitui a base ativa. Falha mantém a base anterior. Depois de uma substituição bem-sucedida, o payload de dados antigo é descartado; metadados mínimos de auditoria permanecem. O original binário é descartado após o processamento, conforme aceito pelo usuário; persistem os dados extraídos, normalizados e versionados por base.
+Cada base/arquivo ocupa um slot identificável. A substituição atualiza somente aquele slot; as demais bases continuam ativas. Um arquivo novo é processado em staging; somente após validação substitui a base ativa. Falha mantém a base anterior. Depois de uma substituição bem-sucedida, os dados tratados da versão anterior são descartados; metadados mínimos de importação/auditoria permanecem. O original binário é descartado após o processamento, conforme aceito pelo usuário. O usuário confirmou que o payload anterior também deve ser descartado depois da validação bem-sucedida.
 
-Os formatos, esquemas, slots e regras de cada motor serão definidos a partir de amostras reais. Datas, decimais, textos e identificadores devem ser tratados conforme regras brasileiras, sem suposições silenciosas.
+## Datas e histórico
 
-### Primeiro piloto: Histórico
+O período de cada arquivo será detectado dinamicamente pelos dados/competência encontrados no próprio arquivo, não por uma faixa fixa pré-configurada. Se não houver informação de período confiável ou houver conflito, registrar em Auditoria e não usar aquela parte em métricas até resolver. A regra para sobreposição de fontes e o significado das métricas também precisam ser confirmados.
 
-O exemplo informado pelo usuário usa três arquivos antigos de movimentação, dois arquivos do ERP anterior, dados dos meses passados do ERP atual e um de-para de itens antigos para o cadastro atual. O parser precisa resolver a origem correta para cada período e item, manter a proveniência e sinalizar lacunas, sobreposições ou itens sem correspondência, sem descartar linhas nem criar métricas falsas.
+Primeiro piloto informado pelo usuário: três arquivos antigos de movimentação, dois arquivos do ERP anterior, dados dos meses passados do ERP atual e um de-para de itens antigos para o cadastro atual. Parser, formatos, campos e relações serão definidos a partir dos próprios arquivos; não exigir amostras anonimizadas como pré-condição.
 
-### Auditoria
+## Auditoria
 
-Configurações > Auditoria centraliza inconsistências com descrição direta, origem/linha/campo quando disponível e ajuste recomendado. A exportação será estruturada e legível por IA. Aplicar correções à base será uma ação separada e confirmada; exportar um diagnóstico não altera dados.
+Configurações > Auditoria centraliza inconsistências com descrição direta, origem/linha/campo quando disponível e ajuste recomendado. A exportação será estruturada e legível por IA. Exportar um diagnóstico não altera dados.
 
 ## Arquitetura proposta sem upgrade de plano
 
@@ -41,13 +41,13 @@ Configurações > Auditoria centraliza inconsistências com descrição direta, 
 - Cloud Firestore guarda os dados normalizados separados por motor/base, metadados de importação, auditoria e mapeamentos. O original do Excel não é persistido.
 - Excel sanitizado e JSON são exportados pelo navegador a partir dos dados ativos armazenados.
 - Não usar Firebase Storage, Cloud Functions, Cloud Run ou Cloud Billing nesta arquitetura proposta.
-- Documentos e regras de acesso só serão implementados após aprovar provedor de autenticação, localização da base Firestore e amostras/volume.
-- Cotas gratuitas são limites, não garantia de capacidade para qualquer volume. Se a carga ultrapassar cotas, a operação deve falhar sem substituir a base ativa; não ampliar o plano automaticamente.
+- Provedor de login e localização/região da base Firestore ainda precisam ser decididos antes de criar/configurar a base.
+- Cotas gratuitas são limites, não garantia de capacidade para qualquer volume. Se uma gravação falhar por cota, manter a base ativa e não habilitar billing.
 
 ## Fora de escopo até autorização/dados
 
 - Alterar o plano Firebase, associar billing, criar recursos pagos, habilitar serviço de armazenamento de binários ou contratar outro provedor.
-- Implementar parser específico antes de receber amostras e regras do negócio.
+- Implementar parser específico sem conhecer os arquivos e as regras necessárias.
 - Inventar colunas, dados, métricas, períodos, contagens ou avisos.
 
 ## Qualidade e processo
