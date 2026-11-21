@@ -17,6 +17,7 @@ Permitir atualizar somente as bases selecionadas e manter as demais bases ativas
 - Promover só o slot validado; os demais slots não mudam.
 - Em erro, preservar a base ativa e apresentar o erro real no painel Auditoria.
 - Após a promoção, descartar os dados tratados da versão anterior do slot, conforme confirmação do usuário. Manter metadados mínimos de importação, hash, resultado e horário; rollback completo é decisão futura.
+- Mostrar, em cada base/slot, a data e a hora da última ativação bem-sucedida, com formatação brasileira (dd/mm/aaaa HH:mm) e fuso horário do usuário. Registrar o instante de ativação no servidor em UTC; não usar a data de modificação do arquivo local como data de atualização. Antes da primeira ativação, não inventar uma data.
 - Listar estado de cada base e oferecer substituição individual.
 - Exportar dados ativos do motor em Excel e JSON.
 
@@ -35,3 +36,4 @@ Permitir atualizar somente as bases selecionadas e manter as demais bases ativas
 - Cada linha exportada mantém referência ao motor, slot e origem necessários para auditoria.
 - Excel usa apresentação pt-BR; JSON mantém campos tipados para leitura por software, formato final documentado.
 - Suíte automatizada cobre substituição isolada, falhas, idempotência e exportação; CI verde e QA remoto aprovado.
+- A interface mostra data e hora real da última ativação bem-sucedida de cada slot e não apresenta um horário fictício para base ainda não atualizada.
