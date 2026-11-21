@@ -8,6 +8,7 @@ const css = await readFile(new URL('../src/style.css', import.meta.url), 'utf8')
 class FakeElement {
   constructor(attrs = {}, parent = null) {
     this.attrs = attrs;
+    this.dataset = { tab: attrs['data-tab'] };
     this.parent = parent;
     this.listeners = {};
     this.classes = new Set((attrs.class || '').split(/\s+/).filter(Boolean));
