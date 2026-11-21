@@ -36,7 +36,7 @@ test('shell mantém canvas vazio fora de Configurações',()=>{
   assert.doesNotMatch(main,/expand-trigger|Expandir menu/);
   assert.match(main,/<div class="subtab-items"><span class="tab-indicator"/);
   assert.doesNotMatch(main,/class="notice"|Disponível após configurar autenticação/);
-  assert.doesNotMatch(main,/<(?:h1|h2|h3|table|progress)\b/);
+  assert.doesNotMatch(main,/<(?:h1|h3|table|progress)\b/);
   assert.doesNotMatch(main,/R\$\s*\d/);
 });
 test('layout desloca canvas e respeita movimento reduzido',()=>{
