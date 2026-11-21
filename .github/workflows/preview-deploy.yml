@@ -1,0 +1,129 @@
+name: Preview Deploy (PR #3)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    if: github.event.pull_request.number == 3
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.12.0'
+          cache: npm
+
+      - name: Instalar dependências do lockfile
+        run: npm ci --no-audit
+
+      - name: Testes
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Publicar dist/ como artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 1
+
+  deploy-preview:
+    needs: build-and-test
+    if: github.event.pull_request.number == 3
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+      - id: auth
+        name: Autenticar via Workload Identity Federation (sem chave)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/1005318744020/locations/global/workloadIdentityPools/github-red-jacket-preview/providers/github-actions
+          service_account: github-preview-deployer@red-jacket-3a488.iam.gserviceaccount.com
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/firebase.hosting
+
+      - name: Deploy do canal de preview via Hosting REST API (sem firebase-tools)
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+          SITE_ID: red-jacket-3a488
+          CHANNEL_ID: pr3-preview
+          TTL: 604800s
+        run: |
+          set -euo pipefail
+          BASE="https://firebasehosting.googleapis.com/v1beta1"
+          AUTH_HEADER="Authorization: Bearer ${ACCESS_TOKEN}"
+
+          echo "Criando versao..."
+          VERSION_JSON=$(curl -sf -H "$AUTH_HEADER" -H "Content-Type: application/json" \
+            -X POST -d '{}' "$BASE/sites/$SITE_ID/versions")
+          VERSION_NAME=$(echo "$VERSION_JSON" | jq -r '.name')
+          echo "Versao: $VERSION_NAME"
+
+          echo "Calculando hashes gzip dos arquivos de dist/..."
+          WORKDIR=$(mktemp -d)
+          FILES_JSON="{}"
+          cd dist
+          while IFS= read -r -d '' f; do
+            rel="/${f#./}"
+            gz="$WORKDIR/$(echo "$rel" | sha256sum | cut -d' ' -f1).gz"
+            gzip -c "$f" > "$gz"
+            hash=$(sha256sum "$gz" | cut -d' ' -f1)
+            mv "$gz" "$WORKDIR/$hash.gz"
+            FILES_JSON=$(echo "$FILES_JSON" | jq --arg p "$rel" --arg h "$hash" '. + {($p): $h}')
+          done < <(find . -type f -print0)
+          cd ..
+
+          echo "populateFiles..."
+          POP_BODY=$(jq -n --argjson files "$FILES_JSON" '{files: $files}')
+          POP_RESP=$(curl -sf -H "$AUTH_HEADER" -H "Content-Type: application/json" \
+            -X POST -d "$POP_BODY" "$BASE/$VERSION_NAME:populateFiles")
+          UPLOAD_URL=$(echo "$POP_RESP" | jq -r '.uploadUrl')
+          REQUIRED=$(echo "$POP_RESP" | jq -r '.uploadRequiredHashes[]?')
+
+          echo "Upload dos arquivos requisitados..."
+          for hash in $REQUIRED; do
+            curl -sf -H "$AUTH_HEADER" -H "Content-Type: application/octet-stream" \
+              --data-binary "@$WORKDIR/$hash.gz" "$UPLOAD_URL/$hash" > /dev/null
+          done
+
+          echo "Finalizando versao..."
+          curl -sf -H "$AUTH_HEADER" -H "Content-Type: application/json" \
+            -X PATCH -d '{"status":"FINALIZED"}' \
+            "$BASE/$VERSION_NAME?update_mask=status" > /dev/null
+
+          echo "Garantindo canal de preview (ttl $TTL)..."
+          CHANNEL_HTTP=$(curl -s -o /tmp/channel.json -w '%{http_code}' \
+            -H "$AUTH_HEADER" -H "Content-Type: application/json" \
+            -X POST -d "{\"ttl\":\"$TTL\"}" \
+            "$BASE/sites/$SITE_ID/channels?channelId=$CHANNEL_ID")
+          if [ "$CHANNEL_HTTP" = "409" ] || [ "$CHANNEL_HTTP" = "400" ]; then
+            echo "Canal ja existe, lendo URL existente..."
+            curl -sf -H "$AUTH_HEADER" "$BASE/sites/$SITE_ID/channels/$CHANNEL_ID" > /tmp/channel.json
+          fi
+          CHANNEL_URL=$(jq -r '.url' /tmp/channel.json)
+
+          echo "Criando release no canal..."
+          curl -sf -H "$AUTH_HEADER" -X POST \
+            "$BASE/sites/$SITE_ID/channels/$CHANNEL_ID/releases?versionName=$VERSION_NAME" > /tmp/release.json
+
+          echo "### Preview Firebase Hosting (canal: $CHANNEL_ID, expira em 7 dias)" >> "$GITHUB_STEP_SUMMARY"
+          echo "URL: $CHANNEL_URL" >> "$GITHUB_STEP_SUMMARY"
+          echo "Versao: $VERSION_NAME" >> "$GITHUB_STEP_SUMMARY"
