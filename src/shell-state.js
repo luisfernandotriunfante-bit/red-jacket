@@ -2,13 +2,15 @@ export const tabs=[
   {id:'sellout',label:'Sell out',icon:'chart'},
   {id:'stock',label:'Estoque',icon:'box'},
   {id:'clients',label:'Clientes',icon:'users'},
-  {id:'campaigns',label:'Campanhas',icon:'spark'}
+  {id:'campaigns',label:'Campanhas',icon:'spark'},
+  {id:'settings',label:'Configurações',icon:'settings'}
 ];
 export const subtabs={
   sellout:['Painel','Gerencial','Clientes'],
   stock:['Painel','Movimentação','Produtos'],
   clients:['Painel','Segmentos','Histórico'],
-  campaigns:['Painel','Calendário','Resultados']
+  campaigns:['Painel','Calendário','Resultados'],
+  settings:['Uploads','Auditoria']
 };
 export function nextIndex(index,key,length,vertical=false){
   if(key==='Home')return 0;

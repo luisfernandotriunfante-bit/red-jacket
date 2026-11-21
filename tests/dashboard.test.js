@@ -6,16 +6,17 @@ import {tabs,subtabs,nextIndex,preferredTheme} from '../src/shell-state.js';
 const main=await readFile(new URL('../src/main.js',import.meta.url),'utf8');
 const css=await readFile(new URL('../src/style.css',import.meta.url),'utf8');
 test('ordem principal e subabas de Sell out',()=>{
-  assert.deepEqual(tabs.map(t=>t.label),['Sell out','Estoque','Clientes','Campanhas']);
+  assert.deepEqual(tabs.map(t=>t.label),['Sell out','Estoque','Clientes','Campanhas','Configurações']);
   assert.deepEqual(subtabs.sellout,['Painel','Gerencial','Clientes']);
   assert.ok(tabs.every(t=>subtabs[t.id].length>0));
+  assert.deepEqual(subtabs.settings,['Uploads','Auditoria']);
 });
 test('teclado de abas verticais e horizontais',()=>{
-  assert.equal(nextIndex(0,'ArrowDown',4,true),1);
-  assert.equal(nextIndex(0,'ArrowUp',4,true),3);
-  assert.equal(nextIndex(3,'ArrowDown',4,true),0);
-  assert.equal(nextIndex(1,'Home',4,true),0);
-  assert.equal(nextIndex(1,'End',4,true),3);
+  assert.equal(nextIndex(0,'ArrowDown',5,true),1);
+  assert.equal(nextIndex(0,'ArrowUp',5,true),4);
+  assert.equal(nextIndex(4,'ArrowDown',5,true),0);
+  assert.equal(nextIndex(1,'Home',5,true),0);
+  assert.equal(nextIndex(1,'End',5,true),4);
   assert.equal(nextIndex(0,'ArrowRight',3,false),1);
   assert.equal(nextIndex(0,'ArrowLeft',3,false),2);
   assert.equal(nextIndex(0,'ArrowDown',3,false),0);

@@ -12,6 +12,7 @@ const paths={
   moon:'<path d="M20 16A8.5 8.5 0 0 1 8 4a8.5 8.5 0 1 0 12 12Z"/>',
   sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4m0-14.2-1.4 1.4M6.3 17.7l-1.4 1.4"/>',
   edit:'<path d="M4 20h4l11-11-4-4L4 16v4Zm9-13 4 4"/>',
+  settings:'<circle cx="12" cy="12" r="3"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
   exit:'<path d="M9 4H4v16h5m6-4 4-4-4-4m4 4H9"/>'
 };
 const icon=name=>'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+paths[name]+'</svg>';
