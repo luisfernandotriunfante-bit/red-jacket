@@ -17,4 +17,4 @@ Arquivos/áreas: Bootstrap, config Hosting, ADR e workflow em branch remota; doc
 Testes exigidos: Build e auditoria integral via GitHub Actions; revisão remota do diff; sem executar no PC.
 Prioridade: P1
 Dificuldade: Médio
-Status: QA aprovado no HEAD 66e234d; CI verde; PR #1 continua draft, aguardando decisão de merge.
+Status: QA aprovou HEAD 66e234d; novos ajustes no HEAD 99dccf4 aguardam re-revisão. CI verde no HEAD atual; PR #1 segue draft.
