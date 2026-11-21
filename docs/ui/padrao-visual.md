@@ -19,7 +19,7 @@ Interface comercial premium e sóbria. Fundo branco ou preto absoluto, superfíc
 
 ## Regras de componentes
 - **Navegação:** sidebar discreta em desktop expande por hover ou foco e desloca o conteúdo, sem sobreposição. Em mobile, seções em navegação horizontal. A seção atual tem texto e marca vermelha.
-- **Filtros:** período altera série do gráfico; categoria e busca filtram a tabela; paginação exibe cinco itens por página. Estados vazio, carregando e erro têm mensagem textual no componente.
+- **Filtros:** período altera série do gráfico; categoria e busca filtram a tabela; paginação exibe cinco itens por página. O estado vazio tem mensagem e ação de limpar filtros. Não há carregamento nem erro de API nesta demonstração estática.
 - **KPIs:** quatro indicadores com borda superior vermelha ou azul e vidro discreto. Valores usam números tabulares e rótulos com unidade ou período.
 - **Gráfico:** eixos rotulados, duas séries diferenciadas por cor e traçado, legenda e lista textual expansível.
 - **Tabela:** cabeçalhos semânticos e números à direita. A 360 px, registros viram cartões com campos rotulados.
