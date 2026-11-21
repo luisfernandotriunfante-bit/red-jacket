@@ -7,10 +7,10 @@ Escopo:
 - Design system e painel demonstrativo em português, dados inteiramente fictícios.
 - Temas claro/escuro; bases preto/branco e acentos vermelho/azul.
 - Botões, filtros, listas, gráficos, tabelas, linhas, tipografia/números, KPIs com bordas coloridas e efeito de vidro, barras/indicadores reutilizáveis.
-- Sidebar recolhida inicialmente; expande ao entrar o ponteiro pela lateral, fecha com breve atraso; foco abre, Escape fecha; botão acessível permite teclado/toque e fixação.
+- Sidebar recolhida inicialmente; expande ao entrar o ponteiro pela lateral, fecha com breve atraso; foco abre, Escape fecha; botão acessível permite teclado/toque e fixação com drawer em tela estreita.
 - Subabas centralizadas: Visão geral, Vendas, Produtos e Clientes.
 - Tema persiste localmente; na primeira visita respeita tema do sistema.
-- Gráfico sintético com alternativa textual/tabela; tabela rolável horizontalmente em 360 px.
+- Gráfico sintético com lista textual dos valores; tabela rolável horizontalmente em telas estreitas.
 - Documentação dos tokens/componentes em docs/ui/padrao-visual.md.
 - Sem autenticação ou coleta; autenticação real fica para T-004.
 - Build estático em dist/ para Firebase Hosting, sem configurar projeto nem publicar nesta tarefa.
@@ -20,13 +20,13 @@ Critérios de aceitação:
 - Tema atualiza toda a interface, salva preferência e respeita sistema na primeira visita.
 - Componentes listados aparecem e têm regras documentadas.
 - Sidebar funciona com ponteiro, teclado e toque; foco visível.
-- Responsividade em 360/768/1280 px.
+- Suíte automatizada no GitHub Actions cobrindo tema/persistência, navegação e interações do menu.
 - Contraste WCAG AA, semântica, estados e movimento reduzido; alternativa textual do gráfico presente.
-- Build/audit executados somente no GitHub CI; dependência de ferramenta nova exige aprovação prévia do gerente.
-- QA registra evidências no PR; verificação de navegador/capturas aguarda autorização para um preview publicado, conforme a regra de não publicar sem aprovação.
+- Build/testes/audit executados somente no GitHub CI; dependência de teste autorizada pelo usuário.
+- QA registra evidências no PR; verificação de navegador/capturas aguarda autorização para preview publicado.
 Dependências: T-000 aprovado.
-Arquivos permitidos: UI, CSS, dados fictícios e docs/ui/padrao-visual.md por PR do GitHub; sem alterar dados reais ou auth.
-Testes: CI remoto e revisão remota de código; verificações de navegador/fluxo, responsividade, teclado/toque, contraste/foco, movimento reduzido e smoke dependem de preview autorizado.
+Arquivos permitidos: UI, CSS, dados fictícios, testes e docs/ui/padrao-visual.md por PR do GitHub; sem alterar dados reais ou auth.
+Testes: CI remoto para build, suíte e audit; QA de navegador/fluxo, responsividade, teclado/toque, contraste/foco, movimento reduzido e smoke em preview autorizado.
 Prioridade: P1
 Dificuldade: Difícil
-Status: PR draft #3 devolvida pela QA; Frontend corrige achados.
+Status: Código/documentação aprovados pela QA no HEAD de0af5b; Frontend adiciona suíte autorizada; revisão de navegador depende de preview aprovado.
