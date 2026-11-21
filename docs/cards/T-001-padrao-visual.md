@@ -11,21 +11,22 @@ Escopo:
 - Subabas centralizadas: Visão geral, Vendas, Produtos e Clientes.
 - Tema persiste localmente; na primeira visita respeita tema do sistema.
 - Gráfico sintético com alternativa textual/tabela; tabela rolável horizontalmente em 360 px.
-- Documentação dos tokens/componentes em docs/padrao-visual.md.
-- Tela de acesso meramente ilustrativa, sem campo de senha ou coleta; Auth real é T-004.
-Fora de escopo: Auth real, dados reais, integrações, cálculos, mudanças Firebase e deploy.
+- Documentação dos tokens/componentes em docs/ui/padrao-visual.md.
+- Sem autenticação ou coleta; autenticação real fica para T-004.
+- Build estático em dist/ para Firebase Hosting, sem configurar projeto nem publicar nesta tarefa.
+Fora de escopo: Auth real, dados reais, integrações, cálculos, configuração de projeto Firebase e deploy.
 Critérios de aceitação:
 - Navegação funcional entre as quatro seções.
 - Tema atualiza toda a interface, salva preferência e respeita sistema na primeira visita.
 - Componentes listados aparecem e têm regras documentadas.
 - Sidebar funciona com ponteiro, teclado e toque; foco visível.
-- Responsividade verificada em 360/768/1280 px.
-- Contraste WCAG AA, semântica, estados e movimento reduzido verificados; alternativa textual do gráfico presente.
-- Build/testes/audit executados somente no GitHub CI; ferramenta nova requer aprovação prévia do gerente.
-- QA registra evidências e capturas no PR.
+- Responsividade em 360/768/1280 px.
+- Contraste WCAG AA, semântica, estados e movimento reduzido; alternativa textual do gráfico presente.
+- Build/audit executados somente no GitHub CI; dependência de ferramenta nova exige aprovação prévia do gerente.
+- QA registra evidências no PR; verificação de navegador/capturas aguarda autorização para um preview publicado, conforme a regra de não publicar sem aprovação.
 Dependências: T-000 aprovado.
-Arquivos permitidos: UI, CSS, dados fictícios e docs/padrao-visual.md por PR do GitHub; sem alterar dados reais ou auth.
-Testes: CI remoto e verificação remota de navegação, tema, sidebar, responsividade, teclado/toque, contraste/foco, movimento reduzido e smoke.
+Arquivos permitidos: UI, CSS, dados fictícios e docs/ui/padrao-visual.md por PR do GitHub; sem alterar dados reais ou auth.
+Testes: CI remoto e revisão remota de código; verificações de navegador/fluxo, responsividade, teclado/toque, contraste/foco, movimento reduzido e smoke dependem de preview autorizado.
 Prioridade: P1
 Dificuldade: Difícil
-Status: Aguardando aprovação de T-000.
+Status: PR draft #3 devolvida pela QA; Frontend corrige achados.
