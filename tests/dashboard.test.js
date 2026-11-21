@@ -119,12 +119,15 @@ test('menu responde a hover, fixação, toque fora e Escape', async () => {
   toggle.click();
   document.dispatch('keydown', { key: 'Escape' });
   assert.equal(side.classList.contains('pinned'), false);
-  assert.equal(document.activeElement, toggle);
+  assert.equal(document.activeElement, document.querySelector('#theme-toggle'));
+  assert.equal(toggle.getAttribute('aria-label'), 'Fixar menu aberto');
+  assert.equal(toggle.getAttribute('aria-expanded'), 'false');
   toggle.click();
   document.dispatch('pointerdown', { target: document.querySelector('#theme-toggle') });
   assert.equal(side.classList.contains('pinned'), false);
   assert.match(css, /\.sidebar:focus-within/);
   assert.match(css, /@media\(max-width:650px\)\{\.drawer-backdrop\.visible/);
+  assert.match(css, /\.shell:has\(\.sidebar:not\(\.force-collapsed\)/);
 });
 
 test('gráfico lista doze índices e Ver todos dá resposta visível', async () => {

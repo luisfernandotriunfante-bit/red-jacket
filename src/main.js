@@ -28,19 +28,20 @@ function render(focusTarget) {
   side.classList.toggle('hovered', hovered);
   document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>{const fromSidebar=b.classList.contains('nav-item');active=b.dataset.tab;render();document.querySelector(fromSidebar ? '.nav-item.selected' : '.subtabs .active').focus();}));
   document.querySelector('#theme-toggle').addEventListener('click',()=>{theme=theme==='dark'?'light':'dark';localStorage.setItem('red-jacket-theme',theme);render();document.querySelector('#theme-toggle').focus();});
-  document.querySelector('.menu-toggle').addEventListener('click',()=>{pinned=!pinned;side.classList.toggle('pinned',pinned);document.querySelector('.drawer-backdrop').classList.toggle('visible',pinned);document.querySelector('.menu-toggle').setAttribute('aria-expanded',String(pinned));document.querySelector('.menu-toggle').setAttribute('aria-label',pinned?'Desafixar menu':'Fixar menu aberto');});
-  document.querySelector('.drawer-backdrop').addEventListener('click',()=>{pinned=false;hovered=false;side.classList.remove('pinned','hovered');document.querySelector('.drawer-backdrop').classList.remove('visible');document.querySelector('.menu-toggle').setAttribute('aria-expanded','false');document.querySelector('.menu-toggle').setAttribute('aria-label','Fixar menu aberto');document.querySelector('.menu-toggle').focus();});
-  side.addEventListener('pointerenter',()=>{clearTimeout(timer);hovered=true;side.classList.add('hovered');});
-  side.addEventListener('pointerleave',()=>{timer=setTimeout(()=>{hovered=false;side.classList.remove('hovered');},180);});
+  document.querySelector('.menu-toggle').addEventListener('click',()=>{pinned=!pinned;side.classList.remove('force-collapsed');side.classList.toggle('pinned',pinned);document.querySelector('.drawer-backdrop').classList.toggle('visible',pinned);document.querySelector('.menu-toggle').setAttribute('aria-expanded',String(pinned));document.querySelector('.menu-toggle').setAttribute('aria-label',pinned?'Desafixar menu':'Fixar menu aberto');});
+  document.querySelector('.drawer-backdrop').addEventListener('click',()=>{pinned=false;hovered=false;side.classList.remove('pinned','hovered');side.classList.add('force-collapsed');document.querySelector('.drawer-backdrop').classList.remove('visible');document.querySelector('.menu-toggle').setAttribute('aria-expanded','false');document.querySelector('.menu-toggle').setAttribute('aria-label','Fixar menu aberto');document.querySelector('.menu-toggle').focus();});
+  side.addEventListener('pointerenter',()=>{clearTimeout(timer);side.classList.remove('force-collapsed');hovered=true;side.classList.add('hovered');});
+  side.addEventListener('pointerleave',()=>{timer=setTimeout(()=>{hovered=false;side.classList.remove('hovered','force-collapsed');},180);});
   document.querySelector('#show-all').addEventListener('click',()=>{document.querySelector('#table-message').textContent='Todos os 3 destaques desta demonstração estão exibidos.';});
 }
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){pinned=false;hovered=false;const s=document.querySelector('.sidebar');s.classList.remove('pinned','hovered');document.querySelector('.drawer-backdrop').classList.remove('visible');document.querySelector('.menu-toggle').setAttribute('aria-expanded','false');document.querySelector('.menu-toggle').focus();}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){pinned=false;hovered=false;const s=document.querySelector('.sidebar');s.classList.remove('pinned','hovered');s.classList.add('force-collapsed');document.querySelector('.drawer-backdrop').classList.remove('visible');document.querySelector('.menu-toggle').setAttribute('aria-expanded','false');document.querySelector('.menu-toggle').setAttribute('aria-label','Fixar menu aberto');document.querySelector('#theme-toggle').focus();}});
 document.addEventListener('pointerdown', e => {
   const side = document.querySelector('.sidebar');
   if (pinned && !side.contains(e.target)) {
     pinned = false;
     hovered = false;
     side.classList.remove('pinned', 'hovered');
+    side.classList.add('force-collapsed');
     document.querySelector('.drawer-backdrop').classList.remove('visible');
     const toggle = side.querySelector('.menu-toggle');
     toggle.setAttribute('aria-expanded', 'false');

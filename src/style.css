@@ -9,3 +9,5 @@
 .chart-data{margin-top:14px;font-size:12px;color:var(--muted)}.chart-data summary{cursor:pointer;color:var(--blue);font-weight:700}.chart-data ol{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px 20px;padding-left:22px}.table-message{min-height:1.2em;color:var(--blue);font-size:12px;margin:8px 0 0}@media(max-width:650px){.chart-data ol{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 .drawer-backdrop{display:none}@media(max-width:650px){.drawer-backdrop.visible{display:block;position:fixed;z-index:9;inset:0 0 0 205px;width:calc(100% - 205px);height:100vh;border:0;border-radius:0;background:var(--backdrop)}.sidebar.pinned{box-shadow:12px 0 32px var(--shadow)}}
+
+@media(min-width:651px){.content{transition:margin-left .22s ease}.shell:has(.sidebar:not(.force-collapsed):is(:hover,:focus-within,.hovered,.pinned)) .content{margin-left:228px}}.sidebar.force-collapsed{width:76px}.sidebar.force-collapsed .nav-label,.sidebar.force-collapsed .brand-name,.sidebar.force-collapsed .menu-toggle span{opacity:0}@media(max-width:650px){.sidebar.force-collapsed{width:58px}}
