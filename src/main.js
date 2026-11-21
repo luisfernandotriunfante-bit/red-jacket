@@ -59,7 +59,7 @@ function selectMain(index,source){
   renderCanvas();
   if(state.drawer){state.drawer=false;shell.classList.remove('drawer-open');mobileTrigger.setAttribute('aria-expanded','false')}
   const selector=source==='mobile'?'.mobile-tabs [aria-selected="true"]':'.main-tabs [aria-selected="true"]';
-  document.querySelector(selector)?.focus();
+  if(source==='side'&&!state.keyboard){document.querySelector('.canvas').focus();openSidebar(false)}else document.querySelector(selector)?.focus();
 }
 function selectSub(index){state.sub=index;renderCanvas();subtabItems.querySelectorAll('[role="tab"]').forEach((button,i)=>{button.setAttribute('aria-selected',String(i===index));button.tabIndex=i===index?0:-1});positionIndicator();subtabItems.querySelector('[aria-selected="true"]')?.focus();subtabsEl.classList.remove('entering');void subtabsEl.offsetWidth;subtabsEl.classList.add('entering')}
 function bindTabs(list,vertical,callback){
