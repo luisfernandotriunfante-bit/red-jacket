@@ -21,8 +21,8 @@ jobs:
         with:
           node-version: '22.12.0'
 
-      - name: Install dependencies (gera package-lock.json se faltar)
-        run: npm install
+      - name: Instalar (reprodutivel se houver lockfile, senao gera um)
+        run: npm ci --no-audit || npm install
 
       - name: Commitar package-lock.json gerado, se mudou
         run: |
@@ -37,9 +37,6 @@ jobs:
           else
             echo "package-lock.json já está sincronizado."
           fi
-
-      - name: Reinstalar a partir do lockfile committed (prova de reprodutibilidade)
-        run: npm ci
 
       - name: Build
         run: npm run build
