@@ -45,6 +45,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
+      pull-requests: write
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -60,7 +61,8 @@ jobs:
           token_format: access_token
           access_token_scopes: https://www.googleapis.com/auth/firebase.hosting
 
-      - name: Deploy do canal de preview via Hosting REST API (sem firebase-tools)
+      - id: deploy
+        name: Deploy do canal de preview via Hosting REST API (sem firebase-tools)
         env:
           ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
           SITE_ID: red-jacket-3a488
@@ -127,3 +129,20 @@ jobs:
           echo "### Preview Firebase Hosting (canal: $CHANNEL_ID, expira em 7 dias)" >> "$GITHUB_STEP_SUMMARY"
           echo "URL: $CHANNEL_URL" >> "$GITHUB_STEP_SUMMARY"
           echo "Versao: $VERSION_NAME" >> "$GITHUB_STEP_SUMMARY"
+
+          echo "preview_url=$CHANNEL_URL" >> "$GITHUB_OUTPUT"
+          echo "version_name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Comentar URL do preview no PR
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PREVIEW_URL: ${{ steps.deploy.outputs.preview_url }}
+          VERSION_NAME: ${{ steps.deploy.outputs.version_name }}
+        run: |
+          set -euo pipefail
+          BODY=$(jq -n --arg url "$PREVIEW_URL" --arg v "$VERSION_NAME" \
+            '{body: ("Preview Firebase Hosting (canal pr3-preview, expira em 7 dias): " + $url + "\nVersao: " + $v)}')
+          curl -sf -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -X POST -d "$BODY" \
+            "https://api.github.com/repos/${{ github.repository }}/issues/3/comments" > /dev/null
