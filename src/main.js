@@ -1,71 +1,77 @@
 import './style.css';
-import { tabs, subtabs, nextIndex, preferredTheme } from './shell-state.js';
+import {tabs,subtabs,nextIndex,preferredTheme} from './shell-state.js';
 
-const icons={
-  chart:'<path d="M3 17V7m5 10V3m5 14v-7m5 7V5"/>',
-  boxes:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
-  people:'<circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2M17 5a3 3 0 0 1 0 6m1 3a5 5 0 0 1 3 5v1"/>',
-  spark:'<path d="m12 2 1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8L12 2Zm7 14 .7 2.3L22 19l-2.3.7L19 22l-.7-2.3L16 19l2.3-.7L19 16Z"/>',
+const paths={
+  chart:'<path d="M4 19V7m5 12V4m5 15v-8m5 8V6"/>',
+  box:'<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 10h16M10 10v10"/>',
+  users:'<circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2M17 5a3 3 0 0 1 0 6m1 3a5 5 0 0 1 3 5v1"/>',
+  spark:'<path d="m12 3 2 7 7 2-7 2-2 7-2-7-7-2 7-2 2-7Z"/>',
+  user:'<circle cx="12" cy="8" r="3.4"/><path d="M5 21a7 7 0 0 1 14 0"/>',
   menu:'<path d="M4 7h16M4 12h16M4 17h16"/>',
-  user:'<circle cx="12" cy="8" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/>',
-  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4m0-14.2-1.4 1.4M6.3 17.7l-1.4 1.4"/>',
-  moon:'<path d="M20 15.5A8.5 8.5 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5Z"/>',
-  chevron:'<path d="m9 6 6 6-6 6"/>',
   close:'<path d="M5 5l14 14M19 5 5 19"/>',
+  moon:'<path d="M20 16A8.5 8.5 0 0 1 8 4a8.5 8.5 0 1 0 12 12Z"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4m0-14.2-1.4 1.4M6.3 17.7l-1.4 1.4"/>',
   edit:'<path d="M4 20h4l11-11-4-4L4 16v4Zm9-13 4 4"/>',
   exit:'<path d="M9 4H4v16h5m6-4 4-4-4-4m4 4H9"/>'
 };
-const icon=(name,size=18)=>'<svg viewBox="0 0 24 24" width="'+size+'" height="'+size+'" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+icons[name]+'</svg>';
+const icon=name=>'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+paths[name]+'</svg>';
 const app=document.querySelector('#app');
-const saved=(()=>{try{return localStorage.getItem('red-jacket-theme')}catch{return null}})();
-const model={tab:'sellout',subtab:'Painel',theme:preferredTheme(saved,matchMedia('(prefers-color-scheme: dark)').matches),sidebarOpen:false,sidebarPinned:false,drawerOpen:false,profileOpen:false,viewState:'empty'};
-const activeTab=()=>tabs.find(tab=>tab.id===model.tab);
-function sidebar(open=model.sidebarOpen){model.sidebarOpen=open;const el=document.querySelector('.sidebar');el?.classList.toggle('open',open);document.querySelector('.shell')?.classList.toggle('sidebar-open',open);document.querySelector('#sidebar-toggle')?.setAttribute('aria-expanded',String(open));}
-function closeProfile(restore=true){model.profileOpen=false;document.querySelector('#profile-menu')?.classList.remove('open');document.querySelector('#profile-button')?.setAttribute('aria-expanded','false');if(restore)document.querySelector('#profile-button')?.focus();}
-function render(focusSelector){
-  document.documentElement.dataset.theme=model.theme;
-  const tab=activeTab(),items=subtabs[tab.id];
-  app.innerHTML='<div class="shell"><aside class="sidebar" aria-label="Navegação principal"><div class="side-top"><div class="brand" aria-label="Red Jacket"><span class="brand-mark">R<span>.</span></span><span class="brand-name">RED JACKET</span></div><button id="sidebar-toggle" class="icon-button side-toggle" type="button" aria-label="Alternar menu lateral" aria-expanded="'+model.sidebarOpen+'" aria-controls="primary-nav" title="Alternar menu lateral">'+icon('menu')+'</button></div><nav id="primary-nav" role="tablist" aria-label="Áreas" aria-orientation="vertical" class="side-nav">'+tabs.map(item=>'<button class="side-item '+(item.id===model.tab?'active':'')+'" type="button" data-main-tab="'+item.id+'" role="tab" aria-selected="'+(item.id===model.tab)+'" aria-controls="panel-main" tabindex="'+(item.id===model.tab?'0':'-1')+'" title="'+item.label+'" aria-label="'+item.label+'" '+(item.id===model.tab?'aria-current="page"':'')+'><span class="side-icon">'+icon(item.icon)+'</span><span class="side-label">'+item.label+'</span></button>').join('')+'</nav><div class="side-bottom"><button id="theme-toggle" class="theme-button" type="button" role="switch" aria-label="Tema escuro" aria-checked="'+(model.theme==='dark')+'" title="Alternar tema">'+icon(model.theme==='dark'?'sun':'moon')+'<span class="side-label">Tema '+(model.theme==='dark'?'escuro':'claro')+'</span></button></div></aside><button id="drawer-backdrop" class="drawer-backdrop '+(model.drawerOpen?'visible':'')+'" type="button" aria-label="Fechar menu lateral"></button><div class="workspace"><header class="topbar"><div class="top-left"><button id="mobile-menu" class="icon-button mobile-menu" type="button" aria-label="Abrir menu lateral" aria-expanded="'+model.drawerOpen+'" aria-controls="primary-nav">'+icon('menu',20)+'</button><div class="breadcrumb">RED JACKET <span>/</span> '+tab.label.toUpperCase()+'</div></div><div class="profile-wrap"><button id="profile-button" class="icon-button profile-button" type="button" aria-label="Perfil" aria-expanded="'+model.profileOpen+'" aria-haspopup="menu" aria-controls="profile-menu" title="Perfil">'+icon('user',20)+'</button><div id="profile-menu" class="profile-menu '+(model.profileOpen?'open':'')+'" role="menu" aria-label="Perfil"><button type="button" role="menuitem" data-profile="edit">'+icon('edit')+'Editar perfil</button><button type="button" role="menuitem" data-profile="exit">'+icon('exit')+'Sair</button></div></div></header><div class="page"><div class="page-heading"><div><span class="eyebrow">ÁREA DE TRABALHO</span><h1>'+tab.label+'</h1><p>Estrutura pronta para receber seus dados comerciais.</p></div><span class="shell-badge">ESTRUTURA DE INTERFACE</span></div><div class="mobile-tabs" role="tablist" aria-label="Áreas principais">'+tabs.map((item,i)=>'<button role="tab" data-main-tab="'+item.id+'" aria-selected="'+(item.id===model.tab)+'" aria-controls="panel-main" tabindex="'+(item.id===model.tab?'0':'-1')+'">'+item.label+'</button>').join('')+'</div><div class="subtabs" role="tablist" aria-label="Visualizações de '+tab.label+'">'+items.map((name,i)=>'<button role="tab" data-subtab="'+name+'" aria-selected="'+(name===model.subtab)+'" aria-controls="panel-main" tabindex="'+(name===model.subtab?'0':'-1')+'">'+name+'</button>').join('')+'</div><main id="panel-main" role="tabpanel" tabindex="0" aria-label="'+tab.label+' — '+model.subtab+'"><div class="context-row"><div><span class="eyebrow">VISUALIZAÇÃO</span><h2>'+model.subtab+'</h2></div><div class="context-actions"><label for="period">Período</label><select id="period" class="pill-select"><option>Selecione um período</option><option>Últimos 30 dias</option><option>Últimos 90 dias</option><option>Últimos 12 meses</option></select></div></div><section class="kpi-grid" aria-label="Indicadores vazios">'+['Receita','Pedidos','Ticket médio','Meta'].map(label=>'<article class="kpi"><span>'+label+'</span><strong>—</strong><small>Sem dados disponíveis</small></article>').join('')+'</section><div class="content-grid"><section class="card trend-card" aria-labelledby="trend-heading"><div class="card-heading"><div><span class="eyebrow">ANÁLISE</span><h3 id="trend-heading">Tendência</h3></div><span class="quiet-label">Aguardando dados</span></div><div class="empty-figure" role="status"><div class="empty-graphic" aria-hidden="true"><span></span><span></span><span></span><span></span></div><strong>Nenhuma série disponível</strong><p>Um gráfico aparecerá quando houver dados para o período escolhido.</p></div></section><section class="card state-card" aria-labelledby="state-heading"><div class="card-heading"><div><span class="eyebrow">COMPONENTES</span><h3 id="state-heading">Estados da interface</h3></div></div><div class="state-tabs" role="tablist" aria-label="Exemplos de estado">'+[['empty','Vazio'],['loading','Carregando'],['error','Erro']].map(([key,label])=>'<button type="button" role="tab" data-view-state="'+key+'" aria-selected="'+(model.viewState===key)+'" tabindex="'+(model.viewState===key?'0':'-1')+'">'+label+'</button>').join('')+'</div><div class="state-example" role="status">'+(model.viewState==='empty'?'<strong>Sem registros</strong><p>Esta área ainda não recebeu informações.</p>':model.viewState==='loading'?'<strong>Carregando informações</strong><p>Aguarde enquanto o conteúdo é preparado.</p>':'<strong>Não foi possível carregar</strong><p>Tente novamente quando a fonte de dados estiver disponível.</p>')+'</div></section></div><section class="card table-card" aria-labelledby="table-heading"><div class="card-heading table-heading"><div><span class="eyebrow">DETALHAMENTO</span><h3 id="table-heading">Registros</h3></div><div class="table-tools"><label for="search">Buscar</label><input id="search" type="search" placeholder="Nenhum registro para buscar" disabled><label for="category">Categoria</label><select id="category" class="pill-select" disabled><option>Todas</option></select></div></div><div class="empty-table"><strong>Sem registros nesta visualização</strong><p>A tabela será preenchida quando houver uma fonte de dados conectada.</p></div><div class="mobile-record-template" aria-label="Modelo de cartão sem registro"><strong>Modelo de registro · sem dados</strong><dl><div><dt>Nome</dt><dd>—</dd></div><div><dt>Categoria</dt><dd>—</dd></div><div><dt>Valor</dt><dd>—</dd></div></dl></div><div class="table-footer"><span>0 registros</span><div><button type="button" class="icon-button" aria-label="Página anterior" disabled>'+icon('chevron')+'</button><span>Página 0 de 0</span><button type="button" class="icon-button" aria-label="Próxima página" disabled>'+icon('chevron')+'</button></div></div></section></main><footer>RED JACKET <span>·</span> Interface de demonstração <span>·</span> Nenhum dado comercial foi carregado</footer></div></div><div id="toast" class="toast" role="status" aria-live="polite"></div></div>';
-  bind();
-  sidebar(model.sidebarOpen);
-  if(focusSelector)document.querySelector(focusSelector)?.focus();
+const stored=(()=>{try{return localStorage.getItem('red-jacket-theme')}catch{return null}})();
+const state={main:0,sub:0,theme:preferredTheme(stored,matchMedia('(prefers-color-scheme: dark)').matches),sidebarOpen:false,pinned:false,drawer:false,profile:false,keyboard:false};
+document.documentElement.dataset.theme=state.theme;
+app.innerHTML='<div class="shell"><aside class="sidebar" aria-label="Navegação principal"><div class="sidebar-top"><button class="round profile-trigger" type="button" aria-label="Perfil" aria-haspopup="menu" aria-expanded="false" aria-controls="profile-menu" title="Perfil">'+icon('user')+'</button><button class="round expand-trigger" type="button" aria-label="Expandir menu" aria-expanded="false" aria-controls="main-tabs" title="Expandir menu">'+icon('menu')+'</button><div id="profile-menu" class="profile-menu" role="menu" aria-label="Perfil"><button role="menuitem" type="button" data-profile="edit">'+icon('edit')+'Editar perfil</button><button role="menuitem" type="button" data-profile="exit">'+icon('exit')+'Sair</button></div></div><nav id="main-tabs" class="main-tabs" role="tablist" aria-orientation="vertical" aria-label="Áreas principais">'+tabs.map((tab,i)=>'<button class="main-tab '+(i===0?'active':'')+'" type="button" role="tab" data-main="'+i+'" aria-selected="'+(i===0)+'" aria-controls="empty-canvas" tabindex="'+(i===0?'0':'-1')+'" aria-label="'+tab.label+'" title="'+tab.label+'">'+icon(tab.icon)+'<span class="nav-label">'+tab.label+'</span></button>').join('')+'</nav><div class="sidebar-bottom"><button class="theme-switch" type="button" role="switch" aria-label="Tema escuro" aria-checked="'+(state.theme==='dark')+'" title="Alternar tema">'+icon(state.theme==='dark'?'sun':'moon')+'<span class="nav-label">Tema</span></button></div></aside><button class="drawer-backdrop" type="button" aria-label="Fechar menu"></button><div class="workspace"><div class="mobile-bar"><button class="round mobile-trigger" type="button" aria-label="Abrir menu" aria-expanded="false" aria-controls="main-tabs" title="Abrir menu">'+icon('menu')+'</button><nav class="mobile-tabs" role="tablist" aria-label="Áreas principais">'+tabs.map((tab,i)=>'<button type="button" role="tab" data-main="'+i+'" aria-selected="'+(i===0)+'" aria-controls="empty-canvas" tabindex="'+(i===0?'0':'-1')+'">'+tab.label+'</button>').join('')+'</nav></div><nav class="subtabs" role="tablist" aria-label="Subabas"><div class="subtab-items"></div><span class="tab-indicator" aria-hidden="true"></span></nav><main id="empty-canvas" class="canvas" role="tabpanel" tabindex="-1" aria-label="Área de trabalho vazia"></main></div><div class="notice" role="status" aria-live="polite"></div></div>';
+const shell=document.querySelector('.shell'),side=document.querySelector('.sidebar'),mainTabs=document.querySelector('.main-tabs'),mobileTabs=document.querySelector('.mobile-tabs'),subtabsEl=document.querySelector('.subtabs'),subtabItems=document.querySelector('.subtab-items'),indicator=document.querySelector('.tab-indicator'),profileTrigger=document.querySelector('.profile-trigger'),profileMenu=document.querySelector('#profile-menu'),expandTrigger=document.querySelector('.expand-trigger'),mobileTrigger=document.querySelector('.mobile-trigger'),themeSwitch=document.querySelector('.theme-switch');
+function openSidebar(open){state.sidebarOpen=open;side.classList.toggle('open',open);shell.classList.toggle('sidebar-open',open);expandTrigger.setAttribute('aria-expanded',String(open));expandTrigger.setAttribute('aria-label',open?'Recolher menu':'Expandir menu');}
+function closeDrawer(){state.drawer=false;shell.classList.remove('drawer-open');mobileTrigger.setAttribute('aria-expanded','false');mobileTrigger.setAttribute('aria-label','Abrir menu');mobileTrigger.focus()}
+function closeProfile(restore=true){state.profile=false;profileMenu.classList.remove('open');profileTrigger.setAttribute('aria-expanded','false');if(restore)profileTrigger.focus()}
+function showSubtabs(animate=false){
+  const names=subtabs[tabs[state.main].id];
+  if(animate)subtabsEl.classList.remove('entering');
+  subtabItems.innerHTML=names.map((name,i)=>'<button type="button" role="tab" data-sub="'+i+'" aria-selected="'+(i===state.sub)+'" aria-controls="empty-canvas" tabindex="'+(i===state.sub?'0':'-1')+'">'+name+'</button>').join('');
+  if(animate){void subtabsEl.offsetWidth;subtabsEl.classList.add('entering')}
+  requestAnimationFrame(()=>positionIndicator());
 }
-function selectTab(id,fromMobile=false){model.tab=id;model.subtab=subtabs[id][0];model.drawerOpen=false;model.sidebarPinned=false;model.sidebarOpen=false;render(fromMobile?'.mobile-tabs [aria-selected="true"]':'.side-nav .active');}
-function bindTablist(selector,dataName,items,callback,vertical=false){
-  const list=document.querySelector(selector);
-  list?.addEventListener('keydown',event=>{
-    const keys=vertical?['ArrowDown','ArrowUp','Home','End']:['ArrowRight','ArrowLeft','Home','End'];
-    if(!keys.includes(event.key))return;
-    const buttons=[...list.querySelectorAll('[role="tab"]')],index=buttons.indexOf(document.activeElement);
-    if(index<0)return;
-    event.preventDefault();
-    const next=nextIndex(index,event.key,buttons.length);
-    callback(buttons[next].dataset[dataName]);
+function positionIndicator(){
+  const active=subtabItems.querySelector('[aria-selected="true"]');
+  if(!active)return;
+  const box=active.getBoundingClientRect(),parent=subtabsEl.getBoundingClientRect();
+  indicator.style.width=box.width+'px';
+  indicator.style.transform='translateX('+(box.left-parent.left)+'px)';
+}
+function selectMain(index,source){
+  state.main=index;state.sub=0;
+  document.querySelectorAll('[data-main]').forEach(button=>{
+    const selected=Number(button.dataset.main)===index;
+    button.setAttribute('aria-selected',String(selected));
+    button.tabIndex=selected?0:-1;
+    button.classList.toggle('active',selected);
   });
+  showSubtabs(true);
+  if(state.drawer){state.drawer=false;shell.classList.remove('drawer-open');mobileTrigger.setAttribute('aria-expanded','false')}
+  const selector=source==='mobile'?'.mobile-tabs [aria-selected="true"]':'.main-tabs [aria-selected="true"]';
+  document.querySelector(selector)?.focus();
 }
-function bind(){
-  const side=document.querySelector('.sidebar');
-  side.addEventListener('pointerenter',event=>{if(event.pointerType!=='touch')sidebar(true)});
-  side.addEventListener('pointerleave',()=>{if(!model.sidebarPinned&&!side.contains(document.activeElement))sidebar(false)});
-  side.addEventListener('focusin',()=>sidebar(true));
-  side.addEventListener('focusout',event=>{if(!side.contains(event.relatedTarget)&&!model.sidebarPinned)sidebar(false)});
-  document.querySelector('#sidebar-toggle').addEventListener('click',()=>{model.sidebarPinned=!model.sidebarPinned;sidebar(model.sidebarPinned);});
-  document.querySelector('#mobile-menu').addEventListener('click',()=>{model.drawerOpen=!model.drawerOpen;document.querySelector('.shell').classList.toggle('drawer-open',model.drawerOpen);document.querySelector('#mobile-menu').setAttribute('aria-expanded',String(model.drawerOpen));if(model.drawerOpen)document.querySelector('.side-item.active').focus();});
-  document.querySelector('#drawer-backdrop').addEventListener('click',()=>closeDrawer());
-  document.querySelectorAll('[data-main-tab]').forEach(button=>button.addEventListener('click',()=>selectTab(button.dataset.mainTab,!!button.closest('.mobile-tabs'))));
-  document.querySelectorAll('[data-subtab]').forEach(button=>button.addEventListener('click',()=>{model.subtab=button.dataset.subtab;render('.subtabs [aria-selected="true"]');}));
-  document.querySelectorAll('[data-view-state]').forEach(button=>button.addEventListener('click',()=>{model.viewState=button.dataset.viewState;render('.state-tabs [aria-selected="true"]');}));
-  bindTablist('.side-nav','mainTab',tabs,id=>selectTab(id,false),true);
-  bindTablist('.mobile-tabs','mainTab',tabs, id=>selectTab(id,true));
-  bindTablist('.subtabs','subtab',subtabs[model.tab],name=>{model.subtab=name;render('.subtabs [aria-selected="true"]')});
-  bindTablist('.state-tabs','viewState',['empty','loading','error'],name=>{model.viewState=name;render('.state-tabs [aria-selected="true"]')});
-  document.querySelector('#theme-toggle').addEventListener('click',()=>{model.theme=model.theme==='dark'?'light':'dark';try{localStorage.setItem('red-jacket-theme',model.theme)}catch{}render('#theme-toggle')});
-  const profileButton=document.querySelector('#profile-button'),menu=document.querySelector('#profile-menu');
-  profileButton.addEventListener('click',()=>{model.profileOpen=!model.profileOpen;menu.classList.toggle('open',model.profileOpen);profileButton.setAttribute('aria-expanded',String(model.profileOpen));if(model.profileOpen)menu.querySelector('[role="menuitem"]').focus()});
-  menu.addEventListener('keydown',event=>{const items=[...menu.querySelectorAll('[role="menuitem"]')],index=items.indexOf(document.activeElement);if(event.key==='Escape'){event.preventDefault();event.stopPropagation();closeProfile();return}if(['ArrowDown','ArrowUp','Home','End'].includes(event.key)){event.preventDefault();const next=event.key==='Home'?0:event.key==='End'?items.length-1:(index+(event.key==='ArrowDown'?1:-1)+items.length)%items.length;items[next].focus()}});
-  menu.querySelectorAll('[role="menuitem"]').forEach(button=>button.addEventListener('click',()=>{closeProfile();document.querySelector('#toast').textContent='Disponível após configurar autenticação.';}));
+function selectSub(index){state.sub=index;subtabItems.querySelectorAll('[role="tab"]').forEach((button,i)=>{button.setAttribute('aria-selected',String(i===index));button.tabIndex=i===index?0:-1});positionIndicator();subtabItems.querySelector('[aria-selected="true"]')?.focus();subtabsEl.classList.remove('entering');void subtabsEl.offsetWidth;subtabsEl.classList.add('entering')}
+function bindTabs(list,vertical,callback){
+  list.addEventListener('click',event=>{const button=event.target.closest('[role="tab"]');if(button&&list.contains(button))callback(Number(button.dataset.main??button.dataset.sub))});
+  list.addEventListener('keydown',event=>{const keys=vertical?['ArrowUp','ArrowDown','Home','End']:['ArrowLeft','ArrowRight','Home','End'];if(!keys.includes(event.key))return;const buttons=[...list.querySelectorAll('[role="tab"]')],index=buttons.indexOf(document.activeElement);if(index<0)return;event.preventDefault();callback(nextIndex(index,event.key,buttons.length,vertical))});
 }
-function closeDrawer(){model.drawerOpen=false;document.querySelector('.shell')?.classList.remove('drawer-open');document.querySelector('#mobile-menu')?.setAttribute('aria-expanded','false');document.querySelector('#mobile-menu')?.focus();}
-document.addEventListener('pointerdown',event=>{if(model.profileOpen&&!event.target.closest('.profile-wrap'))closeProfile(false)});
-document.addEventListener('keydown',event=>{if(event.key==='Escape'){if(model.profileOpen){closeProfile();return}if(model.drawerOpen){closeDrawer();return}if(model.sidebarOpen){model.sidebarPinned=false;sidebar(false);document.querySelector('#panel-main')?.focus()}}});
-render();
+bindTabs(mainTabs,true,index=>selectMain(index,'side'));
+bindTabs(mobileTabs,false,index=>selectMain(index,'mobile'));
+bindTabs(subtabItems,false,selectSub);
+side.addEventListener('pointerenter',event=>{if(event.pointerType!=='touch'&&matchMedia('(min-width:701px)').matches){state.keyboard=false;openSidebar(true)}});
+side.addEventListener('pointerleave',()=>{if(!state.pinned&&!state.keyboard)openSidebar(false)});
+side.addEventListener('focusin',()=>{if(matchMedia('(min-width:701px)').matches)openSidebar(true)});
+side.addEventListener('focusout',event=>{if(!side.contains(event.relatedTarget)&&!state.pinned)openSidebar(false)});
+document.addEventListener('keydown',()=>{state.keyboard=true});
+document.addEventListener('pointerdown',event=>{state.keyboard=false;if(state.profile&&!event.target.closest('.sidebar-top'))closeProfile(false)});
+expandTrigger.addEventListener('click',()=>{state.pinned=!state.pinned;openSidebar(state.pinned)});
+mobileTrigger.addEventListener('click',()=>{state.drawer=!state.drawer;shell.classList.toggle('drawer-open',state.drawer);mobileTrigger.setAttribute('aria-expanded',String(state.drawer));mobileTrigger.setAttribute('aria-label',state.drawer?'Fechar menu':'Abrir menu');if(state.drawer)mainTabs.querySelector('[aria-selected="true"]')?.focus()});
+document.querySelector('.drawer-backdrop').addEventListener('click',closeDrawer);
+profileTrigger.addEventListener('click',()=>{state.profile=!state.profile;profileMenu.classList.toggle('open',state.profile);profileTrigger.setAttribute('aria-expanded',String(state.profile));if(state.profile)profileMenu.querySelector('[role="menuitem"]')?.focus()});
+profileMenu.addEventListener('keydown',event=>{const items=[...profileMenu.querySelectorAll('[role="menuitem"]')],index=items.indexOf(document.activeElement);if(event.key==='Escape'){event.preventDefault();event.stopPropagation();closeProfile();return}if(['ArrowUp','ArrowDown','Home','End'].includes(event.key)){event.preventDefault();const next=event.key==='Home'?0:event.key==='End'?items.length-1:(index+(event.key==='ArrowDown'?1:-1)+items.length)%items.length;items[next].focus()}});
+profileMenu.querySelectorAll('[role="menuitem"]').forEach(button=>button.addEventListener('click',()=>{closeProfile();document.querySelector('.notice').textContent='Disponível após configurar autenticação.'}));
+themeSwitch.addEventListener('click',()=>{state.theme=state.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=state.theme;themeSwitch.setAttribute('aria-checked',String(state.theme==='dark'));themeSwitch.querySelector('svg').outerHTML=icon(state.theme==='dark'?'sun':'moon');try{localStorage.setItem('red-jacket-theme',state.theme)}catch{}themeSwitch.focus()});
+document.addEventListener('keydown',event=>{if(event.key!=='Escape')return;if(state.profile){closeProfile();return}if(state.drawer){closeDrawer();return}if(state.sidebarOpen){state.pinned=false;openSidebar(false);document.querySelector('.canvas').focus()}});
+window.addEventListener('resize',positionIndicator);
+showSubtabs();

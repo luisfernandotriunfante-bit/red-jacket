@@ -1,28 +1,29 @@
-# Red Jacket — shell visual T-001
+# Red Jacket — navegação T-001
 
-Esta proposta substitui os dashboards anteriores. É uma interface vazia: **não apresenta números nem gráficos comerciais inventados**. Não há login, dados reais ou integração de API. A saída `dist/` é estática; somente o canal temporário `pr4-preview` pode ser publicado para revisão.
+Esta versão contém **somente navegação e um canvas vazio**. Não há títulos, indicadores, filtros, tabelas, gráficos ou dados comerciais na área central. Perfil mostra Editar perfil e Sair; as ações exibem aviso de indisponibilidade até a etapa de autenticação.
 
-## Direção e tokens
-Fonte Inter quando disponível no sistema, seguida de sans do sistema; sem download. Escala de espaço: 4, 8, 12, 16, 24 e 32 px. Títulos de página 32 px (28 px em 360), subtítulos 24 px, texto 14 px, labels 12 px e KPIs 28–32 px com números tabulares. Raios: 12 px em cartões, 10 px em menus e 999 px em pills. Ícones: 18–20 px; botões de ícone 36 px desktop e 44 px touch.
-
+## Tokens
 | Token | Claro | Escuro |
 | --- | --- | --- |
-| Fundo `--bg` | `#F5F7FA` | `#101216` |
-| Superfície `--surface` | `#FFF` | `#191C22` |
-| Texto `--text` | `#141820` | `#F4F6FA` |
-| Secundário `--muted` | `#667085` | `#A6ADBB` |
-| Linha `--line` | `#D9E0EA` | `#303641` |
-| Destaque `--accent` | `#2457C5` | `#D94A4A` |
+| Fundo `--bg` | `#F7F9FC` | `#000` |
+| Superfície `--surface` | `#FFF` | `#050505` |
+| Superfície secundária `--surface-alt` | `#F2F5FA` | `#0A0A0A` |
+| Texto `--text` | `#18202D` | `#F4F4F4` |
+| Texto secundário `--muted` | `#647084` | `#A8A8A8` |
+| Linha `--line` | `#DCE4EF` | `#252525` |
+| Destaque `--accent` | `#1457E6` | `#FF3B45` |
+| Texto ativo `--accent-text` | `#1457E6` | `#FF6B73` |
+| Hover `--hover` | `#EAF0FF` | `#26090B` |
+| Foco `--focus` | `#1457E6` | `#FF6B73` |
 
-Destaque somente para seleção, foco e ação primária. KPIs e botões permanecem neutros, sem bordas coloridas. A indicação de estado também usa texto ou ícone. Contraste alvo WCAG AA: 4,5:1 para texto comum, 3:1 para texto grande e componentes.
+Texto ativo escuro usa vermelho mais claro para atingir WCAG AA em 14 px. Ícones inativos usam `--muted`; ativo usa `--accent-text`. Fonte Inter quando disponível no sistema, com fallback sans; nenhum download.
 
-## Estrutura e interação
-- Sidebar de 64 px recolhida e 232 px expandida. Hover ou foco abre, e o conteúdo desloca junto; pointerleave recolhe quando o foco não está dentro. O botão explícito permite fixar/desafixar. Com 360 px vira drawer com botão e backdrop, além de abas principais horizontais.
-- Perfil abre menu com Editar perfil e Sair. Não há autenticação nesta fase: essas ações mostram aviso de indisponibilidade. Menu suporta setas, Home, End e Escape; o foco volta ao botão.
-- Abas principais na ordem Sell out, Estoque, Clientes, Campanhas. Todas têm subabas centralizadas; Sell out contém Painel, Gerencial, Clientes. Na sidebar vertical, ArrowUp/ArrowDown, Home e End selecionam e focam a aba; nas subabas horizontais, ArrowLeft/ArrowRight, Home e End. Transição de 160 ms ease-out; movimento reduzido remove deslocamento.
-- Tema alterna no fim da sidebar, com `role=switch`, rótulo estável e preferência salva localmente.
-- Estados vazio, carregando e erro têm demonstrações textuais acionáveis nas abas de estado. Os indicadores e registros padrão mostram traços e mensagens explícitas, sem simular dados.
-- Selects são pill; busca e filtros de tabela ficam desabilitados com explicação contextual porque não há registros. Em 360 px o modelo de registro aparece como cartão rotulado.
+## Navegação
+Sidebar desktop: 64 px recolhida, 232 px expandida. Hover/foco abre, pointerleave recolhe para uso por ponteiro, botão explícito fixa/desfixa; o canvas desloca junto e não fica encoberto. Em 360 px, há drawer com backdrop, botão e abas principais horizontais. Perfil fica no alto e tema no rodapé. O centro permanece vazio.
 
-## QA
-Conferir 360, 768 e 1280 px em claro/escuro; ordem e teclado das abas, sidebar sem sobreposição, drawer, menu de perfil, foco, contraste e `prefers-reduced-motion`. Capturas e teste em navegador são necessários para aprovar.
+Abas principais: Sell out, Estoque, Clientes, Campanhas. Todas têm subabas centralizadas. Sell out: Painel, Gerencial, Clientes. A sidebar vertical usa ArrowUp/ArrowDown/Home/End; barras horizontais usam ArrowLeft/ArrowRight/Home/End. Perfil usa ArrowUp/ArrowDown/Home/End, Enter e Escape. Botões de ícone têm nome acessível e alvo de 44 px.
+
+Troca de abas: entrada com opacidade e deslocamento horizontal de 12 px por 320 ms; indicador desliza por 220 ms. `prefers-reduced-motion` elimina o deslocamento e limita transições a 80 ms. Tema é salvo localmente, com preferência inicial do sistema.
+
+## Verificação
+QA deve conferir 360, 768 e 1280 px, claro/escuro, contraste WCAG AA, ausência de overflow, sidebar sem sobreposição, teclado, perfil, tema, drawer e movimento reduzido. Preview é temporário na PR #4; sem merge ou produção.
