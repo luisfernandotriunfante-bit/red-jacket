@@ -13,8 +13,8 @@ export const subtabs = {
 export function nextIndex(index, key, length) {
   if(key==='Home') return 0;
   if(key==='End') return length-1;
-  if(key==='ArrowRight') return (index+1)%length;
-  if(key==='ArrowLeft') return (index-1+length)%length;
+  if(key==='ArrowRight'||key==='ArrowDown') return (index+1)%length;
+  if(key==='ArrowLeft'||key==='ArrowUp') return (index-1+length)%length;
   return index;
 }
 export function preferredTheme(saved, prefersDark) {

@@ -12,6 +12,8 @@ test('ordem das áreas e subabas do Sell out',()=>{
 });
 test('setas, Home e End percorrem abas com retorno circular',()=>{
   assert.equal(nextIndex(0,'ArrowRight',4),1);
+  assert.equal(nextIndex(0,'ArrowDown',4),1);
+  assert.equal(nextIndex(0,'ArrowUp',4),3);
   assert.equal(nextIndex(0,'ArrowLeft',4),3);
   assert.equal(nextIndex(3,'ArrowRight',4),0);
   assert.equal(nextIndex(2,'Home',4),0);
@@ -25,6 +27,8 @@ test('preferência do tema respeita escolha salva e sistema',()=>{
 });
 test('shell mantém estados vazios e controles acessíveis',()=>{
   assert.match(main,/role="tablist"/);
+  assert.match(main,/aria-orientation="vertical"/);
+  assert.match(main,/bindTablist\('\.side-nav'[^;]*true\)/);
   assert.match(main,/aria-selected/);
   assert.match(main,/role="menu"/);
   assert.match(main,/role="switch"/);
