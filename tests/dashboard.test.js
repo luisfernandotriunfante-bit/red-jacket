@@ -32,12 +32,15 @@ test('shell contém só navegação e canvas vazio',()=>{
   assert.match(main,/role="switch"/);
   assert.match(main,/class="canvas" role="tabpanel"/);
   assert.match(main,/aria-label="Tema escuro"/);
+  assert.doesNotMatch(main,/class="notice"|Disponível após configurar autenticação/);
   assert.doesNotMatch(main,/<(?:h1|h2|h3|table|progress)\b/);
   assert.doesNotMatch(main,/R\$\s*\d/);
 });
 test('layout desloca canvas e respeita movimento reduzido',()=>{
   assert.match(css,/\.shell\.sidebar-open \.workspace\{margin-left:232px\}/);
   assert.match(css,/\.shell\.drawer-open \.sidebar\{transform:translateX\(0\)\}/);
+  assert.match(css,/\.main-tab\[aria-selected=true\] svg[^}]+animation:tab-in 320ms/);
+  assert.match(css,/\.subtabs\.entering \.subtab-items\{animation:tab-in 320ms/);
   assert.match(css,/prefers-reduced-motion:reduce/);
   assert.match(css,/--bg:#000/);
 });
