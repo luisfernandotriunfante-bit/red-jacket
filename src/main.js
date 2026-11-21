@@ -54,7 +54,7 @@ function renderCanvas(){
   if(tabs[state.main].id!=='settings'){canvas.innerHTML='';canvas.setAttribute('aria-label','Área de trabalho vazia');return}
   if(state.sub===0){
     canvas.innerHTML=uploadView();
-    for(const [id,files] of localFiles){const output=canvas.querySelector('[data-selection="'+id+'"]');if(output&&files.length)output.textContent=files.map(file=>file.name).join(', ')+' · selecionado nesta sessão'}
+    for(const [id,files] of localFiles){const output=canvas.querySelector('[data-selection="'+id+'"]');if(output&&files.length)output.textContent=files.map(file=>file.name).join(', ')+(id.startsWith('history-')?' · selecionado nesta sessão':' · selecionados nesta sessão')}
     for(const button of canvas.querySelectorAll('.history-row .row-action'))button.textContent=localFiles.get(button.dataset.pick)?.length?'Substituir':'Selecionar arquivo';
     canvas.setAttribute('aria-label','Uploads');
   }else{canvas.innerHTML='<section class="audit-view" aria-label="Inconsistências"></section>';canvas.setAttribute('aria-label','Auditoria')}
@@ -106,7 +106,7 @@ document.querySelector('.canvas').addEventListener('change',event=>{
   const input=event.target.closest('input[type="file"][data-upload]');if(!input||!input.files.length)return;
   const id=input.dataset.upload,existing=localFiles.get(id);
   if(id.startsWith('history-')&&existing?.length&&!window.confirm('Substituir '+historySlots[Number(id.slice(8))]+'?')){input.value='';return}
-  localFiles.set(id,[...input.files]);renderCanvas();
+  localFiles.set(id,id.startsWith('group-')?[...(existing||[]),...input.files]:[...input.files]);renderCanvas();
 });
 window.addEventListener('resize',positionIndicator);
 showSubtabs();
