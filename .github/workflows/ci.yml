@@ -25,6 +25,12 @@ jobs:
       - name: Instalar dependências do lockfile
         run: npm ci --no-audit
 
+      - name: Publicar package-lock.json como artifact (rastreabilidade)
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-lock
+          path: package-lock.json
+
       - name: Build
         run: npm run build
 
