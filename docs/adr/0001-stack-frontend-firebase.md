@@ -11,8 +11,8 @@ usuário escolheu Firebase e confirmou que o Firebase Hosting atende; pediu
 login real já na primeira fase. Por decisão do gerente, todo trabalho deste
 ciclo acontece só via GitHub (sem artefatos locais), e a dependência do SDK
 de Firebase (pacote `firebase`, módulos `firebase/app`/`firebase/auth`) fica
-para uma tarefa futura (T-004), porque o bootstrap desta entrega (T-001)
-ainda não importa nenhum código de Firebase.
+para uma tarefa futura (T-004), porque o bootstrap desta entrega ainda não
+importa nenhum código de Firebase.
 
 ## Decisão
 
@@ -33,13 +33,14 @@ ainda não importa nenhum código de Firebase.
   revisão: pacotes `@firebase/app`/`@firebase/auth` isolados foram avaliados
   e descartados para esta entrega porque o bootstrap atual não importa
   nenhum deles — adicionar dependência não usada não se justifica.
-- **Nota de segurança para quando T-004 instalar o pacote `firebase`:** o
-  pacote guarda-chuva `firebase` traz `@firebase/firestore` como dependência
-  obrigatória, que por sua vez depende de versões de `@grpc/grpc-js` com
-  vulnerabilidade high (GHSA-m9gg-hp2v-232j), mesmo sem uso de Firestore.
-  Revisar `npm audit` na hora e decidir entre aceitar o risco documentado,
-  usar os módulos com escopo oficial (`@firebase/app`/`@firebase/auth`,
-  mesmo time e release do SDK, sem o wrapper) ou aguardar correção upstream.
+- **Nota para quando T-004 instalar o pacote `firebase`:** o CI deste ADR
+  (`.github/workflows/ci.yml`) só inclui Vite como dependência hoje — não há
+  nenhum SDK de Firebase instalado nem `npm audit` atual que cubra suas
+  dependências transitivas. Ao adicionar o pacote `firebase` (ou os módulos
+  `firebase/app`/`firebase/auth`) em T-004, rodar `npm audit` nesse momento
+  e revisar os avisos oficiais das dependências transitivas antes de seguir;
+  decidir então entre aceitar risco documentado, usar módulos com escopo
+  oficial sem o pacote guarda-chuva, ou aguardar correção upstream.
 
 ## Fora de escopo desta ADR
 
@@ -55,25 +56,19 @@ ainda não importa nenhum código de Firebase.
   estáticos; caminho natural para login real em T-004 sem troca de stack;
   bootstrap atual não carrega dependências não usadas.
 - Negativo: acopla a hospedagem a um provedor específico (Firebase/Google);
-  T-004 vai precisar revisitar a decisão de pacote do SDK (ver nota de
-  segurança acima) antes de instalar.
+  T-004 vai precisar revisitar a decisão de pacote do SDK (ver nota acima)
+  antes de instalar.
 - Risco: enquanto não houver projeto Firebase, qualquer tentativa de
   configurar Hosting/Auth real antes da aprovação do usuário deve ser
   bloqueada.
-
-## Split de tarefas
-
-- T-001 (em curso): fundação visual, bootstrap do app, login só visual.
-- T-002 (dono: usuário/gerente, fora do backend): criação e configuração da
-  conta/projeto Firebase, billing, provedores de Auth.
-- T-004 (bloqueada até T-002): instala o SDK de Firebase e implementa
-  autenticação real (hash/sessão via Firebase Auth, testes de login/token/
-  erro) — só inicia com projeto e provedores aprovados e existentes.
 
 ## Alternativas consideradas
 
 - GitHub Pages: descartada a pedido do usuário em favor do Firebase Hosting.
 - Pacotes `@firebase/app`/`@firebase/auth` isolados nesta entrega: avaliados
-  e descartados por não haver uso ainda (ver nota de segurança).
+  e descartados por não haver uso ainda (ver nota acima).
 - Static site sem build tool: descartada por dificultar organização de
   componentes do design system.
+
+Backlog e split de cartões (T-001 em diante) são mantidos pelo gerente
+técnico fora desta ADR.
