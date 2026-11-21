@@ -29,7 +29,7 @@ class FakeElement {
     for (const callback of this.listeners[type] || []) callback(event);
   }
   click() { this.dispatch('click'); }
-  focus() { globalThis.document.activeElement = this; }
+  focus() { const previous = globalThis.document.activeElement; if(previous?.parent && previous !== this) previous.parent.dispatch('focusout', { target: previous, relatedTarget: this }); globalThis.document.activeElement = this; this.parent?.dispatch('focusin', { target: this, relatedTarget: previous }); }
   contains(target) { for (let p = target; p; p = p.parent) if (p === this) return true; return false; }
   setAttribute(name, value) { this.attrs[name] = value; }
   getAttribute(name) { return this.attrs[name] ?? null; }
@@ -119,9 +119,12 @@ test('menu responde a hover, fixação, toque fora e Escape', async () => {
   toggle.click();
   document.dispatch('keydown', { key: 'Escape' });
   assert.equal(side.classList.contains('pinned'), false);
-  assert.equal(document.activeElement, document.querySelector('#theme-toggle'));
+  assert.equal(document.activeElement, toggle);
+  assert.equal(side.classList.contains('force-collapsed'), true);
   assert.equal(toggle.getAttribute('aria-label'), 'Fixar menu aberto');
   assert.equal(toggle.getAttribute('aria-expanded'), 'false');
+  tab(document, 'Produtos', 'sidebar').focus();
+  assert.equal(side.classList.contains('force-collapsed'), false);
   toggle.click();
   document.dispatch('pointerdown', { target: document.querySelector('#theme-toggle') });
   assert.equal(side.classList.contains('pinned'), false);
