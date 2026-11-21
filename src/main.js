@@ -1,6 +1,10 @@
 import './style.css';
 import {tabs,subtabs,nextIndex,preferredTheme} from './shell-state.js';
 
+const historySlots=['Movimentações antigas 1','Movimentações antigas 2','Movimentações antigas 3','ERP anterior 1','ERP anterior 2','ERP atual — meses passados','De-para'];
+const uploadGroups=['Movimentações','Clientes','Produtos','Chegada de NFs'];
+const uploadField=(label,id,multiple=false)=>'<div class="upload-field"><span class="upload-label">'+label+'</span><label class="file-picker"><span>'+(multiple?'Adicionar arquivos':'Selecionar arquivo')+'</span><input type="file" data-upload="'+id+'" '+(multiple?'multiple':'')+' aria-label="'+label+'" /></label><span class="file-selection" data-selection="'+id+'">Nenhum arquivo selecionado</span></div>';
+const uploadView=()=>'<div class="settings-content"><section class="upload-section" aria-labelledby="history-title"><h2 id="history-title">Histórico</h2><div class="history-grid">'+historySlots.map((label,i)=>uploadField(label,'history-'+i)).join('')+'</div></section>'+uploadGroups.map((label,i)=>'<section class="upload-section" aria-labelledby="group-'+i+'"><h2 id="group-'+i+'">'+label+'</h2>'+uploadField('Arquivos de '+label.toLowerCase(),'group-'+i,true)+'</section>').join('')+'</div>';
 const paths={
   chart:'<path d="M4 19V7m5 12V4m5 15v-8m5 8V6"/>',
   box:'<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 10h16M10 10v10"/>',
@@ -41,6 +45,7 @@ function positionIndicator(){
   indicator.style.width=box.width+'px';
   indicator.style.transform='translateX('+(box.left-parent.left)+'px)';
 }
+function renderCanvas(){const canvas=document.querySelector('.canvas');if(tabs[state.main].id!=='settings'){canvas.innerHTML='';canvas.setAttribute('aria-label','Área de trabalho vazia');return}if(state.sub===0){canvas.innerHTML=uploadView();canvas.setAttribute('aria-label','Uploads')}else{canvas.innerHTML='<section class="audit-view" aria-label="Inconsistências"></section>';canvas.setAttribute('aria-label','Auditoria')}}
 function selectMain(index,source){
   state.main=index;state.sub=0;
   document.querySelectorAll('[data-main]').forEach(button=>{
@@ -50,11 +55,12 @@ function selectMain(index,source){
     button.classList.toggle('active',selected);
   });
   showSubtabs(true);
+  renderCanvas();
   if(state.drawer){state.drawer=false;shell.classList.remove('drawer-open');mobileTrigger.setAttribute('aria-expanded','false')}
   const selector=source==='mobile'?'.mobile-tabs [aria-selected="true"]':'.main-tabs [aria-selected="true"]';
   document.querySelector(selector)?.focus();
 }
-function selectSub(index){state.sub=index;subtabItems.querySelectorAll('[role="tab"]').forEach((button,i)=>{button.setAttribute('aria-selected',String(i===index));button.tabIndex=i===index?0:-1});positionIndicator();subtabItems.querySelector('[aria-selected="true"]')?.focus();subtabsEl.classList.remove('entering');void subtabsEl.offsetWidth;subtabsEl.classList.add('entering')}
+function selectSub(index){state.sub=index;renderCanvas();subtabItems.querySelectorAll('[role="tab"]').forEach((button,i)=>{button.setAttribute('aria-selected',String(i===index));button.tabIndex=i===index?0:-1});positionIndicator();subtabItems.querySelector('[aria-selected="true"]')?.focus();subtabsEl.classList.remove('entering');void subtabsEl.offsetWidth;subtabsEl.classList.add('entering')}
 function bindTabs(list,vertical,callback){
   list.addEventListener('click',event=>{const button=event.target.closest('[role="tab"]');if(button&&list.contains(button))callback(Number(button.dataset.main??button.dataset.sub))});
   list.addEventListener('keydown',event=>{const keys=vertical?['ArrowUp','ArrowDown','Home','End']:['ArrowLeft','ArrowRight','Home','End'];if(!keys.includes(event.key))return;const buttons=[...list.querySelectorAll('[role="tab"]')],index=buttons.indexOf(document.activeElement);if(index<0)return;event.preventDefault();callback(nextIndex(index,event.key,buttons.length,vertical))});
@@ -75,5 +81,7 @@ profileMenu.addEventListener('keydown',event=>{const items=[...profileMenu.query
 profileMenu.querySelectorAll('[role="menuitem"]').forEach(button=>button.addEventListener('click',()=>{closeProfile()}));
 themeSwitch.addEventListener('click',()=>{state.theme=state.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=state.theme;themeSwitch.setAttribute('aria-checked',String(state.theme==='dark'));themeSwitch.querySelector('svg').outerHTML=icon(state.theme==='dark'?'sun':'moon');try{localStorage.setItem('red-jacket-theme',state.theme)}catch{}themeSwitch.focus()});
 document.addEventListener('keydown',event=>{if(event.key!=='Escape')return;if(state.profile){closeProfile();return}if(state.drawer){closeDrawer();return}if(state.sidebarOpen){openSidebar(false);document.querySelector('.canvas').focus()}});
+document.querySelector('.canvas').addEventListener('change',event=>{const input=event.target.closest('input[type="file"][data-upload]');if(!input)return;const output=document.querySelector('[data-selection="'+input.dataset.upload+'"]');if(output)output.textContent=input.files.length?[...input.files].map(file=>file.name).join(', '):'Nenhum arquivo selecionado'});
 window.addEventListener('resize',positionIndicator);
 showSubtabs();
+renderCanvas();

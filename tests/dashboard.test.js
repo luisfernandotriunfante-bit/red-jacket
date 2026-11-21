@@ -27,7 +27,7 @@ test('tema usa escolha persistida ou preferência do sistema',()=>{
   assert.equal(preferredTheme(null,true),'dark');
   assert.equal(preferredTheme(null,false),'light');
 });
-test('shell contém só navegação e canvas vazio',()=>{
+test('shell mantém canvas vazio fora de Configurações',()=>{
   assert.match(main,/aria-orientation="vertical"/);
   assert.match(main,/role="menu"/);
   assert.match(main,/role="switch"/);
@@ -51,3 +51,6 @@ test('layout desloca canvas e respeita movimento reduzido',()=>{
   assert.match(css,/--accent:#FF0000/);
   assert.match(css,/--accent:#0000FF/);
 });
+
+test('uploads locais têm somente os grupos e slots pedidos',()=>{assert.match(main,/historySlots=\['Movimentações antigas 1','Movimentações antigas 2','Movimentações antigas 3','ERP anterior 1','ERP anterior 2','ERP atual — meses passados','De-para'\]/);assert.match(main,/uploadGroups=\['Movimentações','Clientes','Produtos','Chegada de NFs'\]/);assert.match(main,/type="file" data-upload/);assert.match(main,/input\.files\.length/);assert.doesNotMatch(main,/fetch\(|firebase|localStorage\.setItem\('red-jacket-upload/)});
+test('auditoria não mostra dados ou exportação fictícios',()=>{assert.match(main,/class="audit-view" aria-label="Inconsistências"/);assert.doesNotMatch(main,/Exportar IA|Baixar CSV|inconsistências encontradas/)});
