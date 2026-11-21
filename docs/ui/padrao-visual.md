@@ -18,11 +18,12 @@ A implementação está em `src/style.css`. Tokens semânticos: `--bg`, `--surfa
 | `--blue` | `#245bd4` | `#6e9aff` |
 | `--glass` | `rgba(255,255,255,.68)` | `rgba(255,255,255,.055)` |
 | `--shadow` | `rgba(0,0,0,.08)` | `rgba(0,0,0,.32)` |
+| `--backdrop` | `rgba(0,0,0,.48)` | `rgba(0,0,0,.72)` |
 
 Regra mínima: texto comum e conteúdo de controles devem atingir contraste 4,5:1; texto grande e indicadores gráficos, 3:1. Conferir nos dois temas, incluindo vidro sobre conteúdo. Não usar cor como único sinal de estado. Tipografia usa a pilha de sistema, sem carregamento externo.
 
 ## Componentes e regras
-- **Navegação:** menu lateral recolhido, abre com ponteiro ou foco, fixa por botão em toque, Escape fecha e toque fora desfixa; subabas centrais indicam a seção atual. Ícones sempre têm rótulos de texto quando expandidos e os botões têm nome acessível.
+- **Navegação:** menu lateral recolhido, abre com ponteiro ou foco, fixa por botão em toque, Escape fecha e, em telas estreitas, o menu fixado vira drawer com fundo escurecido e botão para fechar ao tocar fora; subabas centrais indicam a seção atual. Ícones sempre têm rótulos de texto quando expandidos e os botões têm nome acessível.
 - **Tema:** botão no cabeçalho; preferência inicial do sistema; escolha posterior em `localStorage`.
 - **KPIs:** borda superior vermelha ou azul, superfície translúcida com desfoque, valor em números tabulares quando aplicável. O texto mantém contraste independente do desfoque.
 - **Controles:** botões e filtro usam foco visível azul, borda neutra e tipografia uniforme. Rótulos ficam explícitos.
