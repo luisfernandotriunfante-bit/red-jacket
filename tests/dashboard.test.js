@@ -41,9 +41,10 @@ test('shell contém só navegação e canvas vazio',()=>{
 test('layout desloca canvas e respeita movimento reduzido',()=>{
   assert.match(css,/\.shell\.sidebar-open \.workspace\{margin-left:232px\}/);
   assert.match(css,/\.shell\.drawer-open \.sidebar\{transform:translateX\(0\)\}/);
-  assert.match(css,/\.main-tab\[aria-selected=true\] svg[^}]+animation:tab-in 320ms/);
-  assert.match(css,/\.subtabs\.entering \.subtab-items\{animation:tab-in 320ms/);
+  assert.match(css,/\.main-tab\[aria-selected=true\] svg[^}]+animation:tab-in 420ms/);
+  assert.match(css,/\.subtabs\.entering \.subtab-items\{animation:tab-in 420ms/);
   assert.match(css,/prefers-reduced-motion:reduce/);
   assert.match(css,/--bg:#000/);
   assert.match(css,/--accent:#FF0000/);
+  assert.match(css,/--accent:#0000FF/);
 });
