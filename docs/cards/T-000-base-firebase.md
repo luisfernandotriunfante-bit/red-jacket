@@ -6,15 +6,15 @@ Objetivo: Definir uma base estática do Red Jacket e registrar a decisão de sta
 Escopo: ADR, bootstrap mínimo sem SDK/auth/configuração Firebase, hosting config apontando para dist/, versão Node compatível com Vite 8, workflow de CI do GitHub para build/auditoria sem deploy.
 Fora de escopo: Criar projeto Firebase, habilitar Auth, alterar regras/billing/domínio, inserir credenciais, publicar site ou fazer deploy.
 Critérios de aceitação:
-- ADR aprova Vite + Firebase Hosting e documenta o Auth em tarefa posterior condicionada a política/projeto.
+- ADR propõe Vite + Firebase Hosting e documenta Auth posterior após decisões do usuário/projeto.
 - App abre sem .env ou projeto Firebase configurado.
 - GitHub Actions executa build e npm audit sem nível alto ou crítico; status verde.
 - Workflow não publica nem faz deploy.
 - QA revisa arquivos/diff e evidências de CI via GitHub.
-- Limitação de ausência de package-lock.json fica registrada; nenhuma execução local.
+- Ausência do package-lock.json e uso de npm install ficam documentados; nenhuma execução local.
 Dependências: Nenhuma; predecessora de T-001 e T-004.
-Arquivos/áreas: Bootstrap, config Hosting, ADR e workflow em branch remota; docs de escopo/backlog/cartões. Alterações exclusivamente pelo GitHub.
-Testes exigidos: build e auditoria integral via GitHub Actions; revisão remota do diff; sem executar no PC.
+Arquivos/áreas: Bootstrap, config Hosting, ADR e workflow em branch remota; documentação de escopo/backlog/cartões. Alterações exclusivamente pelo GitHub.
+Testes exigidos: Build e auditoria integral via GitHub Actions; revisão remota do diff; sem executar no PC.
 Prioridade: P1
 Dificuldade: Médio
-Status: Draft PR #1 aberto; aguardando QA/decisão do gerente.
+Status: Draft PR #1 aberto; CI verde; aguardando QA/decisão gerencial.
