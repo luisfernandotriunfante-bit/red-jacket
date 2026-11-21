@@ -5,17 +5,43 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: write
+
 jobs:
   build-and-audit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
       - uses: actions/setup-node@v4
         with:
           node-version: '22.12.0'
-      - name: Install dependencies
+
+      - name: Install dependencies (gera package-lock.json se faltar)
         run: npm install
+
+      - name: Commitar package-lock.json gerado, se mudou
+        run: |
+          if ! git diff --quiet -- package-lock.json; then
+            git config user.name "openbotgit[bot]"
+            git config user.email "335604065+openbotgit[bot]@users.noreply.github.com"
+            git add package-lock.json
+            git commit -m "chore(backend): commita package-lock.json gerado pelo CI
+
+          Co-authored-by: OpenBot <335604065+openbotgit[bot]@users.noreply.github.com>"
+            git push origin HEAD:"${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}"
+          else
+            echo "package-lock.json já está sincronizado."
+          fi
+
+      - name: Reinstalar a partir do lockfile committed (prova de reprodutibilidade)
+        run: npm ci
+
       - name: Build
         run: npm run build
+
       - name: Audit
         run: npm audit --audit-level=high
