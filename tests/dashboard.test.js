@@ -57,4 +57,4 @@ test('auditoria não mostra dados ou exportação fictícios',()=>{assert.match(
 
 test('clique de ponteiro em aba principal estabiliza o layout antes da subaba',()=>{assert.match(main,/source==='side'&&!state\.keyboard/);assert.match(main,/\.canvas'\)\.focus\(\);openSidebar\(false\)/)});
 
-test('uploads usa um painel e confirma substituição local',()=>{assert.match(main,/class="motor-nav"/);assert.match(main,/class="history-row"/);assert.match(main,/data-open-destinations/);assert.match(main,/window\.confirm\('Substituir /);assert.match(main,/selecionado nesta sessão/);assert.doesNotMatch(main,/lastModified|savedAt|progress/)});
+test('uploads usa um painel e confirma substituição local',()=>{assert.match(main,/class="motor-nav"/);assert.match(main,/class="history-row"/);assert.match(main,/data-open-destinations/);assert.match(main,/window\.confirm\('Substituir /);assert.match(main,/selecionado nesta sessão/);assert.match(main,/\.\.\.\(existing\|\|\[\]\),\.\.\.input\.files/);assert.doesNotMatch(main,/lastModified|savedAt|progress/)});
