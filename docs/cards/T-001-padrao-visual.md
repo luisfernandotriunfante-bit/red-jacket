@@ -29,4 +29,4 @@ Arquivos permitidos: UI, CSS, dados fictícios, testes e docs/ui/padrao-visual.m
 Testes: CI remoto para build, suíte e audit; QA de navegador/fluxo, responsividade, teclado/toque, contraste/foco, movimento reduzido e smoke em preview autorizado.
 Prioridade: P1
 Dificuldade: Difícil
-Status: Código/documentação aprovados pela QA no HEAD de0af5b; Frontend adiciona suíte autorizada; revisão de navegador depende de preview aprovado.
+Status: Suíte adicionada no HEAD 287281c; GitHub Actions verde; revisão QA da suíte pendente. Preview visual ainda depende de autorização.
