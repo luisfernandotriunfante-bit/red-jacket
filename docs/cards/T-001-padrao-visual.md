@@ -23,10 +23,10 @@ Critérios de aceitação:
 - Suíte automatizada no GitHub Actions cobrindo tema/persistência, navegação e interações do menu.
 - Contraste WCAG AA, semântica, estados e movimento reduzido; alternativa textual do gráfico presente.
 - Build/testes/audit executados somente no GitHub CI; dependência de teste autorizada pelo usuário.
-- QA registra evidências no PR; verificação de navegador/capturas aguarda autorização para preview publicado.
+- QA registra evidências no PR; navegador/capturas aguardam preview Firebase autorizado e projeto configurado.
 Dependências: T-000 aprovado.
 Arquivos permitidos: UI, CSS, dados fictícios, testes e docs/ui/padrao-visual.md por PR do GitHub; sem alterar dados reais ou auth.
 Testes: CI remoto para build, suíte e audit; QA de navegador/fluxo, responsividade, teclado/toque, contraste/foco, movimento reduzido e smoke em preview autorizado.
 Prioridade: P1
 Dificuldade: Difícil
-Status: Suíte adicionada no HEAD 287281c; GitHub Actions verde; revisão QA da suíte pendente. Preview visual ainda depende de autorização.
+Status: QA aprovou código/documentação (HEAD de0af5b) e suíte automatizada (HEAD 287281c); CI verde. QA visual em navegador aguarda projeto Firebase e autorização de preview.
