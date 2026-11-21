@@ -3,6 +3,7 @@ import {tabs,subtabs,nextIndex,preferredTheme} from './shell-state.js';
 
 const historySlots=['Movimentações antigas 1','Movimentações antigas 2','Movimentações antigas 3','ERP anterior 1','ERP anterior 2','ERP atual — meses passados','De-para'];
 const uploadGroups=['Movimentações','Clientes','Produtos','Chegada de NFs'];
+const localFiles=new Map();
 const uploadField=(label,id,multiple=false)=>'<div class="upload-field"><span class="upload-label">'+label+'</span><label class="file-picker"><span>'+(multiple?'Adicionar arquivos':'Selecionar arquivo')+'</span><input type="file" data-upload="'+id+'" '+(multiple?'multiple':'')+' aria-label="'+label+'" /></label><span class="file-selection" data-selection="'+id+'">Nenhum arquivo selecionado</span></div>';
 const uploadView=()=>'<div class="settings-content"><section class="upload-section" aria-labelledby="history-title"><h2 id="history-title">Histórico</h2><div class="history-grid">'+historySlots.map((label,i)=>uploadField(label,'history-'+i)).join('')+'</div></section>'+uploadGroups.map((label,i)=>'<section class="upload-section" aria-labelledby="group-'+i+'"><h2 id="group-'+i+'">'+label+'</h2>'+uploadField('Arquivos de '+label.toLowerCase(),'group-'+i,true)+'</section>').join('')+'</div>';
 const paths={
@@ -45,7 +46,7 @@ function positionIndicator(){
   indicator.style.width=box.width+'px';
   indicator.style.transform='translateX('+(box.left-parent.left)+'px)';
 }
-function renderCanvas(){const canvas=document.querySelector('.canvas');if(tabs[state.main].id!=='settings'){canvas.innerHTML='';canvas.setAttribute('aria-label','Área de trabalho vazia');return}if(state.sub===0){canvas.innerHTML=uploadView();canvas.setAttribute('aria-label','Uploads')}else{canvas.innerHTML='<section class="audit-view" aria-label="Inconsistências"></section>';canvas.setAttribute('aria-label','Auditoria')}}
+function renderCanvas(){const canvas=document.querySelector('.canvas');if(tabs[state.main].id!=='settings'){canvas.innerHTML='';canvas.setAttribute('aria-label','Área de trabalho vazia');return}if(state.sub===0){canvas.innerHTML=uploadView();for(const [id,files] of localFiles){const output=canvas.querySelector('[data-selection="'+id+'"]');if(output)output.textContent=files.map(file=>file.name).join(', ')}canvas.setAttribute('aria-label','Uploads')}else{canvas.innerHTML='<section class="audit-view" aria-label="Inconsistências"></section>';canvas.setAttribute('aria-label','Auditoria')}}
 function selectMain(index,source){
   state.main=index;state.sub=0;
   document.querySelectorAll('[data-main]').forEach(button=>{
@@ -81,7 +82,7 @@ profileMenu.addEventListener('keydown',event=>{const items=[...profileMenu.query
 profileMenu.querySelectorAll('[role="menuitem"]').forEach(button=>button.addEventListener('click',()=>{closeProfile()}));
 themeSwitch.addEventListener('click',()=>{state.theme=state.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=state.theme;themeSwitch.setAttribute('aria-checked',String(state.theme==='dark'));themeSwitch.querySelector('svg').outerHTML=icon(state.theme==='dark'?'sun':'moon');try{localStorage.setItem('red-jacket-theme',state.theme)}catch{}themeSwitch.focus()});
 document.addEventListener('keydown',event=>{if(event.key!=='Escape')return;if(state.profile){closeProfile();return}if(state.drawer){closeDrawer();return}if(state.sidebarOpen){openSidebar(false);document.querySelector('.canvas').focus()}});
-document.querySelector('.canvas').addEventListener('change',event=>{const input=event.target.closest('input[type="file"][data-upload]');if(!input)return;const output=document.querySelector('[data-selection="'+input.dataset.upload+'"]');if(output)output.textContent=input.files.length?[...input.files].map(file=>file.name).join(', '):'Nenhum arquivo selecionado'});
+document.querySelector('.canvas').addEventListener('change',event=>{const input=event.target.closest('input[type="file"][data-upload]');if(!input)return;const output=document.querySelector('[data-selection="'+input.dataset.upload+'"]');if(output){const files=[...input.files];localFiles.set(input.dataset.upload,files);output.textContent=files.length?files.map(file=>file.name).join(', '):'Nenhum arquivo selecionado'}});
 window.addEventListener('resize',positionIndicator);
 showSubtabs();
 renderCanvas();
