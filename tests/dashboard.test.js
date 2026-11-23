@@ -52,7 +52,7 @@ test('layout desloca canvas e respeita movimento reduzido',()=>{
   assert.match(css,/--accent:#0000FF/);
 });
 
-test('uploads usa o módulo conectado ao banco',()=>{assert.match(main,/mountUploads\\(canvas\\)/);assert.doesNotMatch(main,/uploadView\\(\\)/)});
+test('uploads usa o módulo conectado ao banco',()=>{assert.ok(main.includes('mountUploads(canvas)'));assert.doesNotMatch(main,/uploadView\\(\\)/)});
 
 test('ponteiro estabiliza a sidebar antes da troca de subaba',()=>{assert.match(main,/source==='side'&&!state\.keyboard/);assert.match(main,/\.canvas'\)\.focus\(\);openSidebar\(false\)/)});
 test('Auditoria mantém painel vazio sem exportação fictícia',()=>{assert.match(main,/canvas\.innerHTML='<section class="audit-view" aria-label="Inconsistências"><\/section>'/);assert.doesNotMatch(main,/class="audit-view"[^']*<(?:button|a)/)});
