@@ -2,10 +2,13 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { atualizarMotor, atualizarTodos, MOTORES } from '../../src/lib/motor-sync.js';
 
-// Mock mínimo do client do Supabase JS, em memória, sem rede. Reproduz só
-// o encadeamento usado por motor-sync.js: from().select().eq().maybeSingle(),
-// from().insert().select().single(), from().insert() (bulk), e rpc().
-function criarClientMock() {
+// Mock mínimo do client do Supabase JS, em memória, sem rede. Reproduz o
+// encadeamento usado por motor-sync.js: from().select().eq().maybeSingle(),
+// from().insert().select().single(), from().insert() (bulk), e rpc(). Além
+// disso simula a autorização que no banco real vem de RLS/SECURITY
+// DEFINER: `autorizado: false` faz insert/rpc retornarem erro, como a
+// policy do banco faria para uma conta sem permissão de atualização.
+function criarClientMock({ autorizado = true } = {}) {
   const slots = [];
   const versoes = [];
   const dados = [];
@@ -14,6 +17,8 @@ function criarClientMock() {
   function novoId() {
     return `id-${proximoId++}`;
   }
+
+  const erroPermissao = () => ({ data: null, error: new Error('usuário sem permissão de atualização') });
 
   const client = {
     rpcChamadas: [],
@@ -32,12 +37,17 @@ function criarClientMock() {
             return { data: encontrado ?? null, error: null };
           },
           insert(objeto) {
+            if (!autorizado) {
+              this._erroInsert = true;
+              return this;
+            }
             const criado = { id: novoId(), motor: objeto.motor };
             slots.push(criado);
             this._ultimoInserido = criado;
             return this;
           },
           async single() {
+            if (this._erroInsert) return erroPermissao();
             return { data: this._ultimoInserido, error: null };
           },
         };
@@ -58,12 +68,18 @@ function criarClientMock() {
             return { data: encontrado ?? null, error: null };
           },
           insert(objeto) {
+            if (!autorizado) {
+              this._erroInsert = true;
+              return this;
+            }
+            // criado_por nunca vem do objeto inserido (seria auth.uid() via trigger no banco real)
             const criado = { id: novoId(), ...objeto };
             versoes.push(criado);
             this._ultimoInserido = criado;
             return this;
           },
           async single() {
+            if (this._erroInsert) return erroPermissao();
             return { data: { id: this._ultimoInserido.id }, error: null };
           },
         };
@@ -71,6 +87,7 @@ function criarClientMock() {
       if (tabela === 'dados_motor') {
         return {
           async insert(registros) {
+            if (!autorizado) return erroPermissao();
             dados.push(...registros);
             return { error: null };
           },
@@ -80,9 +97,19 @@ function criarClientMock() {
     },
     async rpc(nome, args) {
       client.rpcChamadas.push({ nome, args });
+      if (!autorizado) return erroPermissao();
+
       if (nome === 'promover_versao') {
         const versao = versoes.find((v) => v.id === args.p_versao_id);
         const anterior = versoes.find((v) => v.slot_id === versao.slot_id && v.status === 'active');
+        if (anterior && anterior.hash_arquivo === versao.hash_arquivo) {
+          // idempotência: já existe ativa com o mesmo conteúdo
+          for (let i = dados.length - 1; i >= 0; i -= 1) {
+            if (dados[i].versao_id === versao.id) dados.splice(i, 1);
+          }
+          versao.status = 'rejected';
+          return { error: null };
+        }
         if (anterior) {
           anterior.status = 'superseded';
           for (let i = dados.length - 1; i >= 0; i -= 1) {
@@ -117,7 +144,6 @@ test('primeira atualização de um motor cria slot, versão e promove', async ()
     hashArquivo: 'hash-1',
     nomeArquivo: 'cadastro.txt',
     linhas: [{ codigo: '1' }, { codigo: '2' }],
-    userId: 'user-1',
   });
 
   assert.equal(resultado.resultado, 'promovido');
@@ -136,7 +162,6 @@ test('reenviar o mesmo hash é idempotente (sem-mudanca, não reprocessa)', asyn
     hashArquivo: 'hash-x',
     nomeArquivo: 'clientes.csv',
     linhas: [{ a: 1 }],
-    userId: 'user-1',
   });
 
   const resultado = await atualizarMotor({
@@ -145,7 +170,6 @@ test('reenviar o mesmo hash é idempotente (sem-mudanca, não reprocessa)', asyn
     hashArquivo: 'hash-x',
     nomeArquivo: 'clientes.csv',
     linhas: [{ a: 1 }],
-    userId: 'user-1',
   });
 
   assert.equal(resultado.resultado, 'sem-mudanca');
@@ -161,7 +185,6 @@ test('substituir um arquivo promove a versão nova e descarta o payload da anter
     hashArquivo: 'hash-a',
     nomeArquivo: 'mov1.txt',
     linhas: [{ v: 1 }],
-    userId: 'user-1',
   });
 
   const resultado = await atualizarMotor({
@@ -170,7 +193,6 @@ test('substituir um arquivo promove a versão nova e descarta o payload da anter
     hashArquivo: 'hash-b',
     nomeArquivo: 'mov2.txt',
     linhas: [{ v: 2 }, { v: 3 }],
-    userId: 'user-1',
   });
 
   assert.equal(resultado.resultado, 'promovido');
@@ -189,7 +211,6 @@ test('validação reprovada rejeita a versão e preserva a ativa anterior', asyn
     hashArquivo: 'hash-boa',
     nomeArquivo: 'nf1.xls',
     linhas: [{ nf: 1 }],
-    userId: 'user-1',
   });
 
   const resultado = await atualizarMotor({
@@ -198,7 +219,6 @@ test('validação reprovada rejeita a versão e preserva a ativa anterior', asyn
     hashArquivo: 'hash-ruim',
     nomeArquivo: 'nf2.xls',
     linhas: [{ nf: 2 }],
-    userId: 'user-1',
     validar: () => false,
   });
 
@@ -228,7 +248,6 @@ test('atualizarTodos processa cada motor isoladamente, sem abortar nos demais em
       produtos: { hashArquivo: 'h1', nomeArquivo: 'a.txt', linhas: [{ x: 1 }] },
       historico: { hashArquivo: 'h2', nomeArquivo: 'b.txt', linhas: [{ x: 2 }] },
     },
-    userId: 'user-1',
   });
 
   const porMotor = Object.fromEntries(resultados.map((r) => [r.motor, r.resultado]));
@@ -239,3 +258,56 @@ test('atualizarTodos processa cada motor isoladamente, sem abortar nos demais em
   assert.equal(porMotor.chegada_nfs, 'sem-arquivo');
   assert.equal(resultados.length, MOTORES.length);
 });
+
+test('usuário sem permissão (não owner/updater) recebe erro e não grava nada', async () => {
+  const client = criarClientMock({ autorizado: false });
+
+  await assert.rejects(
+    atualizarMotor({
+      client,
+      motor: 'produtos',
+      hashArquivo: 'hash-sem-permissao',
+      nomeArquivo: 'x.txt',
+      linhas: [{ a: 1 }],
+    }),
+    /permissão/,
+  );
+
+  const { slots, versoes, dados } = client._inspecionar();
+  assert.equal(slots.length, 0);
+  assert.equal(versoes.length, 0);
+  assert.equal(dados.length, 0);
+});
+
+test(
+  'duas promoções concorrentes do mesmo motor terminam com exatamente uma versão ativa ' +
+    '(idempotência sob concorrência; a garantia definitiva vem do índice único + FOR UPDATE no banco real, não deste mock)',
+  async () => {
+    const client = criarClientMock();
+
+    const [resultadoA, resultadoB] = await Promise.all([
+      atualizarMotor({
+        client,
+        motor: 'produtos',
+        hashArquivo: 'hash-concorrente',
+        nomeArquivo: 'a.txt',
+        linhas: [{ x: 1 }],
+      }),
+      atualizarMotor({
+        client,
+        motor: 'produtos',
+        hashArquivo: 'hash-concorrente',
+        nomeArquivo: 'b.txt',
+        linhas: [{ x: 2 }],
+      }),
+    ]);
+
+    const resultados = [resultadoA.resultado, resultadoB.resultado].sort();
+    // uma promove, a outra encontra o mesmo hash já ativo e não duplica
+    assert.deepEqual(resultados, ['promovido', 'sem-mudanca']);
+
+    const { versoes } = client._inspecionar();
+    const ativas = versoes.filter((v) => v.status === 'active');
+    assert.equal(ativas.length, 1);
+  },
+);
