@@ -17,16 +17,9 @@ let client;
 let root;
 let mountVersion=0;
 const busy=new Set();
-export const safeError=error=>{const raw=String(error?.message||error||'');if(/permiss|row-level|42501|403/i.test(raw))return 'Esta conta não pode atualizar este motor.';if(/VITE_SUPABASE|ambiente de build/i.test(raw))return 'Conexão com o banco não configurada.';if(/sessão|session|jwt|auth|401/i.test(raw))return 'Entre na sua conta para consultar ou atualizar os dados.';if(/network|fetch|timeout|conexão|connection|503|502/i.test(raw))return 'Falha de conexão. Tente novamente.';return 'Não foi possível concluir a operação. Tente novamente.'};
-export const resultMessage=result=>result==='promovido'?'Atualizado no banco':result==='sem-mudanca'?'Sem mudança':result==='rejeitado'?'Rejeitado':result==='erro'?'Não foi possível atualizar':'Indisponível';
+import {safeError,resultMessage,source,ensureSession,isCurrent} from './upload-feedback.js';
 const escapeHtml=value=>String(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const timestamp=value=>value?new Intl.DateTimeFormat('pt-BR',{dateStyle:'short',timeStyle:'short'}).format(new Date(value)):null;
-function source(file,motor){
-  if(motor==='movimentacoes' && /^379_25.*\.txt$/i.test(file.name))return 'erp_antigo_2025';
-  if(motor==='movimentacoes' && /^379_26.*\.txt$/i.test(file.name))return 'erp_antigo_2026';
-  if(motor==='produtos' && /^818191d3.*\.txt$/i.test(file.name))return 'cadastro_erp_antigo';
-  return null;
-}
 function render(focusTarget){
   if(!root||root.getAttribute('aria-label')!=='Uploads')return;
   root.innerHTML='<div class="settings-content"><div class="uploads-toolbar"><button type="button" data-update-all '+(selected.size&&!busy.size?'':'disabled')+'>Atualizar todos</button></div>'+motors.map(({id,name})=>{
@@ -40,23 +33,20 @@ function render(focusTarget){
 }
 async function sessionClient(){
   if(!client)client=createSupabaseClient();
-  const {data,error}=await client.auth.getSession();
-  if(error)throw error;
-  if(!data.session)throw new Error('Entre na sua conta para consultar ou atualizar os dados.');
-  return client;
+  return ensureSession(client);
 }
 async function loadState(version){
   try{
     const db=await sessionClient();
     const nextState=await listarEstadoMotores({client:db});
-    if(version!==mountVersion)return;
+    if(!isCurrent(version,mountVersion))return;
     persisted=nextState;
     for(const motor of motors){
       const active=(persisted[motor.id]||[]).filter(item=>item.temDados);
       if(active.length)messages.set(motor.id,'Última atualização: '+timestamp(active.reduce((a,b)=>a.promovidoEm>b.promovidoEm?a:b).promovidoEm));
     }
-  }catch(error){if(version!==mountVersion)return;messages.set('movimentacoes',safeError(error));messages.set('produtos',safeError(error))}
-  if(version===mountVersion)render();
+  }catch(error){if(!isCurrent(version,mountVersion))return;messages.set('movimentacoes',safeError(error));messages.set('produtos',safeError(error))}
+  if(isCurrent(version,mountVersion))render();
 }
 async function prepare(file,motor,fonteChave){
   const bytes=await file.arrayBuffer();
@@ -70,7 +60,7 @@ async function prepare(file,motor,fonteChave){
 async function update(motor){
   if(busy.size)return;
   const version=mountVersion;
-  const note=(key,value)=>{if(version===mountVersion)messages.set(key,value)};
+  const note=(key,value)=>{if(isCurrent(version,mountVersion))messages.set(key,value)};
   const entries=[...selected].filter(([key])=>!motor||key.startsWith(motor+':'));
   if(!entries.length)return;
   for(const [key] of entries){busy.add(key);note(key,'Atualizando…')}
@@ -94,10 +84,10 @@ async function update(motor){
       for(const result of results)if(result.fonteChave)note(result.motor+':'+result.fonteChave,result.resultado==='erro'?safeError(result.erro):resultMessage(result.resultado));
     }
     const nextState=await listarEstadoMotores({client:db});
-    if(version===mountVersion)persisted=nextState;
+    if(isCurrent(version,mountVersion))persisted=nextState;
   }catch(error){for(const [key] of entries)note(key,safeError(error))}
   for(const [key] of entries)busy.delete(key);
-  if(version===mountVersion)render(motor||'all');
+  if(isCurrent(version,mountVersion))render(motor||'all');
 }
 export function mountUploads(canvas){
   root=canvas;
