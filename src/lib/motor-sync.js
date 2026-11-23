@@ -219,28 +219,27 @@ export async function listarEstadoMotores({ client }) {
 }
 
 /**
- * Leitura pós-reload: linhas estruturadas de um motor (para exibir/gerar
- * export). Sem `fonteChave`, agrega as linhas de TODAS as fontes ativas do
- * motor (útil para consolidação/export do motor inteiro); com
- * `fonteChave`, retorna só aquela fonte. Liberada a qualquer usuário
- * autenticado.
+ * Leitura pós-reload, preservando a fonte: devolve uma entrada por linha
+ * ativa, com a fonteChave e o id da versão que a contém. Usado pelo
+ * Histórico, que precisa rotular/agregar por fonte (não pode perder a
+ * origem ao consolidar). Liberada a qualquer usuário autenticado.
  *
  * @param {object} args
  * @param {object} args.client
  * @param {string} args.motor Um de MOTORES.
  * @param {string} [args.fonteChave]
- * @returns {Promise<object[]>} linhas (payload); [] se não há dados ainda.
+ * @returns {Promise<{fonteChave: string, versaoId: string, payload: object}[]>}
  */
-export async function obterDadosAtivos({ client, motor, fonteChave }) {
+export async function obterDadosAtivosPorFonte({ client, motor, fonteChave }) {
   if (!MOTORES.includes(motor)) {
-    throw new Error(`motor desconhecido: ${motor}`);
+    throw new Error('motor desconhecido: ' + motor);
   }
 
   const slots = fonteChave
     ? (await listarSlotsDoMotor(client, motor)).filter((s) => s.fonte_chave === fonteChave)
     : await listarSlotsDoMotor(client, motor);
 
-  const todasAsLinhas = [];
+  const registros = [];
   for (const slot of slots) {
     const ativa = await obterVersaoAtiva(client, slot.id);
     if (!ativa) continue;
@@ -250,7 +249,27 @@ export async function obterDadosAtivos({ client, motor, fonteChave }) {
       .select('payload')
       .eq('versao_id', ativa.id);
     if (erroLinhas) throw erroLinhas;
-    todasAsLinhas.push(...(linhas ?? []).map((linha) => linha.payload));
+    for (const linha of linhas ?? []) {
+      registros.push({ fonteChave: slot.fonte_chave, versaoId: ativa.id, payload: linha.payload });
+    }
   }
-  return todasAsLinhas;
+  return registros;
+}
+
+/**
+ * Leitura pós-reload: linhas estruturadas de um motor (para exibir/gerar
+ * export), sem a fonte. Sem fonteChave, agrega as linhas de TODAS as
+ * fontes ativas do motor; com fonteChave, retorna só aquela. Para
+ * relatórios que precisam da origem de cada linha, use
+ * obterDadosAtivosPorFonte. Liberada a qualquer usuário autenticado.
+ *
+ * @param {object} args
+ * @param {object} args.client
+ * @param {string} args.motor Um de MOTORES.
+ * @param {string} [args.fonteChave]
+ * @returns {Promise<object[]>} linhas (payload); [] se não há dados ainda.
+ */
+export async function obterDadosAtivos({ client, motor, fonteChave }) {
+  const registros = await obterDadosAtivosPorFonte({ client, motor, fonteChave });
+  return registros.map((registro) => registro.payload);
 }
