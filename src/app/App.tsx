@@ -3,9 +3,15 @@ import { AppShell } from '../components/layout/AppShell';
 import { EmptyModulePage } from '../components/modules/EmptyModulePage';
 import { LoginPage } from '../features/auth/LoginPage';
 import { ProtectedRoute } from '../features/auth/ProtectedRoute';
+import { PasswordSetupPage } from '../features/auth/PasswordSetupPage';
+import { useAuth } from '../features/auth/useAuth';
 import { navigation } from './navigation';
 
 export function App() {
+  const { user, needsPasswordSetup } = useAuth();
+
+  if (user && needsPasswordSetup) return <PasswordSetupPage />;
+
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
