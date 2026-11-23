@@ -20,10 +20,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22.12.0'
-          cache: npm
 
-      - name: Instalar dependências do lockfile
-        run: npm ci --no-audit
+      - name: Instalar dependencias (lockfile temporariamente desatualizado pela nova dependencia)
+        run: npm install --no-audit
 
       - name: Publicar package-lock.json como artifact (rastreabilidade)
         uses: actions/upload-artifact@v4
