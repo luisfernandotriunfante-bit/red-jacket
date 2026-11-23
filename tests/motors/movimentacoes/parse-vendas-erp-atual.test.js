@@ -1,6 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizarLinhasVendas } from '../../../src/motors/movimentacoes/parse-vendas-erp-atual.js';
+import { readFileSync } from 'node:fs';
+import {
+  normalizarLinhasVendas,
+  lerPlanilhaVendas,
+} from '../../../src/motors/movimentacoes/parse-vendas-erp-atual.js';
 
 // Cabeçalho e uma linha de dados extraídos literalmente (via leitura local
 // read-only, nenhum dado real — amostra DEMO) do arquivo
@@ -67,4 +71,28 @@ test('campo de data ausente/vazio não lança erro, retorna null', () => {
 test('array vazio (só cabeçalho, ou nada) não lança erro', () => {
   assert.deepEqual(normalizarLinhasVendas([CABECALHO]), []);
   assert.deepEqual(normalizarLinhasVendas([]), []);
+});
+
+// Fixture binária real: cabeçalho + 3 linhas de dados extraídas do .xls
+// real 992ca97f-vendas-8022_DEMO.xls (BIFF8), re-salvo em escala reduzida
+// e transportado como texto base64 (a API de conteúdo do GitHub não
+// transporta bytes binários arbitrários de forma confiável como texto
+// UTF-8 — ver docs/contratos/supabase-persistencia-motores.md).
+test('lerPlanilhaVendas decodifica o .xls real (BIFF8) via xls-reader', () => {
+  const base64 = readFileSync(
+    new URL('../../fixtures/vendas-erp-atual-demo.xls.b64.txt', import.meta.url),
+    'utf-8',
+  ).trim();
+  const bytes = Buffer.from(base64, 'base64');
+
+  const linhasBrutas = lerPlanilhaVendas(bytes);
+  assert.equal(linhasBrutas.length, 4); // cabeçalho + 3 linhas reais
+  assert.deepEqual(linhasBrutas[0], CABECALHO);
+  assert.deepEqual(linhasBrutas[1], LINHA_REAL);
+
+  const registros = normalizarLinhasVendas(linhasBrutas);
+  assert.equal(registros.length, 3);
+  assert.equal(registros[0].nomeCliente, 'CLIENTE DEMO 001 LTDA');
+  assert.equal(registros[0].dataMovimento, '2026-10-02');
+  assert.equal(registros[2].descricaoProduto, 'PRODUTO DEMO 0006......................01X 03UN');
 });
