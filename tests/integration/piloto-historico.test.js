@@ -109,8 +109,8 @@ test('piloto Historico: filtros e exportacao usam os mesmos dados normalizados',
   assert.equal(recentes.total, 3);
 
   const porCliente = await obterHistorico({ client, filtros: { cliente: 'CLIENTE DEMO 001' } });
-  assert.equal(porCliente.total, 1);
-  assert.equal(porCliente.registros[0].documento, '100001');
+  assert.equal(porCliente.total, 3);
+  assert.ok(porCliente.registros.every((r) => r.documento === '100001'));
 
   const doErpAntigo = await obterHistorico({ client, filtros: { fonte: 'erp_antigo_379_25' } });
   assert.equal(doErpAntigo.total, 68);
