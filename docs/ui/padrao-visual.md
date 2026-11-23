@@ -26,9 +26,11 @@ Abas principais: Sell out, Estoque, Clientes, Campanhas, Configurações. Config
 Troca de abas principais e subabas: entrada dos rótulos com opacidade e deslocamento horizontal por 420 ms; indicador das subabas desliza por 380 ms, acima dos rótulos e sem fundo opaco. `prefers-reduced-motion` elimina o deslocamento e limita transições a 80 ms. Tema é salvo localmente, com preferência inicial do sistema.
 
 ## Uploads e Auditoria
-Uploads usa navegação compacta entre Histórico, Movimentações, Clientes, Produtos e Chegada de NFs, mostrando um painel por vez. Histórico lista sete destinos fixos: três de Movimentações antigas, dois de ERP anterior, um de ERP atual (meses passados) e um De-para. Cada linha tem estado e ação individual. O botão do cabeçalho escolhe um desses destinos, sem criar slots. Substituir uma seleção local pede confirmação.
+Uploads mostra os cinco motores juntos, em seções separadas: Histórico, Movimentações, Clientes, Produtos e Chegada de NFs. Cada motor agrupa seus próprios arquivos; não é necessário trocar de motor para atualizar outro. As ações de arquivo têm contorno com `--accent` e texto `--accent-text`.
 
-Os demais motores têm apenas Adicionar arquivo e exibem nomes quando selecionados. Toda seleção é local à sessão; não há parser, persistência, consolidação, sincronização nem exportação. Sem timestamp persistido, nenhuma data de ativação aparece. Auditoria permanece vazia.
+Histórico lista sete destinos fixos: três de Movimentações antigas, dois de ERP anterior, um de ERP atual (meses passados) e um De-para. Cada linha tem estado e ação individual; substituir uma seleção local pede confirmação. Os demais motores mostram Adicionar arquivo e exibem nomes somente após seleção.
+
+Seleções existem apenas nesta sessão; não há parser, persistência, consolidação, sincronização nem exportação. Data e hora de última atualização só devem aparecer quando existir timestamp persistido real; nesta versão não há timestamp, portanto nenhuma data é exibida. Auditoria permanece vazia.
 
 ## Verificação
 QA deve conferir 360, 768 e 1280 px, claro/escuro, contraste WCAG AA, ausência de overflow, sidebar sem sobreposição, teclado, perfil, tema, drawer e movimento reduzido. Preview é temporário na PR #4; sem merge ou produção.
