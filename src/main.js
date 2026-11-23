@@ -1,10 +1,7 @@
 import './style.css';
 import {tabs,subtabs,nextIndex,preferredTheme} from './shell-state.js';
+import {mountUploads} from './uploads.js';
 
-const uploadGroups=['Histórico','Movimentações','Clientes','Produtos','Chegada de NFs'];
-const localFiles=new Map();
-const uploadCard=(name,i)=>'<section class="upload-card" aria-labelledby="motor-'+i+'"><div class="card-heading"><h2 id="motor-'+i+'">'+name+'</h2><span class="update-state">Sem atualização registrada</span></div><div class="selected-file" data-selection="motor-'+i+'">Sem arquivo</div><div class="card-actions"><button type="button" class="add-file" data-pick="motor-'+i+'">Adicionar arquivo</button><input class="visually-hidden" type="file" multiple data-upload="motor-'+i+'" aria-label="Arquivo de '+name+'"><button type="button" disabled aria-describedby="integration-'+i+'">Atualizar</button><button type="button" disabled aria-describedby="unavailable-'+i+'">Gerar arquivo</button><button type="button" disabled aria-describedby="unavailable-'+i+'">Excel</button><button type="button" disabled aria-describedby="unavailable-'+i+'">JSON</button></div><span class="unavailable-state" id="integration-'+i+'">Disponível após integração</span><span class="unavailable-state" id="unavailable-'+i+'">Disponível após processamento real</span></section>';
-const uploadView=()=>'<div class="settings-content"><div class="uploads-toolbar"><button type="button" disabled aria-describedby="bulk-unavailable">Atualizar todos</button><span id="bulk-unavailable">Disponível após integração</span></div>'+uploadGroups.map(uploadCard).join('')+'</div>';
 const paths={
   chart:'<path d="M4 19V7m5 12V4m5 15v-8m5 8V6"/>',
   box:'<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 10h16M10 10v10"/>',
@@ -49,9 +46,8 @@ function renderCanvas(){
   const canvas=document.querySelector('.canvas');
   if(tabs[state.main].id!=='settings'){canvas.innerHTML='';canvas.setAttribute('aria-label','Área de trabalho vazia');return}
   if(state.sub===0){
-    canvas.innerHTML=uploadView();
-    for(const [id,files] of localFiles){const output=canvas.querySelector('[data-selection="'+id+'"]');if(output)output.textContent=files.map(file=>file.name).join(', ')+' · selecionados nesta sessão'}
     canvas.setAttribute('aria-label','Uploads');
+    mountUploads(canvas);
   }else{canvas.innerHTML='<section class="audit-view" aria-label="Inconsistências"></section>';canvas.setAttribute('aria-label','Auditoria')}
 }
 function selectMain(index,source){
@@ -89,18 +85,6 @@ profileMenu.addEventListener('keydown',event=>{const items=[...profileMenu.query
 profileMenu.querySelectorAll('[role="menuitem"]').forEach(button=>button.addEventListener('click',()=>{closeProfile()}));
 themeSwitch.addEventListener('click',()=>{state.theme=state.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=state.theme;themeSwitch.setAttribute('aria-checked',String(state.theme==='dark'));themeSwitch.querySelector('svg').outerHTML=icon(state.theme==='dark'?'sun':'moon');try{localStorage.setItem('red-jacket-theme',state.theme)}catch{}themeSwitch.focus()});
 document.addEventListener('keydown',event=>{if(event.key!=='Escape')return;if(state.profile){closeProfile();return}if(state.drawer){closeDrawer();return}if(state.sidebarOpen){openSidebar(false);document.querySelector('.canvas').focus()}});
-document.querySelector('.canvas').addEventListener('click',event=>{
-  const picker=event.target.closest('[data-pick]');
-  if(picker)document.querySelector('input[data-upload="'+picker.dataset.pick+'"]')?.click();
-});
-document.querySelector('.canvas').addEventListener('change',event=>{
-  const input=event.target.closest('input[type="file"][data-upload]');if(!input||!input.files.length)return;
-  const id=input.dataset.upload,existing=localFiles.get(id)||[];
-  const incoming=[...input.files];
-  const duplicates=incoming.filter(file=>existing.some(current=>current.name===file.name));
-  if(duplicates.length&&!window.confirm('Substituir '+duplicates.map(file=>file.name).join(', ')+' em '+uploadGroups[Number(id.slice(6))]+'?')){input.value='';return}
-  localFiles.set(id,[...existing.filter(file=>!incoming.some(next=>next.name===file.name)),...incoming]);renderCanvas();
-});
 window.addEventListener('resize',positionIndicator);
 showSubtabs();
 renderCanvas();

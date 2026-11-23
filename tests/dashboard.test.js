@@ -52,11 +52,9 @@ test('layout desloca canvas e respeita movimento reduzido',()=>{
   assert.match(css,/--accent:#0000FF/);
 });
 
-test('uploads mostra cinco cartões sem slots fictícios',()=>{assert.match(main,/uploadGroups=\['Histórico','Movimentações','Clientes','Produtos','Chegada de NFs'\]/);assert.match(main,/uploadGroups\.map\(uploadCard\)/);assert.doesNotMatch(main,/historySlots|history-row|ERP anterior|ERP atual/);assert.match(css,/grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);assert.match(css,/@media\(max-width:700px\)\{\.settings-content\{grid-template-columns:1fr/)});
-test('datas e exportações só aparecem com dados reais',()=>{assert.match(main,/Sem atualização registrada/);assert.doesNotMatch(main,/lastModified|new Date|fetch\(|firebase/);assert.match(main,/disabled aria-describedby="unavailable-/);assert.match(main,/Disponível após processamento real/);assert.match(main,/Excel/);assert.match(main,/JSON/)});
-test('seleção é local e substituição requer confirmação',()=>{assert.match(main,/type="file" multiple data-upload=/);assert.match(main,/localFiles\.set\(id,\[\.\.\.existing\.filter/);assert.match(main,/window\.confirm\('Substituir /);assert.match(main,/selecionados nesta sessão/)});
+test('uploads usa o módulo conectado ao banco',()=>{assert.match(main,/mountUploads\\(canvas\\)/);assert.doesNotMatch(main,/uploadView\\(\\)/)});
 
 test('ponteiro estabiliza a sidebar antes da troca de subaba',()=>{assert.match(main,/source==='side'&&!state\.keyboard/);assert.match(main,/\.canvas'\)\.focus\(\);openSidebar\(false\)/)});
 test('Auditoria mantém painel vazio sem exportação fictícia',()=>{assert.match(main,/canvas\.innerHTML='<section class="audit-view" aria-label="Inconsistências"><\/section>'/);assert.doesNotMatch(main,/class="audit-view"[^']*<(?:button|a)/)});
 
-test('atualização permanece indisponível até existir integração real',()=>{assert.match(main,/Atualizar todos<\/button>/);assert.match(main,/Atualizar<\/button>/);assert.match(main,/disabled aria-describedby="integration-/);assert.match(main,/id="bulk-unavailable">Disponível após integração/);assert.doesNotMatch(main,/Disponível após integração com Supabase/);assert.doesNotMatch(main,/supabase\.from|createClient|setTimeout\(|Promise\.resolve/)});
+test('upload integra leitura e atualização reais',async()=>{const uploads=await readFile(new URL('../src/uploads.js',import.meta.url),'utf8');assert.match(uploads,/listarEstadoMotores/);assert.match(uploads,/atualizarMotor/);assert.match(uploads,/atualizarTodos/);assert.match(uploads,/getSession/);assert.match(uploads,/erp_antigo_2025/);assert.match(uploads,/cadastro_erp_antigo/);assert.match(uploads,/formato ainda indisponível/)});
