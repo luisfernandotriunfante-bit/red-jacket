@@ -52,9 +52,9 @@ test('layout desloca canvas e respeita movimento reduzido',()=>{
   assert.match(css,/--accent:#0000FF/);
 });
 
-test('uploads locais têm somente os grupos e slots pedidos',()=>{assert.match(main,/historySlots=\['Movimentações antigas 1','Movimentações antigas 2','Movimentações antigas 3','ERP anterior 1','ERP anterior 2','ERP atual — meses passados','De-para'\]/);assert.match(main,/uploadGroups=\['Histórico','Movimentações','Clientes','Produtos','Chegada de NFs'\]/);assert.match(main,/type="file" data-upload/);assert.match(main,/localFiles\.set\(id,id\.startsWith\('group-'\)/);assert.doesNotMatch(main,/fetch\(|firebase|localStorage\.setItem\('red-jacket-upload/)});
-test('auditoria não mostra dados ou exportação fictícios',()=>{assert.match(main,/class="audit-view" aria-label="Inconsistências"/);assert.doesNotMatch(main,/Exportar IA|Baixar CSV|inconsistências encontradas/)});
+test('uploads usa o módulo conectado ao banco',()=>{assert.ok(main.includes('mountUploads(canvas)'));assert.doesNotMatch(main,/uploadView\\(\\)/)});
 
-test('clique de ponteiro em aba principal estabiliza o layout antes da subaba',()=>{assert.match(main,/source==='side'&&!state\.keyboard/);assert.match(main,/\.canvas'\)\.focus\(\);openSidebar\(false\)/)});
+test('ponteiro estabiliza a sidebar antes da troca de subaba',()=>{assert.match(main,/source==='side'&&!state\.keyboard/);assert.match(main,/\.canvas'\)\.focus\(\);openSidebar\(false\)/)});
+test('Auditoria mantém painel vazio sem exportação fictícia',()=>{assert.match(main,/canvas\.innerHTML='<section class="audit-view" aria-label="Inconsistências"><\/section>'/);assert.doesNotMatch(main,/class="audit-view"[^']*<(?:button|a)/)});
 
-test('uploads mostra os cinco motores juntos e confirma substituição local',()=>{assert.doesNotMatch(main,/motor-nav|activeMotor|data-open-destinations/);assert.match(main,/class="history-row"/);assert.match(main,/uploadGroups\.slice\(1\)\.map/);assert.match(css,/border:1\.5px solid var\(--accent\)/);assert.match(main,/window\.confirm\('Substituir /);assert.match(main,/selecionado nesta sessão/);assert.match(main,/\.\.\.\(existing\|\|\[\]\),\.\.\.input\.files/);assert.doesNotMatch(main,/lastModified|savedAt|progress/)});
+test('upload integra leitura e atualização reais',async()=>{const uploads=await readFile(new URL('../src/uploads.js',import.meta.url),'utf8');assert.match(uploads,/listarEstadoMotores/);assert.match(uploads,/atualizarMotor/);assert.match(uploads,/atualizarTodos/);assert.match(uploads,/ensureSession/);assert.match(uploads,/source\(file,id\)/);assert.match(uploads,/formato ainda indisponível/)});

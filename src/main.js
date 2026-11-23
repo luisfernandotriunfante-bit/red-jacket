@@ -1,13 +1,7 @@
 import './style.css';
 import {tabs,subtabs,nextIndex,preferredTheme} from './shell-state.js';
+import {mountUploads} from './uploads.js';
 
-const historySlots=['Movimentações antigas 1','Movimentações antigas 2','Movimentações antigas 3','ERP anterior 1','ERP anterior 2','ERP atual — meses passados','De-para'];
-const uploadGroups=['Histórico','Movimentações','Clientes','Produtos','Chegada de NFs'];
-const localFiles=new Map();
-const historyRow=(label,i)=>'<div class="history-row"><span class="row-name">'+label+'</span><span class="row-state" data-selection="history-'+i+'">Sem arquivo</span><button type="button" class="row-action" data-pick="history-'+i+'">Selecionar arquivo</button><input class="visually-hidden" type="file" data-upload="history-'+i+'" aria-label="'+label+'"></div>';
-const historyView=()=>'<section class="motor-panel" aria-labelledby="motor-history"><div class="motor-heading"><h2 id="motor-history">Histórico</h2></div><div class="history-list">'+historySlots.map(historyRow).join('')+'</div></section>';
-const groupView=(name,i)=>'<section class="motor-panel" aria-labelledby="motor-'+i+'"><div class="motor-heading"><h2 id="motor-'+i+'">'+name+'</h2><button type="button" class="add-file" data-pick="group-'+i+'">Adicionar arquivo</button><input class="visually-hidden" type="file" multiple data-upload="group-'+i+'" aria-label="Arquivos de '+name+'"></div><div class="group-files" data-selection="group-'+i+'"></div></section>';
-const uploadView=()=>'<div class="settings-content">'+historyView()+uploadGroups.slice(1).map((name,i)=>groupView(name,i+1)).join('')+'</div>';
 const paths={
   chart:'<path d="M4 19V7m5 12V4m5 15v-8m5 8V6"/>',
   box:'<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 10h16M10 10v10"/>',
@@ -52,10 +46,8 @@ function renderCanvas(){
   const canvas=document.querySelector('.canvas');
   if(tabs[state.main].id!=='settings'){canvas.innerHTML='';canvas.setAttribute('aria-label','Área de trabalho vazia');return}
   if(state.sub===0){
-    canvas.innerHTML=uploadView();
-    for(const [id,files] of localFiles){const output=canvas.querySelector('[data-selection="'+id+'"]');if(output&&files.length)output.textContent=files.map(file=>file.name).join(', ')+(id.startsWith('history-')?' · selecionado nesta sessão':' · selecionados nesta sessão')}
-    for(const button of canvas.querySelectorAll('.history-row .row-action'))button.textContent=localFiles.get(button.dataset.pick)?.length?'Substituir':'Selecionar arquivo';
     canvas.setAttribute('aria-label','Uploads');
+    mountUploads(canvas);
   }else{canvas.innerHTML='<section class="audit-view" aria-label="Inconsistências"></section>';canvas.setAttribute('aria-label','Auditoria')}
 }
 function selectMain(index,source){
@@ -93,16 +85,6 @@ profileMenu.addEventListener('keydown',event=>{const items=[...profileMenu.query
 profileMenu.querySelectorAll('[role="menuitem"]').forEach(button=>button.addEventListener('click',()=>{closeProfile()}));
 themeSwitch.addEventListener('click',()=>{state.theme=state.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=state.theme;themeSwitch.setAttribute('aria-checked',String(state.theme==='dark'));themeSwitch.querySelector('svg').outerHTML=icon(state.theme==='dark'?'sun':'moon');try{localStorage.setItem('red-jacket-theme',state.theme)}catch{}themeSwitch.focus()});
 document.addEventListener('keydown',event=>{if(event.key!=='Escape')return;if(state.profile){closeProfile();return}if(state.drawer){closeDrawer();return}if(state.sidebarOpen){openSidebar(false);document.querySelector('.canvas').focus()}});
-document.querySelector('.canvas').addEventListener('click',event=>{
-  const picker=event.target.closest('[data-pick]');
-  if(picker)document.querySelector('input[data-upload="'+picker.dataset.pick+'"]')?.click();
-});
-document.querySelector('.canvas').addEventListener('change',event=>{
-  const input=event.target.closest('input[type="file"][data-upload]');if(!input||!input.files.length)return;
-  const id=input.dataset.upload,existing=localFiles.get(id);
-  if(id.startsWith('history-')&&existing?.length&&!window.confirm('Substituir '+historySlots[Number(id.slice(8))]+'?')){input.value='';return}
-  localFiles.set(id,id.startsWith('group-')?[...(existing||[]),...input.files]:[...input.files]);renderCanvas();
-});
 window.addEventListener('resize',positionIndicator);
 showSubtabs();
 renderCanvas();
