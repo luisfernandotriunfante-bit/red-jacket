@@ -1,14 +1,14 @@
-# T-002 — Configuração administrativa Firebase
+# T-002 — Configuração administrativa Firebase Hosting e Supabase
 
 ID: T-002
-Título: Preparar projeto Firebase para login e hospedagem
-Objetivo: Configurar recursos Firebase da conta do usuário para autenticação real e hospedagem Red Jacket.
-Escopo: Selecionar/criar projeto, confirmar plano/custos e região, provedor de login, domínios autorizados e política de usuários conforme escolhas explícitas.
-Fora de escopo: Implementar login, publicar/deploy ou definir regras de acesso a dados sem política aprovada.
-Critérios de aceitação: Projeto/titularidade identificados; custos/plano, provedor, cadastro, domínios e políticas aprovados; credenciais protegidas; configuração verificada.
+Título: Preparar Firebase Hosting e projeto Supabase para o Red Jacket
+Objetivo: Confirmar os recursos administrativos usados pela aplicação sem habilitar cobrança.
+Escopo: Firebase Hosting estático e projeto Supabase existente `red-jacket` (Free, us-east-2); verificar domínios de redirect e configurações administrativas do Supabase Auth conforme política aprovada.
+Fora de escopo: Implementar login, publicar/deploy, configurar credenciais OAuth sem autorização ou habilitar billing.
+Critérios de aceitação: Titularidade e plano identificados; custos e provedores revisados; URLs de redirect autorizadas; credenciais protegidas; configuração verificada.
 Dependências: T-000 aprovada e decisões/aprovação do usuário.
-Área: Firebase Console por autorização explícita; nenhum segredo no repositório.
-Testes: Emulador/ambiente de desenvolvimento e revisão independente.
+Área: Firebase Console e Supabase Dashboard; nenhum segredo no repositório.
+Testes: Ambiente de desenvolvimento e revisão independente.
 Prioridade: P1
 Dificuldade: Difícil
-Status: Bloqueada por escolhas administrativas do usuário.
+Status: Projeto Supabase criado; configuração de Auth e domínios pendente.
