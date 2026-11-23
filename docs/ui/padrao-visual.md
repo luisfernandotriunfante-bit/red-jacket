@@ -26,11 +26,11 @@ Abas principais: Sell out, Estoque, Clientes, Campanhas, Configurações. Config
 Troca de abas principais e subabas: entrada dos rótulos com opacidade e deslocamento horizontal por 420 ms; indicador das subabas desliza por 380 ms, acima dos rótulos e sem fundo opaco. `prefers-reduced-motion` elimina o deslocamento e limita transições a 80 ms. Tema é salvo localmente, com preferência inicial do sistema.
 
 ## Uploads e Auditoria
-Uploads mostra os cinco motores juntos, em seções separadas: Histórico, Movimentações, Clientes, Produtos e Chegada de NFs. Cada motor agrupa seus próprios arquivos; não é necessário trocar de motor para atualizar outro. As ações de arquivo têm contorno com `--accent` e texto `--accent-text`.
+Uploads mostra cinco cartões compactos em uma página: Histórico, Movimentações, Clientes, Produtos e Chegada de NFs. A grade tem duas colunas em telas largas e uma em telas estreitas. Cada cartão contém nome em destaque, estado da última atualização abaixo, seleção local do arquivo e ações.
 
-Histórico lista sete destinos fixos: três de Movimentações antigas, dois de ERP anterior, um de ERP atual (meses passados) e um De-para. Cada linha tem estado e ação individual; substituir uma seleção local pede confirmação. Os demais motores mostram Adicionar arquivo e exibem nomes somente após seleção.
+Nenhum timestamp persistido existe nesta etapa. Por isso, o estado é “Sem atualização registrada”; nenhuma data fictícia é apresentada. A seleção local exibe apenas o nome do arquivo e “selecionado nesta sessão”. Trocar um arquivo selecionado exige confirmação. Não há slots de Histórico para ERP antigo/atual, pois são as próprias movimentações.
 
-Seleções existem apenas nesta sessão; não há parser, persistência, consolidação, sincronização nem exportação. Data e hora de última atualização só devem aparecer quando existir timestamp persistido real; nesta versão não há timestamp, portanto nenhuma data é exibida. Auditoria permanece vazia.
+Gerar arquivo, Excel e JSON aparecem desabilitados com o motivo “Disponível após processamento real”. Não há parser, persistência, sanitização, sincronização ou exportação funcional. Auditoria permanece vazia.
 
 ## Verificação
 QA deve conferir 360, 768 e 1280 px, claro/escuro, contraste WCAG AA, ausência de overflow, sidebar sem sobreposição, teclado, perfil, tema, drawer e movimento reduzido. Preview é temporário na PR #4; sem merge ou produção.
