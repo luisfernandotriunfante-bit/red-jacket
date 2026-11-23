@@ -32,17 +32,23 @@ selecionado e persiste; existe também um botão geral "Atualizar todos" que
 repete a operação para todas as fontes com arquivo selecionado, de forma
 independente (falha em uma não afeta as outras).
 
-### Motores ainda sem formato/arquivo conhecido
+### Fontes ainda sem formato/arquivo conhecido
 
-Nenhuma amostra foi recebida ainda para **Histórico**, **Clientes** e
-**Chegada de NFs**. Sem amostra real, não dá para inventar layout — nem
-largura fixa, nem colunas de planilha, nem nomes de campo. **Precisa do
-usuário**: pelo menos um arquivo real (ou DEMO, como os já enviados) de
-cada um desses 3 motores, no mesmo formato que o sistema de origem gera
-hoje (texto largura-fixa, .xls/.xlsx, CSV — o que for). Sem isso, esses 3
-motores seguem funcionando apenas via a API genérica de staging/promoção
-(`atualizarMotor` aceita `linhas` já estruturadas de qualquer fonte), mas
-sem parser próprio.
+Com a prioridade atual (site real com o fluxo de Histórico funcionando), o
+piloto usa apenas as amostras já enviadas e NÃO pede arquivos novos:
+
+- **Histórico**: não é uma fonte de upload. É uma visão de leitura sobre os
+  dados normalizados de **Movimentações** (ver
+  `docs/contratos/historico-piloto.md`). Não tem slot próprio nem precisa de
+  amostra própria.
+- **Produtos**: o de-para/cadastro do ERP antigo (`818191d3`) já tem parser
+  na PR #5.
+- **Clientes** e **Chegada de NFs**: continuam sem amostra/formato
+  conhecido. Não bloqueiam o piloto do Histórico; entram quando houver
+  arquivo real.
+
+Sem amostra, não se inventa layout. Esses motores continuam aceitando
+`linhas` já estruturadas pela API genérica de staging/promoção.
 
 ## Modelo de acesso (decisão explícita do usuário)
 
@@ -135,76 +141,63 @@ const linhasDoMotorInteiro = await obterDadosAtivos({ client, motor: 'movimentac
 
 ## Parsers de Movimentações (`src/motors/movimentacoes/`)
 
-- **`parse-faturamento-erp-antigo.js`** (fontes `erp_antigo_2025` e
-  `erp_antigo_2026`) — parser de texto largura fixa, 420 caracteres por
-  linha terminada em `\r\n`, para o relatório "Faturamento ... Analítico
-  Detalhado". Offsets de campo validados contra 20.000 linhas reais de
-  `379_25_DEMO.txt` (0 erros). `parseFaturamentoErpAntigo(content)` retorna
-  `{ items, discrepancies, totalLinhasNaoVazias, totalLinhasReconhecidas }`
-  — `discrepancies` lista linhas que não bateram o formato esperado, para a
-  UI decidir se bloqueia ou avisa. **Limite da amostra**: validado contra
-  `379_25_DEMO.txt` (2025); `379_26_DEMO.txt` (2026) não foi escaneado
-  linha a linha da mesma forma — assume-se mesmo layout por ser o mesmo
-  relatório, mas isso não foi 100% confirmado campo a campo nessa segunda
-  amostra. Dois campos têm nome genérico (`campoNaoIdentificado1`,
-  `campoNaoIdentificado2`) por não ter sido possível identificar o que
-  representam a partir da amostra sozinha.
-- **`parse-vendas-erp-atual.js`** (fonte `erp_atual_vendas`) —
-  `normalizarLinhasVendas(linhasBrutas)` já pronta e testada: recebe linhas
-  já decodificadas (array de arrays, uma por linha da planilha, cabeçalho
-  incluído) e devolve objetos tipados com as 36 colunas do relatório real
-  (`COLUNAS`), convertendo datas seriais do Excel para ISO
-  (`serialExcelParaIso`). **O que falta**: a função que decodifica o
-  binário `.xls` em si (abrir o arquivo e extrair essas linhas brutas) —
-  isso depende de uma biblioteca de leitura de planilha, e está bloqueado
-  pela pendência de dependência abaixo. Enquanto isso, `.xls` dessa fonte
-  não pode ser lido pela aplicação; a função pura de normalização já pode
-  ser usada/testada com dados extraídos manualmente.
+- **`parse-faturamento-erp-antigo.js`** (fontes `erp_antigo_379_25` e
+  `erp_antigo_379_26`) — texto largura fixa, 420 caracteres por linha
+  terminada em `\r\n`, para o relatório "Faturamento ... Analítico
+  Detalhado". Offsets validados contra 20.000 linhas de `379_25_DEMO.txt`
+  (0 erros de formato de data/código). `parseFaturamentoErpAntigo(content)`
+  devolve `{ items, discrepancies, totalLinhasNaoVazias,
+  totalLinhasReconhecidas }`. **Limite da amostra**: `379_26_DEMO.txt`
+  (2026) não foi escaneado linha a linha da mesma forma; assume-se o mesmo
+  layout por ser o mesmo relatório. Dois campos seguem com nome genérico
+  (`campoNaoIdentificado1`, `campoNaoIdentificado2`) e o significado de
+  negócio de `carga` não foi confirmado — capturados como estão, sem
+  inventar rótulo.
+- **`parse-vendas-erp-atual.js`** (fonte `erp_atual_vendas_8022`) —
+  `lerPlanilhaVendas(bytes)` decodifica o `.xls` real (BIFF8) via
+  `xls-reader@0.7.0` e `normalizarLinhasVendas(linhasBrutas)` mapeia as 36
+  colunas por posição, convertendo datas seriais do Excel para ISO. Testado
+  contra um excerto binário real do `992ca97f-vendas-8022_DEMO.xls`
+  transportado em base64.
+- **`registro-canonico.js`** (novo) — normaliza os payloads dos dois
+  formatos em um registro único para o Histórico (`data`, `documento`,
+  `serie`, `item`, `codigoProduto`, `cliente`, `quantidade`, `valor`,
+  pesos, vendedor, UF, `fonte`, `chaveRegistro`). Não faz parsing de
+  arquivo nem grava no banco; payload de formato desconhecido vira `null` e
+  é contado como ignorado, nunca inventado.
 
 ## Exportação (`src/lib/export-motor.js`)
 
-- `gerarJson(linhas)` — pronto. Gera um Blob JSON dos dados ativos sem
-  nenhuma sanitização (mantém campos tipados — number, boolean, null —
-  exatamente como estão).
-- `sanitizarCelulaExcel(valor)` / `sanitizarLinhaExcel(linha)` — pronto e
-  testado. Prefixa com apóstrofo qualquer string que comece com `=`, `+`,
-  `-`, `@`, tab ou CR (proteção contra fórmula/CSV injection ao abrir no
-  Excel). Só se aplica a texto destinado ao Excel; nunca é usado no JSON.
-- `gerarExcel(...)` (geração do arquivo `.xlsx` em si) — **removido nesta
-  PR, pendente de decisão de dependência** (ver abaixo). O sanitizer já
-  está pronto para ser usado por essa função quando a lib for escolhida.
+- `gerarJson(linhas)` — Blob JSON dos dados ativos, sem sanitização:
+  mantém `number`, `boolean` e `null` exatamente como estão, porque JSON
+  não é interpretado como fórmula por nenhuma ferramenta.
+- `sanitizarCelulaExcel(valor)` / `sanitizarLinhaExcel(linha)` — prefixa
+  com apóstrofo strings que comecem com `=`, `+`, `-`, `@`, tab ou CR
+  (proteção contra fórmula/CSV injection). Só no Excel; nunca no JSON.
+- `gerarExcel(linhas, nomeAba)` — gera `.xlsx` real via `exceljs@4.4.0`,
+  aplicando o sanitizer célula a célula e preservando números. Testado com
+  round-trip real (escreve e relê o arquivo).
+- `linhasParaExportacao(registros)` (em `src/motors/historico/consultar.js`)
+  — achata o registro canônico do Histórico nas colunas de exportação,
+  mantendo os tipos.
 
-## Pendência de dependência: leitura/escrita de planilha (.xls/.xlsx)
+## Dependências de planilha (decisão tomada)
 
-Tanto a leitura de `erp_atual_vendas` (.xls) quanto a geração real de
-Excel na exportação dependem de uma biblioteca de planilha no navegador. A
-única opção amplamente usada e publicada no **registry público do npm**
-(`xlsx`, pacote SheetJS) está na versão `0.18.5`, que tem **2
-vulnerabilidades HIGH sem correção disponível**:
+A opção `xlsx` (SheetJS no registry público do npm, 0.18.5) foi
+**descartada**: tem 2 vulnerabilidades HIGH sem correção no registry
+(`GHSA-4r6h-8v6p-xvw6`, Prototype Pollution; `GHSA-5pgg-2g8v-p4x9`, ReDoS).
+Não há supressão de alerta nem uso dessa lib.
 
-- `GHSA-4r6h-8v6p-xvw6` — Prototype Pollution.
-- `GHSA-5pgg-2g8v-p4x9` — ReDoS (Regular Expression Denial of Service).
+Alternativa adotada, com versões fixas no `package.json`:
 
-`npm audit --audit-level=high` reprova com essa dependência instalada — a
-CI (`build-and-audit`) ficaria vermelha. Por isso essa PR **não inclui**
-`xlsx` no `package.json`; tanto a leitura de `.xls` quanto `gerarExcel`
-foram removidas, mantendo só a lógica pura (sem binário) já testada.
+- **`xls-reader@0.7.0`** — leitura de `.xls` BIFF8 no navegador, zero
+  dependências de runtime. Validado com o excerto real da amostra 8022.
+- **`exceljs@4.4.0`** — geração de `.xlsx` para exportação.
 
-**Precisa de decisão do usuário/gerente** entre:
-
-1. Aceitar o risco documentado e instalar `xlsx@0.18.5` do registry do npm
-   mesmo assim (ambas as CVEs são do tipo que importa mais em uso
-   server-side com dados não-confiáveis; aqui os arquivos são enviados
-   pelo próprio usuário autorizado no navegador dele — o risco real talvez
-   seja aceitável, mas é uma decisão de produto/segurança, não técnica).
-2. Instalar a versão mais recente do SheetJS fora do registry público do
-   npm (a própria SheetJS publica um tarball via CDN própria com correções
-   que não chegam ao npm) — isso muda o processo padrão de instalação de
-   dependência e precisa de aprovação explícita antes.
-3. Usar outra biblioteca: resolveria a **escrita** de `.xlsx` (ex.
-   `exceljs`, sem as CVEs do xlsx) mas **não resolve a leitura de `.xls`**
-   da fonte `erp_atual_vendas` — poderia exigir pedir esse arquivo em outro
-   formato (`.xlsx` ou `.csv`) à fonte de origem.
+`npm audit --audit-level=high` passa no CI com o lockfile commitado. O
+`exceljs` traz um advisory **MODERATE** indireto (`uuid` < 11.1.1,
+`GHSA-w5hq-g745-h8pq`) abaixo do limiar de falha; fica documentado por
+transparência, não suprimido.
 
 ## Tabelas (ver migração `supabase/migrations/0001_motores_staging.sql`)
 
@@ -253,30 +246,29 @@ foram removidas, mantendo só a lógica pura (sem binário) já testada.
 
 ## Pendências que dependem de aprovação/credenciais do usuário
 
-1. Aplicar a migração no projeto Supabase real (`red-jacket`) — não feito.
-2. O dono do projeto chamar `cadastrar_primeiro_owner()` logo após o
+1. QA revisar as migrações `0001_motores_staging.sql` e
+   `0002_papel_usuario.sql` **completas** após as correções.
+2. Aplicar as migrações no projeto Supabase real (`red-jacket`) — não
+   feito; só depois da aprovação do QA e da configuração segura do owner.
+3. O dono do projeto chamar `cadastrar_primeiro_owner()` logo após o
    primeiro login (passo manual, não automatizável sem credencial real).
-3. Preencher `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` reais no ambiente
-   de build/CI.
-4. Configurar provedor(es) de login no Supabase Auth (ADR 0002).
-5. Decidir a pendência de dependência de planilha (xlsx) acima — bloqueia
-   leitura de `.xls` da fonte `erp_atual_vendas` e a geração real de
-   `.xlsx` na exportação.
-6. Enviar ao menos um arquivo real/DEMO de cada um dos 3 motores sem
-   formato conhecido: **Histórico**, **Clientes**, **Chegada de NFs** —
-   sem isso não é possível escrever parser para eles.
-7. Integrar os botões "Atualizar"/"Atualizar todos" e exportação na UI
-   (frontend) — esta PR entrega a API que os botões/exportação chamam.
+4. Preencher `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` reais no ambiente
+   de build. `service_role` nunca entra no cliente.
+5. Configurar o provedor de login no Supabase Auth (ADR 0002).
+6. Integrar na UI os botões "Atualizar"/"Atualizar todos", a leitura
+   pós-reload e a exportação (frontend) — esta PR entrega a API.
+7. Definir a regra de negócio para períodos sobrepostos entre `379_25/26`
+   e a planilha `8022`: o piloto mantém as duas fontes e apenas sinaliza
+   `registrosEmMaisDeUmaFonte`; não descarta linha sem regra aprovada.
+8. Amostras de **Clientes** e **Chegada de NFs** continuam necessárias para
+   esses motores, mas não bloqueiam o piloto do Histórico.
 
 ## O que já pode ser testado contra o Supabase real (quando autorizado)
 
-Depois que a migração for aplicada e o `cadastrar_primeiro_owner()` for
-chamado pelo dono do projeto: `atualizarMotor`/`atualizarTodos`/
-`listarEstadoMotores`/`obterDadosAtivos` já funcionam de ponta a ponta para
-qualquer motor/fonte, mesmo sem parser de binário próprio — bastando que o
-chamador já tenha as `linhas` estruturadas. Isso cobre hoje:
-`cadastro_erp_antigo` (Produtos, PR #5), `erp_antigo_2025` e
-`erp_antigo_2026` (Movimentações, parser pronto nesta PR). A fonte
-`erp_atual_vendas` e os 3 motores sem amostra ficam fora até as pendências
-5 e 6 acima serem resolvidas. Exportação (`gerarJson`) já funciona para
-qualquer motor com dados ativos; `gerarExcel` real depende da pendência 5.
+Depois que as migrações forem aplicadas e o `cadastrar_primeiro_owner()`
+for chamado pelo dono: `atualizarMotor`/`atualizarTodos`/
+`listarEstadoMotores`/`obterDadosAtivos`/`obterDadosAtivosPorFonte` e
+`obterHistorico` funcionam de ponta a ponta. Cobertura atual por testes
+sem rede: `379_25` (68 itens reais do fixture), `8022` (3 linhas reais do
+excerto binário) e o de-para de Produtos (PR #5). Continua fora: Clientes
+e Chegada de NFs (sem amostra). Exportação JSON e Excel já são reais.
