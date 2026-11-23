@@ -1,13 +1,23 @@
-// Exportação real dos dados ativos de um motor: Excel (.xlsx) e JSON.
+// Exportação real dos dados ativos de um motor: JSON pronto; Excel (.xlsx)
+// pendente de decisão de dependência (ver abaixo).
 //
-// Sanitização de fórmulas (CSV/Excel injection): só se aplica ao Excel.
-// Um texto que comece com =, +, -, @, tab ou CR pode ser interpretado
-// pelo Excel como fórmula quando a planilha é aberta — prefixamos com um
-// apóstrofo para o Excel tratar como texto literal. O JSON NUNCA é
-// sanitizado: mantém os valores exatamente como vieram (tipados), porque
-// não é aberto por uma ferramenta que interpreta fórmulas.
-
-import * as XLSX from 'xlsx';
+// Sanitização de fórmulas (CSV/Excel injection): um texto que comece com
+// =, +, -, @, tab ou CR pode ser interpretado como fórmula quando a
+// planilha é aberta no Excel — `sanitizarCelulaExcel` prefixa com um
+// apóstrofo para o Excel tratar como texto literal. Só se aplica ao
+// Excel. O JSON NUNCA é sanitizado: mantém os valores exatamente como
+// vieram (tipados), porque não é aberto por uma ferramenta que
+// interpreta fórmulas.
+//
+// PENDÊNCIA DE DEPENDÊNCIA: gerar o arquivo .xlsx real precisa de uma lib
+// como 'xlsx' (SheetJS), mas a única versão publicada no registry público
+// do npm (0.18.5) tem 2 vulnerabilidades HIGH sem correção disponível
+// (GHSA-4r6h-8v6p-xvw6 prototype pollution, GHSA-5pgg-2g8v-p4x9 ReDoS) —
+// `npm audit --audit-level=high` reprova. `sanitizarCelulaExcel` já está
+// pronto e testado (puro, sem dependência); falta só a função que
+// efetivamente grava o binário .xlsx, aguardando decisão do
+// usuário/gerente sobre qual biblioteca usar — ver
+// docs/contratos/supabase-persistencia-motores.md.
 
 const CARACTERES_PERIGOSOS = ['=', '+', '-', '@', '\t', '\r'];
 
@@ -24,31 +34,18 @@ export function sanitizarCelulaExcel(valor) {
   return valor;
 }
 
-function sanitizarLinhaExcel(linha) {
+/**
+ * Sanitiza todas as células de texto de uma linha (usar antes de gravar o
+ * .xlsx, quando a lib de escrita for decidida).
+ * @param {object} linha
+ * @returns {object}
+ */
+export function sanitizarLinhaExcel(linha) {
   const saida = {};
   for (const [chave, valor] of Object.entries(linha)) {
     saida[chave] = sanitizarCelulaExcel(valor);
   }
   return saida;
-}
-
-/**
- * Gera um Blob .xlsx a partir das linhas, com sanitização de fórmulas
- * aplicada só às células de texto — números, booleanos e null passam
- * direto, sem risco de serem "corrompidos" pela sanitização.
- * @param {object[]} linhas
- * @param {string} [nomeAba]
- * @returns {Blob}
- */
-export function gerarExcel(linhas, nomeAba = 'Dados') {
-  const linhasSanitizadas = linhas.map(sanitizarLinhaExcel);
-  const planilha = XLSX.utils.json_to_sheet(linhasSanitizadas);
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, planilha, nomeAba);
-  const arrayBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-  return new Blob([arrayBuffer], {
-    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  });
 }
 
 /**
