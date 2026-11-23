@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 jobs:
-  build-and-audit:
+  build-and-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,17 +22,14 @@ jobs:
           node-version: '22.12.0'
           cache: npm
 
-      - name: Instalar dependências (regenerar lockfile, temporario)
-        run: npm install --no-audit
+      - name: Instalar dependencias (reprodutivel, com lockfile)
+        run: npm ci
 
-      - name: Publicar package-lock.json como artifact (rastreabilidade)
-        uses: actions/upload-artifact@v4
-        with:
-          name: package-lock
-          path: package-lock.json
+      - name: Testes
+        run: npm test
 
       - name: Build
         run: npm run build
 
-      - name: Audit
+      - name: Audit (falha em HIGH ou superior)
         run: npm audit --audit-level=high
