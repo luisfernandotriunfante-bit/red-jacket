@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { criarBancoFake } from '../helpers/fake-supabase.js';
+import { criarBancoFake } from '../../helpers/fake-supabase.js';
 import { atualizarMotor } from '../../src/lib/motor-sync.js';
 import {
   obterHistorico,
