@@ -1,13 +1,21 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { atualizarMotor, atualizarTodos, MOTORES } from '../../src/lib/motor-sync.js';
+import {
+  atualizarMotor,
+  atualizarTodos,
+  listarEstadoMotores,
+  obterDadosAtivos,
+  MOTORES,
+} from '../../src/lib/motor-sync.js';
 
 // Mock mínimo do client do Supabase JS, em memória, sem rede. Reproduz o
 // encadeamento usado por motor-sync.js: from().select().eq().maybeSingle(),
 // from().insert().select().single(), from().insert() (bulk), e rpc(). Além
 // disso simula a autorização que no banco real vem de RLS/SECURITY
 // DEFINER: `autorizado: false` faz insert/rpc retornarem erro, como a
-// policy do banco faria para uma conta sem permissão de atualização.
+// policy do banco faria para uma conta sem permissão de atualização. O rpc
+// de promover_versao retorna { data: 'active' | 'rejected' }, igual à
+// função SQL real, para o client distinguir promoção de idempotência.
 function criarClientMock({ autorizado = true } = {}) {
   const slots = [];
   const versoes = [];
@@ -73,7 +81,7 @@ function criarClientMock({ autorizado = true } = {}) {
               return this;
             }
             // criado_por nunca vem do objeto inserido (seria auth.uid() via trigger no banco real)
-            const criado = { id: novoId(), ...objeto };
+            const criado = { id: novoId(), linhas_count: 0, ...objeto };
             versoes.push(criado);
             this._ultimoInserido = criado;
             return this;
@@ -86,10 +94,26 @@ function criarClientMock({ autorizado = true } = {}) {
       }
       if (tabela === 'dados_motor') {
         return {
-          async insert(registros) {
-            if (!autorizado) return erroPermissao();
+          insert(registros) {
+            if (!autorizado) {
+              this._erroInsert = true;
+              return this;
+            }
             dados.push(...registros);
-            return { error: null };
+            return this;
+          },
+          eq(campo, valor) {
+            this._filtroVersao = valor;
+            return this;
+          },
+          select() {
+            return this;
+          },
+          then(resolve) {
+            // suporta await direto em .select().eq(...) sem .single()
+            if (this._erroInsert) return resolve(erroPermissao());
+            const linhas = dados.filter((d) => d.versao_id === this._filtroVersao);
+            resolve({ data: linhas, error: null });
           },
         };
       }
@@ -103,12 +127,12 @@ function criarClientMock({ autorizado = true } = {}) {
         const versao = versoes.find((v) => v.id === args.p_versao_id);
         const anterior = versoes.find((v) => v.slot_id === versao.slot_id && v.status === 'active');
         if (anterior && anterior.hash_arquivo === versao.hash_arquivo) {
-          // idempotência: já existe ativa com o mesmo conteúdo
+          // idempotência: já existe ativa com o mesmo conteúdo; descarta a staging
           for (let i = dados.length - 1; i >= 0; i -= 1) {
             if (dados[i].versao_id === versao.id) dados.splice(i, 1);
           }
           versao.status = 'rejected';
-          return { error: null };
+          return { data: 'rejected', error: null };
         }
         if (anterior) {
           anterior.status = 'superseded';
@@ -117,7 +141,9 @@ function criarClientMock({ autorizado = true } = {}) {
           }
         }
         versao.status = 'active';
-        return { error: null };
+        versao.linhas_count = dados.filter((d) => d.versao_id === versao.id).length;
+        versao.promovido_em = new Date().toISOString();
+        return { data: 'active', error: null };
       }
       if (nome === 'rejeitar_versao') {
         const versao = versoes.find((v) => v.id === args.p_versao_id);
@@ -125,7 +151,7 @@ function criarClientMock({ autorizado = true } = {}) {
         for (let i = dados.length - 1; i >= 0; i -= 1) {
           if (dados[i].versao_id === versao.id) dados.splice(i, 1);
         }
-        return { error: null };
+        return { data: null, error: null };
       }
       throw new Error(`rpc não mockada: ${nome}`);
     },
@@ -234,7 +260,7 @@ test('atualizarTodos processa cada motor isoladamente, sem abortar nos demais em
   client.from = (tabela) => {
     if (tabela === 'dados_motor') {
       return {
-        async insert() {
+        insert() {
           throw new Error('falha simulada de rede');
         },
       };
@@ -280,10 +306,23 @@ test('usuário sem permissão (não owner/updater) recebe erro e não grava nada
 });
 
 test(
-  'duas promoções concorrentes do mesmo motor terminam com exatamente uma versão ativa ' +
-    '(idempotência sob concorrência; a garantia definitiva vem do índice único + FOR UPDATE no banco real, não deste mock)',
+  'duas promoções concorrentes da mesma staging/slot: só uma promove de fato, ' +
+    'a outra recebe sem-mudanca do próprio retorno do RPC (status final), sem depender de contagem local. ' +
+    'A exclusão mútua real (índice único + FOR UPDATE) só é garantida pelo banco; este teste cobre a lógica de ' +
+    'aplicação que consome esse retorno corretamente.',
   async () => {
     const client = criarClientMock();
+
+    // pré-cria e promove a primeira versão fora da concorrência, para
+    // isolar o teste na corrida de SUBSTITUIÇÃO (não na corrida de criação
+    // do slot, que depende de constraint do banco não simulável aqui)
+    await atualizarMotor({
+      client,
+      motor: 'produtos',
+      hashArquivo: 'hash-original',
+      nomeArquivo: 'original.txt',
+      linhas: [{ x: 0 }],
+    });
 
     const [resultadoA, resultadoB] = await Promise.all([
       atualizarMotor({
@@ -303,11 +342,47 @@ test(
     ]);
 
     const resultados = [resultadoA.resultado, resultadoB.resultado].sort();
-    // uma promove, a outra encontra o mesmo hash já ativo e não duplica
     assert.deepEqual(resultados, ['promovido', 'sem-mudanca']);
 
     const { versoes } = client._inspecionar();
     const ativas = versoes.filter((v) => v.status === 'active');
     assert.equal(ativas.length, 1);
+    assert.equal(ativas[0].hash_arquivo, 'hash-concorrente');
   },
 );
+
+test('listarEstadoMotores reflete o que foi promovido, mesmo após "reload" (nova leitura)', async () => {
+  const client = criarClientMock();
+  await atualizarMotor({
+    client,
+    motor: 'produtos',
+    hashArquivo: 'hash-1',
+    nomeArquivo: 'cadastro.txt',
+    linhas: [{ codigo: '1' }, { codigo: '2' }],
+  });
+
+  const estado = await listarEstadoMotores({ client });
+
+  assert.equal(estado.produtos.temDados, true);
+  assert.equal(estado.produtos.nomeArquivo, 'cadastro.txt');
+  assert.equal(estado.produtos.linhasCount, 2);
+  assert.equal(estado.historico.temDados, false);
+  assert.equal(Object.keys(estado).length, MOTORES.length);
+});
+
+test('obterDadosAtivos retorna as linhas da versão ativa, e [] para motor sem dados', async () => {
+  const client = criarClientMock();
+  await atualizarMotor({
+    client,
+    motor: 'clientes',
+    hashArquivo: 'hash-1',
+    nomeArquivo: 'clientes.csv',
+    linhas: [{ nome: 'A' }, { nome: 'B' }],
+  });
+
+  const linhas = await obterDadosAtivos({ client, motor: 'clientes' });
+  assert.deepEqual(linhas, [{ nome: 'A' }, { nome: 'B' }]);
+
+  const vazio = await obterDadosAtivos({ client, motor: 'historico' });
+  assert.deepEqual(vazio, []);
+});
