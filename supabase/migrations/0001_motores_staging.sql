@@ -9,6 +9,13 @@
 --     (app_owners) e as contas às quais um proprietário conceder permissão
 --     (motor_updaters). Sem UUID nem credencial embutida — ver seção de
 --     bootstrap do proprietário mais abaixo.
+--
+-- Modelo de slots (decisão do usuário/gerente, 23/11): motor é o DESTINO
+-- funcional (Histórico, Movimentações, Clientes, Produtos, Chegada de
+-- NFs), não cada relatório/arquivo. Um motor pode ter mais de uma FONTE
+-- (ex. Movimentações recebe vários relatórios/arquivos diferentes do ERP
+-- antigo e do atual) — por isso upload_slots é (motor, fonte_chave), não
+-- um slot único por motor.
 
 create extension if not exists pgcrypto;
 
@@ -139,10 +146,18 @@ $$;
 
 -- ============================ Slots e versões ==============================
 
+-- Um slot é (motor, fonte_chave): o motor é o destino funcional; a fonte é
+-- qual arquivo/relatório específico alimenta aquele motor (ex. motor
+-- 'movimentacoes' pode ter fontes 'erp_antigo_1', 'erp_antigo_2',
+-- 'erp_atual_mes_atual' etc.). fonte_chave é texto livre definido pelo
+-- cliente (frontend/parser), não um enum fixo, porque a quantidade de
+-- fontes por motor varia e ainda depende de arquivos reais.
 create table upload_slots (
   id uuid primary key default gen_random_uuid(),
-  motor motor_nome not null unique,
-  criado_em timestamptz not null default now()
+  motor motor_nome not null,
+  fonte_chave text not null check (length(fonte_chave) > 0),
+  criado_em timestamptz not null default now(),
+  unique (motor, fonte_chave)
 );
 
 create table upload_versoes (
