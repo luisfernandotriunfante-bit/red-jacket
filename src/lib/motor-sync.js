@@ -3,7 +3,12 @@
 // client já construído (por src/lib/supabase-client.js em produção, ou um
 // mock nos testes), para ficar testável sem rede e sem credencial real.
 //
-// Fluxo: ver docs/contratos/supabase-persistencia-motores.md.
+// Autorização: quem pode escrever (owner/updater) é decidido pelo banco
+// (RLS + funções SECURITY DEFINER), nunca pelo client. O `criado_por` de
+// cada versão também vem de auth.uid() via trigger no banco, nunca de um
+// parâmetro enviado por este módulo — ver
+// supabase/migrations/0001_motores_staging.sql e
+// docs/contratos/supabase-persistencia-motores.md.
 
 export const MOTORES = ['historico', 'movimentacoes', 'clientes', 'produtos', 'chegada_nfs'];
 
@@ -36,7 +41,10 @@ async function obterVersaoAtiva(client, slotId) {
   return data;
 }
 
-async function criarVersaoStaging(client, slotId, hashArquivo, nomeArquivo, userId) {
+async function criarVersaoStaging(client, slotId, hashArquivo, nomeArquivo) {
+  // criado_por não é enviado: o trigger set_criado_por() no banco sempre
+  // sobrescreve com auth.uid() da sessão autenticada, nunca confia neste
+  // client para dizer quem é o autor.
   const { data, error } = await client
     .from('upload_versoes')
     .insert({
@@ -44,7 +52,6 @@ async function criarVersaoStaging(client, slotId, hashArquivo, nomeArquivo, user
       status: 'staging',
       hash_arquivo: hashArquivo,
       nome_arquivo_original: nomeArquivo,
-      criado_por: userId,
     })
     .select('id')
     .single();
@@ -72,6 +79,9 @@ async function rejeitarVersao(client, versaoId) {
 /**
  * Processa a atualização de um motor: cria/reaproveita o slot, checa
  * idempotência pelo hash, grava em staging, valida e promove ou rejeita.
+ * Se qualquer passo depois de criar a staging falhar (ex. erro de rede ao
+ * inserir linhas), tenta rejeitar a staging antes de propagar o erro, para
+ * não deixar uma versão órfã pendurada.
  *
  * @param {object} args
  * @param {object} args.client Cliente Supabase (ou mock compatível).
@@ -79,11 +89,10 @@ async function rejeitarVersao(client, versaoId) {
  * @param {string} args.hashArquivo Hash de conteúdo do arquivo (ex. sha256).
  * @param {string} args.nomeArquivo Nome original do arquivo.
  * @param {object[]} args.linhas Linhas já normalizadas (parsing client-side).
- * @param {string} args.userId auth.uid() do usuário autenticado.
  * @param {(linhas: object[]) => boolean | Promise<boolean>} [args.validar]
  * @returns {Promise<{motor: string, resultado: 'promovido'|'sem-mudanca'|'rejeitado'}>}
  */
-export async function atualizarMotor({ client, motor, hashArquivo, nomeArquivo, linhas, userId, validar }) {
+export async function atualizarMotor({ client, motor, hashArquivo, nomeArquivo, linhas, validar }) {
   if (!MOTORES.includes(motor)) {
     throw new Error(`motor desconhecido: ${motor}`);
   }
@@ -95,17 +104,27 @@ export async function atualizarMotor({ client, motor, hashArquivo, nomeArquivo, 
     return { motor, resultado: 'sem-mudanca' };
   }
 
-  const versao = await criarVersaoStaging(client, slot.id, hashArquivo, nomeArquivo, userId);
-  await inserirLinhas(client, versao.id, linhas);
+  const versao = await criarVersaoStaging(client, slot.id, hashArquivo, nomeArquivo);
 
-  const valido = validar ? await validar(linhas) : true;
-  if (!valido) {
-    await rejeitarVersao(client, versao.id);
-    return { motor, resultado: 'rejeitado' };
+  try {
+    await inserirLinhas(client, versao.id, linhas);
+
+    const valido = validar ? await validar(linhas) : true;
+    if (!valido) {
+      await rejeitarVersao(client, versao.id);
+      return { motor, resultado: 'rejeitado' };
+    }
+
+    await promoverVersao(client, versao.id);
+    return { motor, resultado: 'promovido' };
+  } catch (erro) {
+    try {
+      await rejeitarVersao(client, versao.id);
+    } catch {
+      // melhor esforço: não mascara o erro original se a limpeza também falhar
+    }
+    throw erro;
   }
-
-  await promoverVersao(client, versao.id);
-  return { motor, resultado: 'promovido' };
 }
 
 /**
@@ -116,9 +135,8 @@ export async function atualizarMotor({ client, motor, hashArquivo, nomeArquivo, 
  * @param {object} args
  * @param {object} args.client
  * @param {Record<string, {hashArquivo: string, nomeArquivo: string, linhas: object[], validar?: Function}>} args.arquivosPorMotor
- * @param {string} args.userId
  */
-export async function atualizarTodos({ client, arquivosPorMotor, userId }) {
+export async function atualizarTodos({ client, arquivosPorMotor }) {
   const resultados = [];
   for (const motor of MOTORES) {
     const arquivo = arquivosPorMotor[motor];
@@ -127,7 +145,7 @@ export async function atualizarTodos({ client, arquivosPorMotor, userId }) {
       continue;
     }
     try {
-      const resultado = await atualizarMotor({ client, motor, userId, ...arquivo });
+      const resultado = await atualizarMotor({ client, motor, ...arquivo });
       resultados.push(resultado);
     } catch (erro) {
       resultados.push({ motor, resultado: 'erro', erro: String(erro?.message ?? erro) });
