@@ -235,8 +235,11 @@ create policy "autorizados inserem em staging propria" on dados_motor
 -- por hash (não duplica se já existe ativa com o mesmo conteúdo), marca a
 -- anterior como superseded e apaga o payload dela. Operação atômica (uma
 -- transação por chamada). Registra quem promoveu e a contagem de linhas.
+-- Retorna o status final ('active' se promoveu de fato, 'rejected' se foi
+-- descartada por já existir ativa idêntica) — o client usa isso para saber
+-- se foi uma promoção real ou um no-op por idempotência, em vez de supor.
 create or replace function promover_versao(p_versao_id uuid)
-returns void
+returns versao_status
 language plpgsql
 security definer
 set search_path = public
@@ -271,7 +274,7 @@ begin
     -- staging redundante em vez de duplicar trabalho
     delete from dados_motor where versao_id = p_versao_id;
     update upload_versoes set status = 'rejected' where id = p_versao_id;
-    return;
+    return 'rejected';
   end if;
 
   if v_ativa_id is not null then
@@ -285,6 +288,8 @@ begin
       promovido_em = now(),
       linhas_count = (select count(*) from dados_motor where versao_id = p_versao_id)
   where id = p_versao_id;
+
+  return 'active';
 end;
 $$;
 
