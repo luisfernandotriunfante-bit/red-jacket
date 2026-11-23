@@ -1,0 +1,187 @@
+.shell {
+  min-height: 100vh;
+  background: var(--surface-0);
+}
+.sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: 17rem;
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  background: var(--sidebar);
+  border-right: 1px solid var(--border);
+  z-index: 20;
+}
+.brand {
+  display: flex;
+  gap: 0.7rem;
+  align-items: center;
+  padding: 0.25rem 0.5rem 2.2rem;
+}
+.brand > span {
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 0.7rem;
+  display: grid;
+  place-items: center;
+  background: var(--accent);
+  color: white;
+  font-weight: 800;
+}
+.brand div {
+  display: grid;
+}
+.brand strong {
+  font-size: 0.75rem;
+  letter-spacing: 0.16em;
+}
+.brand small {
+  font-size: 0.5rem;
+  color: var(--text-subtle);
+  letter-spacing: 0.14em;
+  margin-top: 0.18rem;
+}
+.sidebar nav {
+  display: grid;
+  gap: 0.3rem;
+}
+.sidebar nav > p {
+  font-size: 0.58rem;
+  letter-spacing: 0.18em;
+  color: var(--text-subtle);
+  font-weight: 800;
+  padding: 0 0.75rem;
+  margin: 0 0 0.5rem;
+}
+.sidebar nav a {
+  height: 2.75rem;
+  padding: 0 0.75rem;
+  border-radius: 0.7rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+.sidebar nav a:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.sidebar nav a.active {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.account {
+  margin-top: auto;
+  border-top: 1px solid var(--border);
+  padding: 1rem 0.3rem 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.65rem;
+  align-items: center;
+}
+.avatar {
+  width: 2.3rem;
+  height: 2.3rem;
+  border-radius: 0.7rem;
+  background: var(--accent-soft);
+  color: var(--accent);
+  display: grid;
+  place-items: center;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+.account > div:nth-child(2) {
+  min-width: 0;
+  display: grid;
+}
+.account strong {
+  font-size: 0.72rem;
+  text-transform: capitalize;
+}
+.account small {
+  font-size: 0.58rem;
+  color: var(--text-subtle);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.close {
+  display: none;
+}
+.workspace {
+  min-height: 100vh;
+  margin-left: 17rem;
+}
+.workspace > header {
+  height: 4rem;
+  padding: 0 2rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  position: sticky;
+  top: 0;
+  background: color-mix(in srgb, var(--surface-0) 85%, transparent);
+  backdrop-filter: blur(16px);
+  z-index: 10;
+}
+.workspace > header > button:first-child,
+.mobileBrand {
+  display: none;
+}
+.workspace > main {
+  padding: clamp(1.5rem, 4vw, 4rem);
+}
+.backdrop {
+  display: none;
+}
+@media (max-width: 800px) {
+  .sidebar {
+    transform: translateX(-102%);
+    transition: transform 0.25s ease;
+    box-shadow: var(--shadow-lg);
+  }
+  .sidebar.open {
+    transform: none;
+  }
+  .close {
+    display: grid;
+    place-items: center;
+    position: absolute;
+    right: 0.8rem;
+    top: 0.8rem;
+    border: 0;
+    background: transparent;
+    color: var(--text-muted);
+  }
+  .backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    border: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 15;
+  }
+  .workspace {
+    margin-left: 0;
+  }
+  .workspace > header {
+    padding: 0 1rem;
+    justify-content: space-between;
+  }
+  .workspace > header > button:first-child,
+  .mobileBrand {
+    display: grid;
+  }
+  .mobileBrand {
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.17em;
+  }
+  .workspace > main {
+    padding: 1.25rem;
+  }
+}
