@@ -17,7 +17,8 @@ let client;
 let root;
 let mountVersion=0;
 const busy=new Set();
-const safeError=error=>{const raw=String(error?.message||error||'');if(/permiss|row-level|42501|403/i.test(raw))return 'Esta conta não pode atualizar este motor.';if(/VITE_SUPABASE|ambiente de build/i.test(raw))return 'Conexão com o banco não configurada.';if(/sessão|session|jwt|auth|401/i.test(raw))return 'Entre na sua conta para consultar ou atualizar os dados.';return 'Não foi possível concluir a operação. Tente novamente.'};
+export const safeError=error=>{const raw=String(error?.message||error||'');if(/permiss|row-level|42501|403/i.test(raw))return 'Esta conta não pode atualizar este motor.';if(/VITE_SUPABASE|ambiente de build/i.test(raw))return 'Conexão com o banco não configurada.';if(/sessão|session|jwt|auth|401/i.test(raw))return 'Entre na sua conta para consultar ou atualizar os dados.';if(/network|fetch|timeout|conexão|connection|503|502/i.test(raw))return 'Falha de conexão. Tente novamente.';return 'Não foi possível concluir a operação. Tente novamente.'};
+export const resultMessage=result=>result==='promovido'?'Atualizado no banco':result==='sem-mudanca'?'Sem mudança':result==='rejeitado'?'Rejeitado':result==='erro'?'Não foi possível atualizar':'Indisponível';
 const escapeHtml=value=>String(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const timestamp=value=>value?new Intl.DateTimeFormat('pt-BR',{dateStyle:'short',timeStyle:'short'}).format(new Date(value)):null;
 function source(file,motor){
@@ -26,7 +27,7 @@ function source(file,motor){
   if(motor==='produtos' && /^818191d3.*\.txt$/i.test(file.name))return 'cadastro_erp_antigo';
   return null;
 }
-function render(){
+function render(focusTarget){
   if(!root||root.getAttribute('aria-label')!=='Uploads')return;
   root.innerHTML='<div class="settings-content"><div class="uploads-toolbar"><button type="button" data-update-all '+(selected.size&&!busy.size?'':'disabled')+'>Atualizar todos</button></div>'+motors.map(({id,name})=>{
     const supported=id==='movimentacoes'||id==='produtos';
@@ -35,6 +36,7 @@ function render(){
     const message=messages.get(id)||(!supported?'Indisponível nesta etapa':'Sem atualização registrada');
     return '<section class="upload-card" aria-labelledby="motor-'+id+'"><div class="card-heading"><h2 id="motor-'+id+'">'+name+'</h2><span class="update-state" role="status">'+escapeHtml(message)+'</span></div>'+(stored?'<ul class="stored-files">'+stored+'</ul>':'')+(files?'<ul class="selected-files">'+files+'</ul>':'')+'<div class="card-actions"><button type="button" data-pick="'+id+'" '+(supported?'':'disabled')+'>Adicionar arquivo</button><input class="visually-hidden" type="file" data-upload="'+id+'" '+(id==='movimentacoes'?'multiple':'')+' accept=".txt" aria-label="Arquivo de '+name+'"><button type="button" data-update="'+id+'" '+(supported&&!busy.size&&[...selected.keys()].some(key=>key.startsWith(id+':'))?'':'disabled')+'>Atualizar</button><button type="button" disabled>Excel</button><button type="button" disabled>JSON</button></div></section>';
   }).join('')+'</div>';
+  if(focusTarget){const target=focusTarget==='all'?root.querySelector('[data-update-all]'):root.querySelector('[data-update="'+focusTarget+'"]');if(target&&!target.disabled)target.focus()}
 }
 async function sessionClient(){
   if(!client)client=createSupabaseClient();
@@ -68,9 +70,10 @@ async function prepare(file,motor,fonteChave){
 async function update(motor){
   if(busy.size)return;
   const version=mountVersion;
+  const note=(key,value)=>{if(version===mountVersion)messages.set(key,value)};
   const entries=[...selected].filter(([key])=>!motor||key.startsWith(motor+':'));
   if(!entries.length)return;
-  for(const [key] of entries){busy.add(key);messages.set(key,'Atualizando…')}
+  for(const [key] of entries){busy.add(key);note(key,'Atualizando…')}
   render();
   try{
     const db=await sessionClient();
@@ -78,23 +81,23 @@ async function update(motor){
     for(const [key,file] of entries){
       const [id,fonteChave]=key.split(':');
       try{(arquivosPorMotor[id]??=[]).push(await prepare(file,id,fonteChave))}
-      catch(error){messages.set(key,safeError(error))}
+      catch(error){note(key,safeError(error))}
     }
     if(motor){
       const fontes=arquivosPorMotor[motor]||[];
       for(const fonte of fontes){
-        try{const result=await atualizarMotor({client:db,motor,...fonte});messages.set(motor+':'+fonte.fonteChave,result.resultado==='promovido'?'Atualizado no banco':result.resultado==='sem-mudanca'?'Sem mudança':'Rejeitado')}
-        catch(error){messages.set(motor+':'+fonte.fonteChave,safeError(error))}
+        try{const result=await atualizarMotor({client:db,motor,...fonte});note(motor+':'+fonte.fonteChave,resultMessage(result.resultado))}
+        catch(error){note(motor+':'+fonte.fonteChave,safeError(error))}
       }
     }else{
       const results=await atualizarTodos({client:db,arquivosPorMotor});
-      for(const result of results)if(result.fonteChave)messages.set(result.motor+':'+result.fonteChave,result.resultado==='erro'?safeError(result.erro):result.resultado);
+      for(const result of results)if(result.fonteChave)note(result.motor+':'+result.fonteChave,result.resultado==='erro'?safeError(result.erro):resultMessage(result.resultado));
     }
     const nextState=await listarEstadoMotores({client:db});
     if(version===mountVersion)persisted=nextState;
-  }catch(error){for(const [key] of entries)messages.set(key,safeError(error))}
+  }catch(error){for(const [key] of entries)note(key,safeError(error))}
   for(const [key] of entries)busy.delete(key);
-  if(version===mountVersion)render();
+  if(version===mountVersion)render(motor||'all');
 }
 export function mountUploads(canvas){
   root=canvas;
@@ -118,6 +121,7 @@ export function mountUploads(canvas){
       selected.set(fullKey,file);
       messages.set(id,'Selecionado nesta sessão');
     }
+    input.value='';
     render();
   };
   loadState(version);
