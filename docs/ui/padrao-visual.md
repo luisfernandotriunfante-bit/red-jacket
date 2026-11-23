@@ -30,7 +30,7 @@ Uploads mostra cinco cartões compactos em uma página: Histórico, Movimentaç�
 
 Nenhum timestamp persistido existe nesta etapa. Por isso, o estado é “Sem atualização registrada”; nenhuma data fictícia é apresentada. A seleção local exibe apenas o nome do arquivo e “selecionado nesta sessão”. Trocar um arquivo selecionado exige confirmação. Não há slots de Histórico para ERP antigo/atual, pois são as próprias movimentações.
 
-Atualizar por motor e Atualizar todos aparecem desabilitados com o motivo “Disponível após integração com Supabase”. Gerar arquivo, Excel e JSON aparecem desabilitados com o motivo “Disponível após processamento real”. O fluxo global previsto, quando houver contrato e endpoint, deve processar somente motores com arquivo selecionado, manter sucesso por motor e informar falhas individualmente; nenhum desses estados é simulado nesta etapa. Não há parser, persistência, sanitização, sincronização ou exportação funcional. Auditoria permanece vazia.
+Atualizar por motor e Atualizar todos aparecem desabilitados com o motivo “Disponível após integração”. Gerar arquivo, Excel e JSON aparecem desabilitados com o motivo “Disponível após processamento real”. O fluxo global previsto, quando houver contrato e endpoint, deve processar somente motores com arquivo selecionado, manter sucesso por motor e informar falhas individualmente; nenhum desses estados é simulado nesta etapa. Não há parser, persistência, sanitização, sincronização ou exportação funcional. Auditoria permanece vazia.
 
 ## Verificação
 QA deve conferir 360, 768 e 1280 px, claro/escuro, contraste WCAG AA, ausência de overflow, sidebar sem sobreposição, teclado, perfil, tema, drawer e movimento reduzido. Preview é temporário na PR #4; sem merge ou produção.
