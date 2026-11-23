@@ -1,13 +1,14 @@
 // Camada de dados para os botões "Atualizar" (por motor) e "Atualizar
-// todos". Não importa '@supabase/supabase-js' diretamente — recebe um
+// todos", e para a leitura dos dados persistidos (sobrevive a recarregar a
+// página). Não importa '@supabase/supabase-js' diretamente — recebe um
 // client já construído (por src/lib/supabase-client.js em produção, ou um
 // mock nos testes), para ficar testável sem rede e sem credencial real.
 //
 // Autorização: quem pode escrever (owner/updater) é decidido pelo banco
-// (RLS + funções SECURITY DEFINER), nunca pelo client. O `criado_por` de
-// cada versão também vem de auth.uid() via trigger no banco, nunca de um
-// parâmetro enviado por este módulo — ver
-// supabase/migrations/0001_motores_staging.sql e
+// (RLS + funções SECURITY DEFINER), nunca pelo client. Leitura é liberada a
+// qualquer usuário autenticado. O `criado_por` de cada versão também vem de
+// auth.uid() via trigger no banco, nunca de um parâmetro enviado por este
+// módulo — ver supabase/migrations/0001_motores_staging.sql e
 // docs/contratos/supabase-persistencia-motores.md.
 
 export const MOTORES = ['historico', 'movimentacoes', 'clientes', 'produtos', 'chegada_nfs'];
@@ -33,7 +34,7 @@ async function obterOuCriarSlot(client, motor) {
 async function obterVersaoAtiva(client, slotId) {
   const { data, error } = await client
     .from('upload_versoes')
-    .select('id, hash_arquivo')
+    .select('id, hash_arquivo, nome_arquivo_original, linhas_count, promovido_em, promovido_por')
     .eq('slot_id', slotId)
     .eq('status', 'active')
     .maybeSingle();
@@ -67,8 +68,12 @@ async function inserirLinhas(client, versaoId, linhas) {
 }
 
 async function promoverVersao(client, versaoId) {
-  const { error } = await client.rpc('promover_versao', { p_versao_id: versaoId });
+  // retorna o status final ('active' se promoveu de fato, 'rejected' se o
+  // banco descartou por já existir ativa idêntica) — nunca supor sucesso
+  // só porque error é null.
+  const { data, error } = await client.rpc('promover_versao', { p_versao_id: versaoId });
   if (error) throw error;
+  return data;
 }
 
 async function rejeitarVersao(client, versaoId) {
@@ -115,8 +120,8 @@ export async function atualizarMotor({ client, motor, hashArquivo, nomeArquivo, 
       return { motor, resultado: 'rejeitado' };
     }
 
-    await promoverVersao(client, versao.id);
-    return { motor, resultado: 'promovido' };
+    const statusFinal = await promoverVersao(client, versao.id);
+    return { motor, resultado: statusFinal === 'active' ? 'promovido' : 'sem-mudanca' };
   } catch (erro) {
     try {
       await rejeitarVersao(client, versao.id);
@@ -152,4 +157,81 @@ export async function atualizarTodos({ client, arquivosPorMotor }) {
     }
   }
   return resultados;
+}
+
+/**
+ * Leitura pós-reload: estado de cada um dos 5 motores (liberada a qualquer
+ * usuário autenticado, independente de ser owner/updater). Usar ao montar
+ * a tela de Uploads para mostrar "última atualização" sem depender de
+ * estado local perdido no reload.
+ *
+ * @param {object} args
+ * @param {object} args.client
+ * @returns {Promise<Record<string, {
+ *   temDados: boolean,
+ *   nomeArquivo?: string,
+ *   linhasCount?: number,
+ *   promovidoEm?: string,
+ * }>>}
+ */
+export async function listarEstadoMotores({ client }) {
+  const estado = {};
+  for (const motor of MOTORES) {
+    const { data: slot, error: erroSlot } = await client
+      .from('upload_slots')
+      .select('id')
+      .eq('motor', motor)
+      .maybeSingle();
+    if (erroSlot) throw erroSlot;
+
+    if (!slot) {
+      estado[motor] = { temDados: false };
+      continue;
+    }
+
+    const ativa = await obterVersaoAtiva(client, slot.id);
+    estado[motor] = ativa
+      ? {
+          temDados: true,
+          nomeArquivo: ativa.nome_arquivo_original,
+          linhasCount: ativa.linhas_count,
+          promovidoEm: ativa.promovido_em,
+        }
+      : { temDados: false };
+  }
+  return estado;
+}
+
+/**
+ * Leitura pós-reload: linhas estruturadas da versão ativa de um motor
+ * (para exibir/gerar export). Liberada a qualquer usuário autenticado.
+ *
+ * @param {object} args
+ * @param {object} args.client
+ * @param {string} args.motor Um de MOTORES.
+ * @returns {Promise<object[]>} linhas (payload) da versão ativa; [] se o
+ *   motor não tem dados ainda.
+ */
+export async function obterDadosAtivos({ client, motor }) {
+  if (!MOTORES.includes(motor)) {
+    throw new Error(`motor desconhecido: ${motor}`);
+  }
+
+  const { data: slot, error: erroSlot } = await client
+    .from('upload_slots')
+    .select('id')
+    .eq('motor', motor)
+    .maybeSingle();
+  if (erroSlot) throw erroSlot;
+  if (!slot) return [];
+
+  const ativa = await obterVersaoAtiva(client, slot.id);
+  if (!ativa) return [];
+
+  const { data: linhas, error: erroLinhas } = await client
+    .from('dados_motor')
+    .select('payload')
+    .eq('versao_id', ativa.id);
+  if (erroLinhas) throw erroLinhas;
+  return (linhas ?? []).map((linha) => linha.payload);
 }
