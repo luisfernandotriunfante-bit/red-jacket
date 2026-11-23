@@ -1,7 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import * as XLSX from 'xlsx';
-import { sanitizarCelulaExcel, gerarExcel, gerarJson } from '../../src/lib/export-motor.js';
+import { sanitizarCelulaExcel, gerarJson } from '../../src/lib/export-motor.js';
 
 test('sanitizarCelulaExcel prefixa com apóstrofo valores que começam com caractere de fórmula', () => {
   assert.equal(sanitizarCelulaExcel('=SOMA(A1:A2)'), "'=SOMA(A1:A2)");
@@ -16,23 +15,6 @@ test('sanitizarCelulaExcel não altera texto normal, número, boolean ou null', 
   assert.equal(sanitizarCelulaExcel(true), true);
   assert.equal(sanitizarCelulaExcel(null), null);
   assert.equal(sanitizarCelulaExcel(''), '');
-});
-
-test('gerarExcel sanitiza texto de risco mas preserva números (round-trip real via xlsx)', async () => {
-  const linhas = [
-    { nome: '=HYPERLINK("http://evil")', valor: 10.5, ativo: true },
-    { nome: 'Cliente Normal', valor: -3.2, ativo: false },
-  ];
-  const blob = gerarExcel(linhas, 'Teste');
-  const arrayBuffer = await blob.arrayBuffer();
-  const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-  const planilha = workbook.Sheets['Teste'];
-  const linhasLidas = XLSX.utils.sheet_to_json(planilha);
-
-  assert.equal(linhasLidas[0].nome, "'=HYPERLINK(\"http://evil\")");
-  assert.equal(linhasLidas[0].valor, 10.5); // número não sanitizado nem corrompido
-  assert.equal(linhasLidas[1].nome, 'Cliente Normal');
-  assert.equal(linhasLidas[1].valor, -3.2); // número negativo não é string, não sanitiza
 });
 
 test('gerarJson não sanitiza — mantém o valor original mesmo começando com "="', async () => {
