@@ -92,6 +92,17 @@ begin
   if auth.uid() is null then
     raise exception 'requer usuário autenticado';
   end if;
+
+  -- Serializa chamadas concorrentes: sem este lock, duas transações
+  -- poderiam passar o "not exists" abaixo ao mesmo tempo (MVCC, read
+  -- committed) e as duas se inserirem como proprietário — a tabela não
+  -- tem como impedir isso só com PK, pois o conflito é em "app_owners
+  -- está vazia", não numa chave repetida. O lock é por transação (libera
+  -- sozinho no commit/rollback); a segunda chamada só segue depois que a
+  -- primeira commitou, e nesse ponto já vê o INSERT da primeira no
+  -- "exists" abaixo.
+  perform pg_advisory_xact_lock(hashtext('cadastrar_primeiro_owner'));
+
   if exists (select 1 from app_owners) then
     raise exception 'já existe proprietário cadastrado; use conceder_owner() a partir de uma conta proprietária';
   end if;
@@ -175,7 +186,10 @@ create table upload_versoes (
 
 -- Garante, no nível do banco, que nunca existam duas versões "active" para
 -- o mesmo slot simultaneamente — trava a corrida de promoções concorrentes
--- junto com o "for update" em promover_versao().
+-- junto com o "for update" em promover_versao(). Também é o que resolve,
+-- de forma determinística, a corrida da PRIMEIRA promoção de um slot (ver
+-- comentário em promover_versao(): nesse caso não há linha "active" para
+-- o "for update" travar, então o índice é a única barreira).
 create unique index upload_versoes_slot_active_unique
   on upload_versoes (slot_id)
   where status = 'active';
@@ -245,14 +259,13 @@ create policy "autorizados inserem em staging propria" on dados_motor
 -- ===================== Promoção/rejeição (SECURITY DEFINER) ================
 
 -- Promove uma versão em staging: checa autorização, trava a linha ativa do
--- slot (FOR UPDATE) para serializar promoções concorrentes do mesmo slot
--- (resolve a corrida de duas promoções simultâneas), trata idempotência
--- por hash (não duplica se já existe ativa com o mesmo conteúdo), marca a
--- anterior como superseded e apaga o payload dela. Operação atômica (uma
--- transação por chamada). Registra quem promoveu e a contagem de linhas.
--- Retorna o status final ('active' se promoveu de fato, 'rejected' se foi
--- descartada por já existir ativa idêntica) — o client usa isso para saber
--- se foi uma promoção real ou um no-op por idempotência, em vez de supor.
+-- slot (FOR UPDATE) para serializar promoções concorrentes do mesmo slot,
+-- trata idempotência por hash (não duplica se já existe ativa com o mesmo
+-- conteúdo), marca a anterior como superseded e apaga o payload dela.
+-- Registra quem promoveu e a contagem de linhas. Retorna o status final
+-- ('active' se promoveu de fato, 'rejected' se foi descartada por já
+-- existir ativa idêntica) — o client usa isso para saber se foi uma
+-- promoção real ou um no-op por idempotência, em vez de supor.
 create or replace function promover_versao(p_versao_id uuid)
 returns versao_status
 language plpgsql
@@ -277,34 +290,52 @@ begin
     raise exception 'versão % não está em staging ou não existe', p_versao_id;
   end if;
 
-  -- trava a linha ativa do slot (se houver) para serializar promoções
-  -- concorrentes deste mesmo slot até o fim da transação
-  select id, hash_arquivo into v_ativa_id, v_ativa_hash
-  from upload_versoes
-  where slot_id = v_slot_id and status = 'active'
-  for update;
+  begin
+    -- Trava a linha ativa do slot (se houver) para serializar promoções
+    -- concorrentes deste mesmo slot até o fim da transação. Quando ainda
+    -- não existe nenhuma ativa (primeira promoção do slot), este FOR
+    -- UPDATE não trava nada — não há linha para travar. Nesse caso a
+    -- corrida entre duas primeiras promoções concorrentes do mesmo slot é
+    -- resolvida abaixo: o índice único parcial rejeita o segundo UPDATE
+    -- com unique_violation, e o bloco EXCEPTION trata isso chamando a
+    -- função de novo — na segunda passada já existe uma linha "active"
+    -- para o FOR UPDATE travar, então a decisão (idempotente vs.
+    -- substituir) fica determinística.
+    select id, hash_arquivo into v_ativa_id, v_ativa_hash
+    from upload_versoes
+    where slot_id = v_slot_id and status = 'active'
+    for update;
 
-  if v_ativa_id is not null and v_ativa_hash = v_hash then
-    -- idempotência: já existe ativa com o mesmo conteúdo; descarta a
-    -- staging redundante em vez de duplicar trabalho
-    delete from dados_motor where versao_id = p_versao_id;
-    update upload_versoes set status = 'rejected' where id = p_versao_id;
-    return 'rejected';
-  end if;
+    if v_ativa_id is not null and v_ativa_hash = v_hash then
+      -- idempotência: já existe ativa com o mesmo conteúdo; descarta a
+      -- staging redundante em vez de duplicar trabalho
+      delete from dados_motor where versao_id = p_versao_id;
+      update upload_versoes set status = 'rejected' where id = p_versao_id;
+      return 'rejected';
+    end if;
 
-  if v_ativa_id is not null then
-    delete from dados_motor where versao_id = v_ativa_id;
-    update upload_versoes set status = 'superseded' where id = v_ativa_id;
-  end if;
+    if v_ativa_id is not null then
+      delete from dados_motor where versao_id = v_ativa_id;
+      update upload_versoes set status = 'superseded' where id = v_ativa_id;
+    end if;
 
-  update upload_versoes
-  set status = 'active',
-      promovido_por = auth.uid(),
-      promovido_em = now(),
-      linhas_count = (select count(*) from dados_motor where versao_id = p_versao_id)
-  where id = p_versao_id;
+    update upload_versoes
+    set status = 'active',
+        promovido_por = auth.uid(),
+        promovido_em = now(),
+        linhas_count = (select count(*) from dados_motor where versao_id = p_versao_id)
+    where id = p_versao_id;
 
-  return 'active';
+    return 'active';
+  exception when unique_violation then
+    -- Outra transação venceu a corrida da primeira promoção deste slot
+    -- entre o FOR UPDATE (que não achou nada para travar) e o UPDATE
+    -- final. O bloco acima é revertido até aqui (savepoint implícito do
+    -- BEGIN/EXCEPTION), então a versão ainda está em 'staging'. Repete a
+    -- chamada: agora existe uma linha 'active', o FOR UPDATE a trava de
+    -- verdade, e a decisão idempotente/substituir é resolvida sem corrida.
+    return promover_versao(p_versao_id);
+  end;
 end;
 $$;
 
@@ -329,6 +360,28 @@ begin
   where id = p_versao_id and status = 'staging';
 end;
 $$;
+
+-- ===================== Grants nas funções SECURITY DEFINER =================
+-- Por padrão, uma função SECURITY DEFINER é executável por PUBLIC (o que
+-- inclui o papel "anon" do Supabase), mesmo que a lógica interna já
+-- cheque auth.uid()/pode_atualizar(). Um usuário anônimo nunca passaria
+-- essas checagens internas (anon não tem auth.uid()), mas não há motivo
+-- para deixá-lo nem tentar chamar uma função privilegiada — revoga de
+-- PUBLIC e concede só para "authenticated", como defesa em profundidade
+-- (a checagem interna continua sendo a barreira principal).
+revoke execute on function cadastrar_primeiro_owner() from public;
+revoke execute on function conceder_owner(uuid) from public;
+revoke execute on function conceder_updater(uuid) from public;
+revoke execute on function revogar_updater(uuid) from public;
+revoke execute on function promover_versao(uuid) from public;
+revoke execute on function rejeitar_versao(uuid) from public;
+
+grant execute on function cadastrar_primeiro_owner() to authenticated;
+grant execute on function conceder_owner(uuid) to authenticated;
+grant execute on function conceder_updater(uuid) to authenticated;
+grant execute on function revogar_updater(uuid) to authenticated;
+grant execute on function promover_versao(uuid) to authenticated;
+grant execute on function rejeitar_versao(uuid) to authenticated;
 
 -- ============================ Nota de validação =============================
 -- As checks acima (hash_arquivo não vazio, nome do arquivo obrigatório,
