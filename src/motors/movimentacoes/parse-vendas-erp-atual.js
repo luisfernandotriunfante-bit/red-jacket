@@ -2,20 +2,21 @@
 // 992ca97f-vendas-8022_DEMO.xls) — alimenta o motor Movimentações
 // (fonteChave sugerida: erp_atual_vendas).
 //
-// Separado em duas camadas para ficar testável sem arquivo binário:
-//   - lerPlanilhaVendas(arrayBuffer): decodifica o .xls/.xlsx real via
-//     'xlsx' (SheetJS) e delega a normalizarLinhasVendas.
-//   - normalizarLinhasVendas(linhasBrutas): lógica pura, testada com
-//     dados literais extraídos da amostra real — ver
-//     tests/motors/movimentacoes/parse-vendas-erp-atual.test.js.
+// PENDÊNCIA DE DEPENDÊNCIA (ver docs/contratos/formato-vendas-erp-atual.md):
+// a decodificação binária do .xls/.xlsx real precisa de uma lib como
+// 'xlsx' (SheetJS), mas a única versão publicada no registry público do
+// npm (0.18.5) tem 2 vulnerabilidades HIGH sem correção disponível
+// (GHSA-4r6h-8v6p-xvw6 prototype pollution, GHSA-5pgg-2g8v-p4x9 ReDoS) —
+// `npm audit --audit-level=high` reprova. Por isso esta versão só traz a
+// camada de NORMALIZAÇÃO (lógica pura, testável sem arquivo binário); a
+// função que decodifica o arquivo real ainda não existe aqui — depende de
+// decisão do usuário/gerente sobre qual biblioteca usar.
 //
 // As 36 colunas são mapeadas por POSIÇÃO (ordem do cabeçalho da amostra),
 // não pelo nome do cabeçalho — os nomes de cabeçalho da amostra DEMO são
 // confiáveis o suficiente para nomear os campos, mas a leitura em si não
 // depende de casar string de cabeçalho, para tolerar pequenas variações
 // de grafia entre exportações.
-
-import * as XLSX from 'xlsx';
 
 const COLUNAS = [
   'filial',
@@ -69,7 +70,9 @@ function serialExcelParaIso(serial) {
 
 /**
  * @param {Array[]} linhasBrutas Array de arrays (primeira linha = cabeçalho
- *   da planilha, ignorado — o mapeamento é por posição).
+ *   da planilha, ignorado — o mapeamento é por posição). Em produção,
+ *   esse array viria de uma lib de leitura de planilha ainda não
+ *   decidida — ver pendência de dependência no topo do arquivo.
  * @returns {object[]} linhas normalizadas, com `dataMovimento`/
  *   `dataEmissaoNf` já convertidas para ISO.
  */
@@ -88,16 +91,4 @@ export function normalizarLinhasVendas(linhasBrutas) {
         dataEmissaoNf: serialExcelParaIso(registro.dataEmissaoNfSerial),
       };
     });
-}
-
-/**
- * @param {ArrayBuffer} arrayBuffer Conteúdo do arquivo .xls/.xlsx do
- *   usuário (ex. `await file.arrayBuffer()` no navegador).
- * @returns {Promise<object[]>}
- */
-export async function lerPlanilhaVendas(arrayBuffer) {
-  const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-  const planilha = workbook.Sheets[workbook.SheetNames[0]];
-  const linhasBrutas = XLSX.utils.sheet_to_json(planilha, { header: 1, raw: true });
-  return normalizarLinhasVendas(linhasBrutas);
 }
