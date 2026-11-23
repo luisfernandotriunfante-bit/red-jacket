@@ -1,14 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { criarBancoFake } from '../../helpers/fake-supabase.js';
-import { atualizarMotor } from '../../src/lib/motor-sync.js';
+import { atualizarMotor } from '../../../src/lib/motor-sync.js';
 import {
   obterHistorico,
   filtrarRegistros,
   resumirRegistros,
   linhasParaExportacao,
-} from '../../src/motors/historico/consultar.js';
-import { normalizarRegistro } from '../../src/motors/movimentacoes/registro-canonico.js';
+} from '../../../src/motors/historico/consultar.js';
+import { normalizarRegistro } from '../../../src/motors/movimentacoes/registro-canonico.js';
 
 function venda(overrides = {}) {
   return {
