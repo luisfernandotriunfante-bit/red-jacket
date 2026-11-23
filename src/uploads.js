@@ -24,7 +24,7 @@ function source(file,motor){
   return null;
 }
 function render(){
-  if(!root)return;
+  if(!root||root.getAttribute('aria-label')!=='Uploads')return;
   root.innerHTML='<div class="settings-content"><div class="uploads-toolbar"><button type="button" data-update-all '+(selected.size?'':'disabled')+'>Atualizar todos</button></div>'+motors.map(({id,name})=>{
     const supported=id==='movimentacoes'||id==='produtos';
     const files=[...selected].filter(([key])=>key.startsWith(id+':')).map(([key,file])=>'<li>'+escapeHtml(file.name)+' · selecionado nesta sessão</li>').join('');
