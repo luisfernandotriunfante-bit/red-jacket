@@ -33,13 +33,33 @@ function numero(valor) {
  * @param {unknown} valor
  * @returns {string|null}
  */
+function dataValida(ano, mes, dia) {
+  if (mes < 1 || mes > 12 || dia < 1 || dia > 31) return false;
+  const data = new Date(Date.UTC(ano, mes - 1, dia));
+  return (
+    data.getUTCFullYear() === ano &&
+    data.getUTCMonth() === mes - 1 &&
+    data.getUTCDate() === dia
+  );
+}
+
 export function dataParaIso(valor) {
   const normalizada = texto(valor);
   if (!normalizada) return null;
-  if (DATA_ISO.test(normalizada)) return normalizada;
-  const partes = DATA_BR.exec(normalizada);
-  if (!partes) return null;
-  return partes[3] + '-' + partes[2] + '-' + partes[1];
+  const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(normalizada);
+  if (iso) {
+    const ano = Number(iso[1]);
+    const mes = Number(iso[2]);
+    const dia = Number(iso[3]);
+    return dataValida(ano, mes, dia) ? normalizada : null;
+  }
+  const br = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(normalizada);
+  if (!br) return null;
+  const dia = Number(br[1]);
+  const mes = Number(br[2]);
+  const ano = Number(br[3]);
+  if (!dataValida(ano, mes, dia)) return null;
+  return String(ano).padStart(4, '0') + '-' + String(mes).padStart(2, '0') + '-' + String(dia).padStart(2, '0');
 }
 
 /**
@@ -148,7 +168,7 @@ export function normalizarRegistro(payload, { fonteChave } = {}) {
  * @returns {{registrosEmMaisDeUmaFonte: number, chaves: string[]}}
  */
 export function contarRepeticoesEntreFontes(registros) {
-  const fontesPorChave = new Map();
+  const gruposPorChave = new Map();
   for (const registro of registros) {
     const chave = [
       registro.documento,
@@ -160,18 +180,20 @@ export function contarRepeticoesEntreFontes(registros) {
     ]
       .map((parte) => (parte === null || parte === undefined ? '' : String(parte)))
       .join('|');
-    if (!fontesPorChave.has(chave)) fontesPorChave.set(chave, new Set());
-    if (registro.fonte) fontesPorChave.get(chave).add(registro.fonte);
+    if (!gruposPorChave.has(chave)) {
+      gruposPorChave.set(chave, { fontes: new Set(), registros: [] });
+    }
+    const grupo = gruposPorChave.get(chave);
+    if (registro.fonte) grupo.fontes.add(registro.fonte);
+    grupo.registros.push(registro);
   }
 
   const chaves = [];
   let registrosEmMaisDeUmaFonte = 0;
-  for (const [chave, fontes] of fontesPorChave) {
-    if (fontes.size > 1) {
+  for (const [chave, grupo] of gruposPorChave) {
+    if (grupo.fontes.size > 1) {
       chaves.push(chave);
-      registrosEmMaisDeUmaFonte += registros.filter(
-        (registro) => registro.fonte && fontes.has(registro.fonte),
-      ).length;
+      registrosEmMaisDeUmaFonte += grupo.registros.length;
     }
   }
   return { registrosEmMaisDeUmaFonte, chaves };
