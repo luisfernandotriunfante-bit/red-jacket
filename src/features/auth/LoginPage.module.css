@@ -168,7 +168,8 @@
   margin-top: 1rem;
 }
 .notice,
-.error {
+.error,
+.success {
   padding: 0.8rem 1rem;
   border-radius: 0.7rem;
   font-size: 0.78rem;
@@ -180,6 +181,20 @@
 }
 .error {
   background: var(--accent-soft);
+  color: var(--accent);
+}
+.success {
+  background: rgba(26, 145, 91, 0.12);
+  color: #168252;
+}
+.card button.reset {
+  height: auto;
+  margin-top: 0.9rem;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.76rem;
+}
+.card button.reset:hover {
   color: var(--accent);
 }
 @media (max-width: 850px) {

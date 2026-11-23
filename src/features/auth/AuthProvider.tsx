@@ -1,13 +1,11 @@
 import { useEffect, useMemo, useState, type PropsWithChildren } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { AuthContext } from './auth-context';
-import { isSupabaseConfigured, supabase } from './supabase';
+import { initialAuthUrl, isSupabaseConfigured, supabase } from './supabase';
 
 const arrivedFromInvitation =
-  window.location.hash.includes('type=invite') ||
-  window.location.hash.includes('type=recovery') ||
-  window.location.search.includes('type=invite') ||
-  window.location.search.includes('type=recovery');
+  initialAuthUrl.includes('type=invite') ||
+  initialAuthUrl.includes('type=recovery');
 
 export function AuthProvider({ children }: PropsWithChildren) {
   const [user, setUser] = useState<User | null>(null);
@@ -48,6 +46,14 @@ export function AuthProvider({ children }: PropsWithChildren) {
         const { error } = await supabase.auth.updateUser({ password });
         if (error) throw error;
         setNeedsPasswordSetup(false);
+      },
+      requestPasswordReset: async (email: string) => {
+        if (!supabase) throw new Error('Supabase não configurado.');
+        const redirectTo = `${window.location.origin}${window.location.pathname}`;
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo,
+        });
+        if (error) throw error;
       },
       signOut: async () => {
         if (supabase) await supabase.auth.signOut();

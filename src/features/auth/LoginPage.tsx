@@ -5,11 +5,12 @@ import { useAuth } from './useAuth';
 import styles from './LoginPage.module.css';
 
 export function LoginPage() {
-  const { user, configured, signIn } = useAuth();
+  const { user, configured, signIn, requestPasswordReset } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [message, setMessage] = useState('');
   if (user) return <Navigate to="/sell-out" replace />;
 
   async function handleSubmit(event: FormEvent) {
@@ -24,6 +25,24 @@ export function LoginPage() {
           ? 'E-mail ou senha inválidos.'
           : 'Não foi possível entrar. Tente novamente.',
       );
+      setSubmitting(false);
+    }
+  }
+
+  async function handlePasswordReset() {
+    setError('');
+    setMessage('');
+    if (!email.trim()) {
+      setError('Informe seu e-mail primeiro.');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await requestPasswordReset(email.trim());
+      setMessage('Enviamos um link para você definir sua senha.');
+    } catch {
+      setError('Não foi possível enviar o link. Tente novamente.');
+    } finally {
       setSubmitting(false);
     }
   }
@@ -98,9 +117,22 @@ export function LoginPage() {
               {error}
             </p>
           )}
+          {message && (
+            <p className={styles.success} role="status">
+              {message}
+            </p>
+          )}
           <button type="submit" disabled={!configured || submitting}>
             {submitting ? 'Entrando…' : 'Entrar'}
             <ArrowRight size={18} />
+          </button>
+          <button
+            className={styles.reset}
+            type="button"
+            disabled={!configured || submitting}
+            onClick={() => void handlePasswordReset()}
+          >
+            Definir ou recuperar senha
           </button>
           <small>Contas são criadas somente por administradores.</small>
         </form>
