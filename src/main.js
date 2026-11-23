@@ -4,11 +4,10 @@ import {tabs,subtabs,nextIndex,preferredTheme} from './shell-state.js';
 const historySlots=['Movimentações antigas 1','Movimentações antigas 2','Movimentações antigas 3','ERP anterior 1','ERP anterior 2','ERP atual — meses passados','De-para'];
 const uploadGroups=['Histórico','Movimentações','Clientes','Produtos','Chegada de NFs'];
 const localFiles=new Map();
-let activeMotor=0;
 const historyRow=(label,i)=>'<div class="history-row"><span class="row-name">'+label+'</span><span class="row-state" data-selection="history-'+i+'">Sem arquivo</span><button type="button" class="row-action" data-pick="history-'+i+'">Selecionar arquivo</button><input class="visually-hidden" type="file" data-upload="history-'+i+'" aria-label="'+label+'"></div>';
-const historyView=()=>'<div class="motor-heading"><h2>Histórico</h2><button type="button" class="add-file" data-open-destinations aria-expanded="false">Adicionar arquivo</button><div class="slot-chooser" hidden><span class="chooser-label">Destino</span>'+historySlots.map((label,i)=>'<button type="button" data-pick="history-'+i+'">'+label+'</button>').join('')+'</div></div><div class="history-list">'+historySlots.map(historyRow).join('')+'</div>';
-const groupView=()=>'<div class="motor-heading"><h2>'+uploadGroups[activeMotor]+'</h2><button type="button" class="add-file" data-pick="group-'+activeMotor+'">Adicionar arquivo</button><input class="visually-hidden" type="file" multiple data-upload="group-'+activeMotor+'" aria-label="Arquivos de '+uploadGroups[activeMotor]+'"></div><div class="group-files" data-selection="group-'+activeMotor+'"></div>';
-const uploadView=()=>'<div class="settings-content"><nav class="motor-nav" aria-label="Motores de uploads">'+uploadGroups.map((name,i)=>'<button type="button" data-motor="'+i+'" aria-current="'+(i===activeMotor?'page':'false')+'">'+name+'</button>').join('')+'</nav><section class="motor-panel" aria-label="'+uploadGroups[activeMotor]+'">'+(activeMotor===0?historyView():groupView())+'</section></div>';
+const historyView=()=>'<section class="motor-panel" aria-labelledby="motor-history"><div class="motor-heading"><h2 id="motor-history">Histórico</h2></div><div class="history-list">'+historySlots.map(historyRow).join('')+'</div></section>';
+const groupView=(name,i)=>'<section class="motor-panel" aria-labelledby="motor-'+i+'"><div class="motor-heading"><h2 id="motor-'+i+'">'+name+'</h2><button type="button" class="add-file" data-pick="group-'+i+'">Adicionar arquivo</button><input class="visually-hidden" type="file" multiple data-upload="group-'+i+'" aria-label="Arquivos de '+name+'"></div><div class="group-files" data-selection="group-'+i+'"></div></section>';
+const uploadView=()=>'<div class="settings-content">'+historyView()+uploadGroups.slice(1).map((name,i)=>groupView(name,i+1)).join('')+'</div>';
 const paths={
   chart:'<path d="M4 19V7m5 12V4m5 15v-8m5 8V6"/>',
   box:'<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 10h16M10 10v10"/>',
@@ -95,12 +94,8 @@ profileMenu.querySelectorAll('[role="menuitem"]').forEach(button=>button.addEven
 themeSwitch.addEventListener('click',()=>{state.theme=state.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=state.theme;themeSwitch.setAttribute('aria-checked',String(state.theme==='dark'));themeSwitch.querySelector('svg').outerHTML=icon(state.theme==='dark'?'sun':'moon');try{localStorage.setItem('red-jacket-theme',state.theme)}catch{}themeSwitch.focus()});
 document.addEventListener('keydown',event=>{if(event.key!=='Escape')return;if(state.profile){closeProfile();return}if(state.drawer){closeDrawer();return}if(state.sidebarOpen){openSidebar(false);document.querySelector('.canvas').focus()}});
 document.querySelector('.canvas').addEventListener('click',event=>{
-  const motor=event.target.closest('[data-motor]');
-  if(motor){activeMotor=Number(motor.dataset.motor);renderCanvas();document.querySelector('[data-motor="'+activeMotor+'"]')?.focus();return}
-  const opener=event.target.closest('[data-open-destinations]');
-  if(opener){const chooser=document.querySelector('.slot-chooser');chooser.hidden=!chooser.hidden;opener.setAttribute('aria-expanded',String(!chooser.hidden));if(!chooser.hidden)chooser.querySelector('button')?.focus();return}
   const picker=event.target.closest('[data-pick]');
-  if(picker){document.querySelector('input[data-upload="'+picker.dataset.pick+'"]')?.click()}
+  if(picker)document.querySelector('input[data-upload="'+picker.dataset.pick+'"]')?.click();
 });
 document.querySelector('.canvas').addEventListener('change',event=>{
   const input=event.target.closest('input[type="file"][data-upload]');if(!input||!input.files.length)return;
