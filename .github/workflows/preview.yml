@@ -1,8 +1,8 @@
-name: Prévia visual
+name: Publicação do site
 
 on:
   push:
-    branches: [feat/app-foundation]
+    branches: [main, feat/app-foundation]
   workflow_dispatch:
 
 permissions:
@@ -36,6 +36,6 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
-      - name: Publicar prévia
+      - name: Publicar site
         id: deployment
         uses: actions/deploy-pages@v4

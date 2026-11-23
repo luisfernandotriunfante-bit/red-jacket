@@ -29,3 +29,10 @@ Toda tabela criada no Supabase deverá ter Row Level Security (RLS), políticas 
 | GitHub Pages      | telas e navegação do aplicativo           |
 | Supabase Auth     | login, sessão e usuários                  |
 | Supabase Postgres | dados do produto, quando aprovados        |
+
+## Primeiro acesso de novos usuários
+
+1. Um administrador cadastra e-mail, função e equipe em uma área protegida.
+2. O sistema gera um acesso temporário por uma função segura, fora do navegador.
+3. O usuário é obrigado a definir uma senha pessoal no primeiro acesso.
+4. Nenhuma senha permanente fica visível para o administrador ou armazenada no código.
