@@ -2,21 +2,18 @@
 // 992ca97f-vendas-8022_DEMO.xls) — alimenta o motor Movimentações
 // (fonteChave sugerida: erp_atual_vendas).
 //
-// PENDÊNCIA DE DEPENDÊNCIA (ver docs/contratos/formato-vendas-erp-atual.md):
-// a decodificação binária do .xls/.xlsx real precisa de uma lib como
-// 'xlsx' (SheetJS), mas a única versão publicada no registry público do
-// npm (0.18.5) tem 2 vulnerabilidades HIGH sem correção disponível
-// (GHSA-4r6h-8v6p-xvw6 prototype pollution, GHSA-5pgg-2g8v-p4x9 ReDoS) —
-// `npm audit --audit-level=high` reprova. Por isso esta versão só traz a
-// camada de NORMALIZAÇÃO (lógica pura, testável sem arquivo binário); a
-// função que decodifica o arquivo real ainda não existe aqui — depende de
-// decisão do usuário/gerente sobre qual biblioteca usar.
+// Decodificação binária via 'xls-reader' (BIFF8/.xls, zero dependências de
+// runtime, sem CVE conhecida) — ver docs/contratos/supabase-persistencia-motores.md.
+// A lib antes considerada ('xlsx'/SheetJS) foi descartada por ter 2 CVEs
+// HIGH sem correção no registry público do npm.
 //
 // As 36 colunas são mapeadas por POSIÇÃO (ordem do cabeçalho da amostra),
 // não pelo nome do cabeçalho — os nomes de cabeçalho da amostra DEMO são
 // confiáveis o suficiente para nomear os campos, mas a leitura em si não
 // depende de casar string de cabeçalho, para tolerar pequenas variações
 // de grafia entre exportações.
+
+import { readFirstSheet } from 'xls-reader';
 
 const COLUNAS = [
   'filial',
@@ -69,10 +66,22 @@ function serialExcelParaIso(serial) {
 }
 
 /**
+ * Decodifica o arquivo .xls real (BIFF8) e devolve as linhas brutas da
+ * primeira planilha (array de arrays, cabeçalho incluído na posição 0),
+ * prontas para `normalizarLinhasVendas`.
+ * @param {ArrayBuffer | Uint8Array} bytes Conteúdo bruto do arquivo .xls
+ *   (ex. `await file.arrayBuffer()` no navegador).
+ * @returns {Array[]}
+ */
+export function lerPlanilhaVendas(bytes) {
+  const sheet = readFirstSheet(bytes);
+  return sheet ? sheet.rows : [];
+}
+
+/**
  * @param {Array[]} linhasBrutas Array de arrays (primeira linha = cabeçalho
- *   da planilha, ignorado — o mapeamento é por posição). Em produção,
- *   esse array viria de uma lib de leitura de planilha ainda não
- *   decidida — ver pendência de dependência no topo do arquivo.
+ *   da planilha, ignorado — o mapeamento é por posição). Vem de
+ *   `lerPlanilhaVendas`.
  * @returns {object[]} linhas normalizadas, com `dataMovimento`/
  *   `dataEmissaoNf` já convertidas para ISO.
  */
