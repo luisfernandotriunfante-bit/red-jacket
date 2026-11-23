@@ -7,6 +7,7 @@ Base do aplicativo comercial Red Jacket, criada do zero para evoluir de forma se
 - interface responsiva e padronizada;
 - navegação modular sem dados fictícios;
 - autenticação com Supabase;
+- interface hospedada no GitHub Pages;
 - tema claro e escuro;
 - testes, validações de código e build automatizados;
 - deploy de prévia em pull requests e produção a partir da branch `main`.
