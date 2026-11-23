@@ -37,10 +37,7 @@ function criarClientMock() {
             this._ultimoInserido = criado;
             return this;
           },
-          select2() {
-            return this;
-          },
-          single: async function () {
+          async single() {
             return { data: this._ultimoInserido, error: null };
           },
         };
