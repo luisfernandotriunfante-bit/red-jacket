@@ -22,10 +22,10 @@ Toda tabela criada no Supabase deverá ter Row Level Security (RLS), políticas 
 
 ## Responsabilidades dos serviços
 
-| Serviço | Responsabilidade |
-| --- | --- |
-| GitHub | código, revisão e histórico de alterações |
-| GitHub Actions | testes e publicação automática |
-| GitHub Pages | telas e navegação do aplicativo |
-| Supabase Auth | login, sessão e usuários |
-| Supabase Postgres | dados do produto, quando aprovados |
+| Serviço           | Responsabilidade                          |
+| ----------------- | ----------------------------------------- |
+| GitHub            | código, revisão e histórico de alterações |
+| GitHub Actions    | testes e publicação automática            |
+| GitHub Pages      | telas e navegação do aplicativo           |
+| Supabase Auth     | login, sessão e usuários                  |
+| Supabase Postgres | dados do produto, quando aprovados        |
