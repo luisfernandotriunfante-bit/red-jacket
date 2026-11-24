@@ -1,375 +1,230 @@
 import {
-  ArrowDownRight,
-  ArrowUpRight,
   BadgePercent,
   Boxes,
-  CalendarDays,
-  ChartNoAxesCombined,
   CircleDollarSign,
   Factory,
   Gift,
   RotateCcw,
-  SlidersHorizontal,
   type LucideIcon,
 } from 'lucide-react';
+
 import styles from './SellOutSummaryPage.module.css';
 
-const pulseHeights = [42, 68, 52, 86, 61, 100, 74, 91, 58, 82, 66, 94];
+type Detail = { label: string; value: string };
 
-const kpis: KpiData[] = [
+type Kpi = {
+  title: string;
+  value: string;
+  status: string;
+  icon: LucideIcon;
+  points: string;
+  details: Detail[];
+};
+
+const kpis: Kpi[] = [
   {
-    icon: CircleDollarSign,
-    category: 'RESULTADO FINANCEIRO',
     title: 'Meta do mês',
     value: 'R$ 6,82 mi',
-    valueLabel: 'FATURADO',
-    progress: 72,
-    tone: 'positive',
-    status: 'NO RITMO',
+    status: '72%',
+    icon: CircleDollarSign,
+    points:
+      '0,43 18,39 36,40 54,31 72,33 90,22 108,25 126,16 144,19 162,10 180,13 198,5',
     details: [
-      ['META', 'R$ 9,50 mi'],
-      ['A FATURAR', 'R$ 1,74 mi'],
-      ['PROJETADO', 'R$ 8,56 mi'],
+      { label: 'Meta', value: 'R$ 9,50 mi' },
+      { label: 'A faturar', value: 'R$ 1,74 mi' },
+      { label: 'Projetado', value: 'R$ 8,56 mi' },
     ],
   },
   {
-    icon: BadgePercent,
-    category: 'RENTABILIDADE',
     title: 'Margem atual',
     value: '18,7%',
-    valueLabel: 'MARGEM REALIZADA',
-    progress: 84,
-    tone: 'balanced',
-    status: '1,3 PP DA META',
+    status: '-1,3 pp',
+    icon: BadgePercent,
+    points:
+      '0,18 18,16 36,22 54,19 72,25 90,23 108,27 126,21 144,17 162,19 180,14 198,16',
     details: [
-      ['META', '20,0%'],
-      ['PROJETADA', '19,4%'],
-      ['VARIAÇÃO', '+0,8 pp'],
+      { label: 'Meta', value: '20,0%' },
+      { label: 'Projetada', value: '19,4%' },
+      { label: 'Mês anterior', value: '+0,8 pp' },
     ],
   },
   {
-    icon: Boxes,
-    category: 'ESTOQUE A VENDA',
-    title: 'Posição comercial',
+    title: 'Estoque a venda',
     value: 'R$ 8,90 mi',
-    valueLabel: 'VALOR DE VENDA',
-    progress: 66,
-    tone: 'cool',
-    status: '34 DIAS',
+    status: '34 dias',
+    icon: Boxes,
+    points:
+      '0,27 18,25 36,29 54,23 72,21 90,18 108,20 126,14 144,16 162,11 180,13 198,9',
     details: [
-      ['A CUSTO', 'R$ 4,28 mi'],
-      ['EM TRÂNSITO', 'R$ 1,36 mi'],
-      ['PROJETADO', 'R$ 10,26 mi'],
+      { label: 'A custo', value: 'R$ 4,28 mi' },
+      { label: 'Em trânsito', value: 'R$ 1,36 mi' },
+      { label: 'Projetado', value: 'R$ 10,26 mi' },
     ],
   },
   {
-    icon: RotateCcw,
-    category: 'DEVOLUÇÕES',
-    title: 'Impacto no faturamento',
+    title: 'Devoluções',
     value: 'R$ 184 mil',
-    valueLabel: 'ACUMULADO DO MÊS',
-    progress: 78,
-    tone: 'risk',
-    status: 'ATENÇÃO',
+    status: '2,1%',
+    icon: RotateCcw,
+    points:
+      '0,30 18,27 36,31 54,24 72,28 90,21 108,25 126,18 144,22 162,16 180,19 198,15',
     details: [
-      ['ÍNDICE', '2,1%'],
-      ['LIMITE', '2,5%'],
-      ['VS. MÊS ANT.', '+0,4 pp'],
+      { label: 'Limite', value: '2,5%' },
+      { label: 'Mês anterior', value: '+0,4 pp' },
+      { label: 'Impacto', value: 'R$ 184 mil' },
     ],
   },
   {
-    icon: Gift,
-    category: 'BONIFICAÇÕES',
-    title: 'Investimento comercial',
+    title: 'Bonificações',
     value: 'R$ 212 mil',
-    valueLabel: 'ACUMULADO DO MÊS',
-    progress: 54,
-    tone: 'balanced',
-    status: 'CONTROLADO',
+    status: '2,4%',
+    icon: Gift,
+    points:
+      '0,26 18,29 36,24 54,27 72,20 90,23 108,19 126,21 144,15 162,18 180,12 198,14',
     details: [
-      ['ÍNDICE', '2,4%'],
-      ['TETO', '3,0%'],
-      ['SALDO', 'R$ 74 mil'],
+      { label: 'Teto', value: '3,0%' },
+      { label: 'Saldo', value: 'R$ 74 mil' },
+      { label: 'Mês anterior', value: '-0,2 pp' },
     ],
   },
   {
-    icon: Factory,
-    category: 'CARTEIRA DE PEDIDOS',
-    title: 'Abastecimento futuro',
+    title: 'Carteira de pedidos',
     value: 'R$ 2,08 mi',
-    valueLabel: 'CARTEIRA TOTAL',
-    progress: 65,
-    tone: 'cool',
-    status: '128 ITENS',
+    status: '128 itens',
+    icon: Factory,
+    points:
+      '0,34 18,31 36,33 54,26 72,29 90,22 108,24 126,17 144,20 162,13 180,16 198,8',
     details: [
-      ['INDÚSTRIA', 'R$ 1,36 mi'],
-      ['MILÊNIO', 'R$ 720 mil'],
-      ['MAIS PRÓXIMA', '3 dias'],
+      { label: 'Indústria', value: 'R$ 1,36 mi' },
+      { label: 'Milênio', value: 'R$ 720 mil' },
+      { label: 'Próximos 3 dias', value: 'R$ 840 mil' },
     ],
   },
 ];
 
-interface KpiData {
-  icon: LucideIcon;
-  category: string;
-  title: string;
-  value: string;
-  valueLabel: string;
-  progress: number;
-  tone: 'positive' | 'balanced' | 'cool' | 'risk';
-  status: string;
-  details: [string, string][];
+const composition = [
+  ['Venda faturada', 'R$ 6,82 mi', '72%'],
+  ['Carteira confirmada', 'R$ 2,08 mi', '22%'],
+  ['Devoluções', '- R$ 184 mil', '2,1%'],
+  ['Cancelamentos', '- R$ 96 mil', '1,1%'],
+  ['Bonificações', 'R$ 212 mil', '2,4%'],
+];
+
+const lines = [
+  ['Pneus', 'R$ 2,48 mi', '81%'],
+  ['Lubrificantes', 'R$ 1,72 mi', '74%'],
+  ['Peças', 'R$ 1,46 mi', '68%'],
+  ['Acessórios', 'R$ 1,16 mi', '63%'],
+];
+
+function Sparkline({ points, label }: { points: string; label: string }) {
+  return (
+    <svg
+      className={styles.sparkline}
+      viewBox="0 0 198 48"
+      role="img"
+      aria-label={label}
+      preserveAspectRatio="none"
+    >
+      <line x1="0" y1="38" x2="198" y2="38" className={styles.sparklineBase} />
+      <polyline points={points} className={styles.sparklineLine} />
+    </svg>
+  );
 }
 
 export function SellOutSummaryPage() {
   return (
-    <section className={styles.page} aria-labelledby="summary-title">
-      <header className={styles.header}>
-        <div>
-          <span className={styles.eyebrow}>
-            <ChartNoAxesCombined size={15} /> VISÃO DO MÊS · DADOS ILUSTRATIVOS
-          </span>
-          <h1 id="summary-title">Resumo comercial</h1>
-          <p>
-            Resultado, rentabilidade e riscos em uma única leitura executiva.
-          </p>
-        </div>
-        <div className={styles.filters}>
-          <button>
-            <CalendarDays size={15} /> NOVEMBRO 2026
-          </button>
-          <button>
-            <SlidersHorizontal size={15} /> FILTROS
-          </button>
-        </div>
-      </header>
-
-      <section aria-labelledby="kpi-title">
-        <div className={styles.sectionLabel}>
-          <div>
-            <span>LEITURA EXECUTIVA</span>
-            <h2 id="kpi-title">Seis sinais para decidir</h2>
-          </div>
-          <p>
-            O espectro mostra intensidade: azul indica base e vermelho destaca
-            avanço ou pressão.
-          </p>
-        </div>
-        <div className={styles.kpiGrid}>
-          {kpis.map((kpi) => (
-            <KpiCard key={kpi.category} {...kpi} />
-          ))}
-        </div>
-      </section>
-
-      <section className={styles.analysisSection}>
-        <div className={styles.sectionLabel}>
-          <div>
-            <span>EVOLUÇÃO E COMPOSIÇÃO</span>
-            <h2>Tabela e gráfico</h2>
-          </div>
-        </div>
-        <div className={styles.analysisGrid}>
-          <article className={styles.chartShell}>
-            <div className={styles.shellHeader}>
-              <div>
-                <span>RITMO DIÁRIO</span>
-                <h3>Realizado × projeção</h3>
-              </div>
-              <span>MODELO VISUAL</span>
+    <section className={styles.page} aria-label="Resumo de sell out">
+      <div className={styles.kpiGrid}>
+        {kpis.map(({ title, value, status, icon: Icon, points, details }) => (
+          <article className={styles.kpi} key={title}>
+            <div className={styles.kpiTop}>
+              <span className={styles.kpiIcon} aria-hidden="true">
+                <Icon size={17} strokeWidth={1.7} />
+              </span>
+              <span className={styles.kpiTitle}>{title}</span>
+              <span className={styles.kpiStatus}>{status}</span>
             </div>
-            <div
-              className={styles.chart}
-              aria-label="Gráfico ilustrativo de evolução"
-            >
-              {[38, 52, 47, 63, 58, 72, 68, 81, 76, 88, 84, 94].map(
-                (height, index) => (
-                  <div className={styles.barTrack} key={index}>
-                    <span style={{ height: `${height}%` }} />
-                  </div>
-                ),
-              )}
-              <div className={styles.targetLine}>
-                <span>META</span>
-              </div>
-            </div>
-            <div className={styles.axis}>
-              <span>01 NOV</span>
-              <span>15 NOV</span>
-              <span>30 NOV</span>
-            </div>
-          </article>
-          <article className={styles.tableShell}>
-            <div className={styles.shellHeader}>
-              <div>
-                <span>COMPOSIÇÃO</span>
-                <h3>Movimentos do resultado</h3>
-              </div>
-              <span>EXEMPLO</span>
-            </div>
-            <div className={styles.compRows}>
-              <CompositionRow
-                label="Venda faturada"
-                value="R$ 6,82 mi"
-                movement="+8,4%"
-                positive
-              />
-              <CompositionRow
-                label="Carteira a faturar"
-                value="R$ 1,74 mi"
-                movement="+3,1%"
-                positive
-              />
-              <CompositionRow
-                label="Devoluções"
-                value="R$ 184 mil"
-                movement="-1,8%"
-              />
-              <CompositionRow
-                label="Cancelamentos"
-                value="R$ 96 mil"
-                movement="-0,7%"
-              />
-              <CompositionRow
-                label="Bonificações"
-                value="R$ 212 mil"
-                movement="2,4%"
-                neutral
-              />
-            </div>
-          </article>
-        </div>
-      </section>
-
-      <section className={styles.linesSection}>
-        <div className={styles.sectionLabel}>
-          <div>
-            <span>RESULTADOS POR LINHA</span>
-            <h2>Onde o resultado acontece</h2>
-          </div>
-        </div>
-        <div className={styles.lineHeader}>
-          <span>LINHA</span>
-          <span>REALIZADO</span>
-          <span>ATINGIMENTO</span>
-          <span>TENDÊNCIA</span>
-        </div>
-        {[
-          'Linha estratégica 01',
-          'Linha estratégica 02',
-          'Linha estratégica 03',
-        ].map((line, index) => (
-          <article className={styles.lineRow} key={line}>
-            <div>
-              <span className={styles.lineIndex}>0{index + 1}</span>
-              <strong>{line}</strong>
-            </div>
-            <strong>R$ —</strong>
-            <div className={styles.miniPulse}>
-              {pulseHeights.slice(0, 8).map((height, pulseIndex) => (
-                <span
-                  key={pulseIndex}
-                  className={
-                    pulseIndex < ([6, 5, 3][index] ?? 0) ? styles.active : ''
-                  }
-                  style={{ height: `${Math.max(22, height)}%` }}
-                />
-              ))}
-            </div>
-            <span className={styles.emptyValue}>AGUARDANDO DADOS</span>
-          </article>
-        ))}
-      </section>
-    </section>
-  );
-}
-
-function KpiCard({
-  icon: Icon,
-  category,
-  title,
-  value,
-  valueLabel,
-  progress,
-  tone,
-  status,
-  details,
-}: KpiData) {
-  const activeBars = Math.round((progress / 100) * pulseHeights.length);
-  return (
-    <article className={`${styles.kpi} ${styles[tone]}`}>
-      <div className={styles.kpiTop}>
-        <div className={styles.kpiIcon}>
-          <Icon size={17} />
-        </div>
-        <div>
-          <span>{category}</span>
-          <h3>{title}</h3>
-        </div>
-        <span className={styles.status}>{status}</span>
-      </div>
-      <div className={styles.kpiCore}>
-        <div className={styles.mainValue}>
-          <small>{valueLabel}</small>
-          <strong>{value}</strong>
-        </div>
-        <div
-          className={styles.pulse}
-          aria-label={`${progress}% de intensidade`}
-        >
-          {pulseHeights.map((height, index) => (
-            <span
-              key={index}
-              className={index < activeBars ? styles.active : ''}
-              style={{ height: `${height}%` }}
+            <strong className={styles.kpiValue}>{value}</strong>
+            <Sparkline
+              points={points}
+              label={`Evolução de ${title.toLowerCase()}`}
             />
-          ))}
-        </div>
-        <div className={styles.pulseScale}>
-          <span>BASE</span>
-          <strong>{progress}%</strong>
-          <span>ALVO</span>
-        </div>
-      </div>
-      <div className={styles.kpiDetails}>
-        {details.map(([label, detail]) => (
-          <div key={label}>
-            <span>{label}</span>
-            <strong>{detail}</strong>
-          </div>
+            <dl className={styles.kpiDetails}>
+              {details.map((detail) => (
+                <div key={detail.label}>
+                  <dt>{detail.label}</dt>
+                  <dd>{detail.value}</dd>
+                </div>
+              ))}
+            </dl>
+          </article>
         ))}
       </div>
-    </article>
-  );
-}
 
-function CompositionRow({
-  label,
-  value,
-  movement,
-  positive,
-  neutral,
-}: {
-  label: string;
-  value: string;
-  movement: string;
-  positive?: boolean;
-  neutral?: boolean;
-}) {
-  return (
-    <div className={styles.compRow}>
-      <span>{label}</span>
-      <strong>{value}</strong>
-      <span
-        className={`${styles.movement} ${positive ? styles.up : ''} ${neutral ? styles.neutral : ''}`}
-      >
-        {positive ? (
-          <ArrowUpRight size={14} />
-        ) : neutral ? null : (
-          <ArrowDownRight size={14} />
-        )}
-        {movement}
-      </span>
-    </div>
+      <div className={styles.analysisGrid}>
+        <article className={styles.panel}>
+          <div className={styles.panelHeading}>
+            <h2>Desempenho diário</h2>
+            <span>Realizado × projeção</span>
+          </div>
+          <div
+            className={styles.chart}
+            aria-label="Desempenho diário ilustrativo"
+          >
+            {[36, 48, 43, 61, 55, 72, 67, 78, 73, 88, 82, 94].map(
+              (height, index) => (
+                <span key={index} style={{ height: `${height}%` }} />
+              ),
+            )}
+          </div>
+          <div className={styles.chartAxis} aria-hidden="true">
+            <span>01</span>
+            <span>05</span>
+            <span>10</span>
+            <span>15</span>
+            <span>20</span>
+            <span>25</span>
+            <span>30</span>
+          </div>
+        </article>
+
+        <article className={styles.panel}>
+          <div className={styles.panelHeading}>
+            <h2>Composição do resultado</h2>
+          </div>
+          <div className={styles.composition}>
+            {composition.map(([label, value, share]) => (
+              <div className={styles.compositionRow} key={label}>
+                <span>{label}</span>
+                <strong>{value}</strong>
+                <small>{share}</small>
+              </div>
+            ))}
+          </div>
+        </article>
+      </div>
+
+      <article className={`${styles.panel} ${styles.linesPanel}`}>
+        <div className={styles.panelHeading}>
+          <h2>Resultados por linha</h2>
+        </div>
+        <div className={styles.linesTable}>
+          {lines.map(([label, value, share]) => (
+            <div className={styles.lineRow} key={label}>
+              <span>{label}</span>
+              <strong>{value}</strong>
+              <div
+                className={styles.lineProgress}
+                aria-label={`${share} da meta`}
+              >
+                <span style={{ width: share }} />
+              </div>
+              <small>{share}</small>
+            </div>
+          ))}
+        </div>
+      </article>
+    </section>
   );
 }
