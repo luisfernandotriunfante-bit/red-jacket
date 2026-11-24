@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Activity,
   TrendingDown,
@@ -91,13 +91,367 @@ const secondaryKpis: SecondaryKpi[] = [
   },
 ];
 
-const composition = [
-  ['Venda faturada', 'R$ 6,82 mi', '72%'],
-  ['Carteira confirmada', 'R$ 2,08 mi', '22%'],
-  ['Devoluções', '- R$ 184 mil', '2,1%'],
-  ['Cancelamentos', '- R$ 96 mil', '1,1%'],
-  ['Bonificações', 'R$ 212 mil', '2,4%'],
+type DailyResult = {
+  date: string;
+  sellOut: number;
+  billed: number;
+  positive: number;
+  billedPositive: number;
+  variation: number;
+};
+
+const dailyResults: DailyResult[] = [
+  {
+    date: '09/11',
+    sellOut: 12680,
+    billed: 12370,
+    positive: 14,
+    billedPositive: 13,
+    variation: 2.1,
+  },
+  {
+    date: '10/11',
+    sellOut: 95300,
+    billed: 91760,
+    positive: 41,
+    billedPositive: 37,
+    variation: 7.8,
+  },
+  {
+    date: '11/11',
+    sellOut: 11620,
+    billed: -12490,
+    positive: 24,
+    billedPositive: 12,
+    variation: -4.2,
+  },
+  {
+    date: '12/11',
+    sellOut: -327580,
+    billed: -331300,
+    positive: 12,
+    billedPositive: 6,
+    variation: -18.6,
+  },
+  {
+    date: '13/11',
+    sellOut: 224380,
+    billed: 183980,
+    positive: 26,
+    billedPositive: 20,
+    variation: 12.4,
+  },
+  {
+    date: '14/11',
+    sellOut: 242120,
+    billed: 242120,
+    positive: 4,
+    billedPositive: 4,
+    variation: 4.7,
+  },
+  {
+    date: '16/11',
+    sellOut: 115150,
+    billed: 90560,
+    positive: 16,
+    billedPositive: 9,
+    variation: -3.1,
+  },
+  {
+    date: '17/11',
+    sellOut: 195420,
+    billed: 190580,
+    positive: 72,
+    billedPositive: 64,
+    variation: 9.3,
+  },
+  {
+    date: '18/11',
+    sellOut: 320290,
+    billed: 192440,
+    positive: 87,
+    billedPositive: 44,
+    variation: 14.8,
+  },
+  {
+    date: '19/11',
+    sellOut: 896490,
+    billed: 770980,
+    positive: 173,
+    billedPositive: 144,
+    variation: 21.6,
+  },
 ];
+
+const brlCompact = new Intl.NumberFormat('pt-BR', {
+  style: 'currency',
+  currency: 'BRL',
+  notation: 'compact',
+  maximumFractionDigits: 1,
+});
+const brl = new Intl.NumberFormat('pt-BR', {
+  style: 'currency',
+  currency: 'BRL',
+  maximumFractionDigits: 0,
+});
+
+function sumUntil(index: number, field: 'sellOut' | 'billed') {
+  return dailyResults
+    .slice(0, index + 1)
+    .reduce((total, day) => total + day[field], 0);
+}
+
+function DailyPerformance() {
+  const [mode, setMode] = useState<'daily' | 'cumulative'>('daily');
+  const [selectedIndex, setSelectedIndex] = useState(dailyResults.length - 1);
+  const chartData = useMemo(
+    () =>
+      dailyResults.map((day, index) => ({
+        ...day,
+        plottedSellOut:
+          mode === 'daily' ? day.sellOut : sumUntil(index, 'sellOut'),
+        plottedBilled:
+          mode === 'daily' ? day.billed : sumUntil(index, 'billed'),
+      })),
+    [mode],
+  );
+  const values = chartData.flatMap((day) => [
+    day.plottedSellOut,
+    day.plottedBilled,
+  ]);
+  const min = Math.min(0, ...values);
+  const max = Math.max(...values);
+  const range = Math.max(max - min, 1);
+  const width = 800;
+  const height = 245;
+  const insetX = 24;
+  const insetY = 22;
+  const x = (index: number) =>
+    insetX + (index * (width - insetX * 2)) / (chartData.length - 1);
+  const y = (value: number) =>
+    insetY + ((max - value) / range) * (height - insetY * 2);
+  const points = (field: 'plottedSellOut' | 'plottedBilled') =>
+    chartData.map((day, index) => `${x(index)},${y(day[field])}`).join(' ');
+  const selected = dailyResults[selectedIndex]!;
+  const pending = selected.sellOut - selected.billed;
+
+  return (
+    <article className={styles.dailyPanel}>
+      <div className={styles.dailyHeader}>
+        <div>
+          <h2>Desempenho diário</h2>
+          <span>09/11 — 19/11</span>
+        </div>
+        <div
+          className={styles.chartControls}
+          aria-label="Visualização do gráfico"
+        >
+          <button
+            type="button"
+            className={mode === 'daily' ? styles.controlActive : undefined}
+            onClick={() => setMode('daily')}
+          >
+            Diário
+          </button>
+          <button
+            type="button"
+            className={mode === 'cumulative' ? styles.controlActive : undefined}
+            onClick={() => setMode('cumulative')}
+          >
+            Acumulado
+          </button>
+        </div>
+      </div>
+      <div className={styles.dailyBody}>
+        <section
+          className={styles.chartSection}
+          aria-label="Evolução financeira do período"
+        >
+          <div className={styles.chartLegend}>
+            <span>
+              <i className={styles.legendSellOut} />
+              Sell out
+            </span>
+            <span>
+              <i className={styles.legendBilled} />
+              Faturado
+            </span>
+            <span>
+              <i className={styles.legendPending} />A faturar
+            </span>
+          </div>
+          <div className={styles.lineChart}>
+            <svg
+              viewBox={`0 0 ${width} ${height}`}
+              role="img"
+              aria-label="Sell out e faturamento por dia"
+            >
+              {[0, 0.25, 0.5, 0.75, 1].map((position) => (
+                <line
+                  key={position}
+                  x1="0"
+                  x2={width}
+                  y1={insetY + position * (height - insetY * 2)}
+                  y2={insetY + position * (height - insetY * 2)}
+                  className={styles.gridLine}
+                />
+              ))}
+              <polygon
+                points={`${points('plottedBilled')} ${x(chartData.length - 1)},${height - insetY} ${x(0)},${height - insetY}`}
+                className={styles.chartArea}
+              />
+              <polyline
+                points={points('plottedSellOut')}
+                className={styles.sellOutLine}
+              />
+              <polyline
+                points={points('plottedBilled')}
+                className={styles.billedLine}
+              />
+              {chartData.map((day, index) => (
+                <g
+                  key={day.date}
+                  onMouseEnter={() => setSelectedIndex(index)}
+                  onClick={() => setSelectedIndex(index)}
+                  className={styles.chartPoint}
+                >
+                  <rect
+                    x={x(index) - 20}
+                    y="0"
+                    width="40"
+                    height={height}
+                    fill="transparent"
+                  />
+                  {selectedIndex === index && (
+                    <line
+                      x1={x(index)}
+                      x2={x(index)}
+                      y1={insetY}
+                      y2={height - insetY}
+                      className={styles.selectedGuide}
+                    />
+                  )}
+                  <circle
+                    cx={x(index)}
+                    cy={y(day.plottedSellOut)}
+                    r={selectedIndex === index ? 5 : 3}
+                    className={styles.sellOutPoint}
+                  />
+                  <circle
+                    cx={x(index)}
+                    cy={y(day.plottedBilled)}
+                    r={selectedIndex === index ? 5 : 3}
+                    className={styles.billedPoint}
+                  />
+                </g>
+              ))}
+            </svg>
+            <div className={styles.chartDates}>
+              {dailyResults.map((day, index) => (
+                <button
+                  type="button"
+                  key={day.date}
+                  className={
+                    selectedIndex === index ? styles.dateActive : undefined
+                  }
+                  onMouseEnter={() => setSelectedIndex(index)}
+                  onClick={() => setSelectedIndex(index)}
+                >
+                  {day.date}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className={styles.selectedSummary}>
+            <div>
+              <span>Sell out</span>
+              <strong>{brl.format(selected.sellOut)}</strong>
+            </div>
+            <div>
+              <span>Faturado</span>
+              <strong>{brl.format(selected.billed)}</strong>
+            </div>
+            <div>
+              <span>A faturar</span>
+              <strong className={pending > 0 ? styles.pendingValue : undefined}>
+                {brl.format(pending)}
+              </strong>
+            </div>
+            <div>
+              <span>Positivados</span>
+              <strong>{selected.positive}</strong>
+            </div>
+          </div>
+        </section>
+        <section
+          className={styles.dailyTableSection}
+          aria-label="Resultados por dia"
+        >
+          <div className={styles.tableHeading}>
+            <div>
+              <h3>Movimento por dia</h3>
+              <span>Selecione para investigar</span>
+            </div>
+            <strong>{selected.date}</strong>
+          </div>
+          <div className={styles.tableScroll}>
+            <table className={styles.dailyTable}>
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Sell out</th>
+                  <th>Faturado</th>
+                  <th>A faturar</th>
+                  <th>Pos.</th>
+                  <th>P. fat.</th>
+                  <th>Var.</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dailyResults.map((day, index) => {
+                  const dayPending = day.sellOut - day.billed;
+                  return (
+                    <tr
+                      key={day.date}
+                      className={
+                        selectedIndex === index ? styles.selectedRow : undefined
+                      }
+                      onMouseEnter={() => setSelectedIndex(index)}
+                      onClick={() => setSelectedIndex(index)}
+                    >
+                      <td>{day.date}</td>
+                      <td>{brlCompact.format(day.sellOut)}</td>
+                      <td>{brlCompact.format(day.billed)}</td>
+                      <td
+                        className={
+                          dayPending > 0 ? styles.pendingCell : undefined
+                        }
+                      >
+                        {brlCompact.format(dayPending)}
+                      </td>
+                      <td>{day.positive}</td>
+                      <td>{day.billedPositive}</td>
+                      <td
+                        className={
+                          day.variation < 0
+                            ? styles.negativeCell
+                            : styles.positiveCell
+                        }
+                      >
+                        {day.variation > 0 ? '+' : ''}
+                        {day.variation.toFixed(1).replace('.', ',')}%
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </article>
+  );
+}
 const lines = [
   ['Pneus', 'R$ 2,48 mi', '81%'],
   ['Lubrificantes', 'R$ 1,72 mi', '74%'],
@@ -227,47 +581,7 @@ export function SellOutSummaryPage() {
           <SecondaryCard kpi={kpi} key={kpi.title} />
         ))}
       </div>
-      <div className={styles.analysisGrid}>
-        <article className={styles.panel}>
-          <div className={styles.panelHeading}>
-            <h2>Desempenho diário</h2>
-            <span>Realizado × projeção</span>
-          </div>
-          <div
-            className={styles.chart}
-            aria-label="Desempenho diário ilustrativo"
-          >
-            {[36, 48, 43, 61, 55, 72, 67, 78, 73, 88, 82, 94].map(
-              (height, index) => (
-                <span key={index} style={{ height: `${height}%` }} />
-              ),
-            )}
-          </div>
-          <div className={styles.chartAxis} aria-hidden="true">
-            <span>01</span>
-            <span>05</span>
-            <span>10</span>
-            <span>15</span>
-            <span>20</span>
-            <span>25</span>
-            <span>30</span>
-          </div>
-        </article>
-        <article className={styles.panel}>
-          <div className={styles.panelHeading}>
-            <h2>Composição do resultado</h2>
-          </div>
-          <div className={styles.composition}>
-            {composition.map(([label, value, share]) => (
-              <div className={styles.compositionRow} key={label}>
-                <span>{label}</span>
-                <strong>{value}</strong>
-                <small>{share}</small>
-              </div>
-            ))}
-          </div>
-        </article>
-      </div>
+      <DailyPerformance />
       <article className={`${styles.panel} ${styles.linesPanel}`}>
         <div className={styles.panelHeading}>
           <h2>Resultados por linha</h2>
