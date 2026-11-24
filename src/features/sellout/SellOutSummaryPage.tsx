@@ -382,6 +382,7 @@ function DailyPerformance() {
                 <button
                   type="button"
                   key={day.date}
+                  aria-label={`Selecionar ${day.date}`}
                   className={
                     selectedIndex === index ? styles.dateActive : undefined
                   }

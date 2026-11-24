@@ -403,17 +403,20 @@
 
 .chartDates {
   display: grid;
-  grid-template-columns: repeat(10, minmax(0, 1fr));
-  margin-top: 0.2rem;
+  grid-template-columns: repeat(30, minmax(0, 1fr));
+  min-height: 1.7rem;
+  margin-top: 0.45rem;
+  align-items: center;
 }
 
 .chartDates button {
-  padding: 0.25rem 0;
+  min-width: 0;
+  padding: 0.35rem 0;
   color: #7e838c;
   background: transparent;
   border: 0;
   font: inherit;
-  font-size: 0.59rem;
+  font-size: 0.62rem;
   cursor: pointer;
 }
 
@@ -425,8 +428,8 @@
 .selectedSummary {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  margin-top: 0.8rem;
-  padding-top: 0.8rem;
+  margin-top: 1rem;
+  padding-top: 0.9rem;
   border-top: 1px solid #292929;
 }
 
@@ -616,13 +619,13 @@
   background: #4d8ff9;
 }
 .railTone2 {
-  background: #2d6fd6;
+  background: #3479e8;
 }
 .railTone3 {
-  background: #1e4f9f;
+  background: #225dbb;
 }
 .railTone4 {
-  background: var(--kpi-red);
+  background: #17458f;
 }
 .portfolioLegend {
   margin-top: 0.65rem;
