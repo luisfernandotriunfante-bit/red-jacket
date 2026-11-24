@@ -2,46 +2,40 @@ import {
   Boxes,
   ChartNoAxesCombined,
   Megaphone,
-  PackageSearch,
-  Settings,
   UsersRound,
 } from 'lucide-react';
 
 export const navigation = [
   {
-    path: '/sell-out',
+    path: '/sell-out/resumo',
+    rootPath: '/sell-out',
     label: 'Sell out',
-    description: 'Acompanhamento comercial',
     icon: ChartNoAxesCombined,
+    tabs: [
+      { path: '/sell-out/resumo', label: 'Resumo' },
+      { path: '/sell-out/gerencial', label: 'Gerencial' },
+      { path: '/sell-out/clientes', label: 'Clientes' },
+    ],
   },
   {
     path: '/estoque',
+    rootPath: '/estoque',
     label: 'Estoque',
-    description: 'Posição e cobertura',
     icon: Boxes,
+    tabs: [],
   },
   {
     path: '/clientes',
+    rootPath: '/clientes',
     label: 'Clientes',
-    description: 'Carteira comercial',
     icon: UsersRound,
-  },
-  {
-    path: '/produtos',
-    label: 'Produtos',
-    description: 'Catálogo e portfólio',
-    icon: PackageSearch,
+    tabs: [],
   },
   {
     path: '/campanhas',
+    rootPath: '/campanhas',
     label: 'Campanhas',
-    description: 'Ações comerciais',
     icon: Megaphone,
-  },
-  {
-    path: '/configuracoes',
-    label: 'Configurações',
-    description: 'Preferências do sistema',
-    icon: Settings,
+    tabs: [],
   },
 ] as const;
