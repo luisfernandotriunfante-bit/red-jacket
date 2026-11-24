@@ -1,127 +1,85 @@
 .page {
-  --kpi-primary: #0000ff;
-  --kpi-secondary: #ff0000;
-}
-
-:global(:root[data-theme='dark']) .page {
-  --kpi-primary: #ff0000;
-  --kpi-secondary: #0000ff;
-}
-
-.page {
+  --kpi-blue: #3d82f7;
+  --kpi-red: #ff2638;
+  --kpi-surface: #191919;
+  --kpi-surface-secondary: #151515;
+  --kpi-text: #ffffff;
+  --kpi-muted: #aeb3bd;
   width: min(100%, 94rem);
   margin: 0 auto;
   padding: 1rem clamp(1rem, 2.4vw, 2.5rem) 5rem;
 }
 
-.kpiGrid {
+.primaryGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.75rem;
+  gap: 0.8rem;
 }
 
-.kpi,
-.panel {
-  background: var(--surface-1);
-  border: 1px solid var(--line);
-  border-radius: 1.4rem;
-}
-
-.kpi {
+.primaryCard,
+.secondaryCard {
   min-width: 0;
-  min-height: 14rem;
-  padding: 0.8rem;
+  color: var(--kpi-text);
+  background: var(--kpi-surface);
+  border: 1px solid #303030;
+  box-shadow: 0 16px 42px rgb(0 0 0 / 20%);
+}
+
+.primaryCard {
+  min-height: 17rem;
+  padding: 1rem 1.1rem;
   display: flex;
   flex-direction: column;
+  border-radius: 1.35rem;
 }
 
-.kpiTop {
-  display: grid;
-  grid-template-columns: 1.8rem minmax(0, 1fr);
-  align-items: center;
-  gap: 0.7rem;
-}
-
-.kpiIcon {
-  width: 1.8rem;
-  height: 1.8rem;
-  display: grid;
-  place-items: center;
-  color: var(--accent);
-  border: 1px solid var(--accent);
-  border-radius: 50%;
-}
-
-.kpiTitle,
-.panelHeading span {
-  color: var(--muted);
-  font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 0.11em;
+.primaryCard h2,
+.secondaryCard h2 {
+  margin: 0;
+  color: var(--kpi-red);
+  font-size: 0.72rem;
+  font-weight: 750;
+  letter-spacing: 0.1em;
+  text-align: center;
   text-transform: uppercase;
-}
-
-.kpiStatus {
-  min-height: 1.85rem;
-  padding: 0.28rem 0.55rem;
-  color: var(--accent);
-  border: 1px solid var(--accent);
-  border-radius: 999px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  white-space: nowrap;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
 }
 
 .rotatingMetric {
   display: grid;
   justify-items: center;
-  margin-top: 0.2rem;
+  margin-top: 0.55rem;
 }
 
 .metricValue {
-  min-height: 2.4rem;
+  min-height: 2.75rem;
   display: grid;
   justify-items: center;
   align-content: end;
-  transition: color 220ms ease;
+  color: var(--kpi-text);
+}
+
+.metricValue strong {
+  font-size: 1.35rem;
+  font-weight: 750;
+  letter-spacing: -0.035em;
+  line-height: 1;
 }
 
 .metricValue span,
 .donutValue span {
+  margin-top: 0.22rem;
+  color: var(--kpi-muted);
   font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
+  font-weight: 650;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
-.metricValue strong {
-  margin-top: 0.2rem;
-  font-family: var(--font-display);
-  font-size: 1.3rem;
-  font-weight: 550;
-  letter-spacing: -0.04em;
-  line-height: 1;
-}
-
-.primary {
-  color: var(--kpi-primary);
-}
-.secondary {
-  color: var(--kpi-secondary);
-}
-
-.combined {
-  color: var(--text);
-}
-
 .donutWrap {
-  width: 6.1rem;
-  height: 6.1rem;
+  width: 7.15rem;
+  height: 7.15rem;
   position: relative;
-  margin-top: 0.2rem;
+  margin-top: 0.05rem;
 }
 
 .donut {
@@ -138,51 +96,45 @@
 }
 
 .donutTrack {
-  stroke: var(--line);
+  stroke: #303030;
 }
-
 .donutSegment {
   stroke-linecap: round;
 }
-
 .donutPrimary {
-  stroke: var(--kpi-primary);
+  stroke: var(--kpi-blue);
 }
 .donutSecondary {
-  stroke: var(--kpi-secondary);
+  stroke: var(--kpi-red);
 }
+
 .donutValue {
   position: absolute;
   inset: 0;
   display: grid;
   place-content: center;
   justify-items: center;
-  transition: color 220ms ease;
+  color: var(--kpi-text);
 }
 
 .donutValue strong {
-  font-family: var(--font-display);
-  font-size: 1.4rem;
-  font-weight: 550;
-  letter-spacing: -0.05em;
+  font-size: 1.55rem;
+  font-weight: 750;
+  letter-spacing: -0.045em;
   line-height: 1;
-}
-
-.donutValue span {
-  margin-top: 0.2rem;
 }
 
 .viewDots {
   display: flex;
-  gap: 0.38rem;
+  gap: 0.35rem;
   margin-top: 0.05rem;
 }
 
 .viewDots button {
-  width: 0.35rem;
-  height: 0.35rem;
+  width: 0.34rem;
+  height: 0.34rem;
   padding: 0;
-  background: var(--line-strong);
+  background: #505050;
   border: 0;
   border-radius: 50%;
   cursor: pointer;
@@ -190,61 +142,107 @@
 
 .viewDots .activeDot {
   width: 1rem;
-  background: var(--text);
+  background: #ffffff;
   border-radius: 999px;
 }
 
-.kpiFooter {
-  min-height: 2.4rem;
-  display: grid;
-  grid-template-columns: 1fr 1fr auto;
+.primaryFooter {
+  display: flex;
   align-items: end;
   justify-content: space-between;
-  gap: 0.4rem;
+  gap: 1rem;
   margin-top: auto;
-  padding-top: 0.45rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid #343434;
 }
 
-.kpiFooter > div {
+.primaryFooter > div {
   display: grid;
-  gap: 0.18rem;
-  min-height: 2.4rem;
-  align-content: center;
-  padding: 0.35rem 0.55rem;
-  background: var(--surface-2);
-  border-radius: 0.75rem;
+  gap: 0.15rem;
 }
 
-.kpiFooter > div span {
-  color: var(--muted);
-  font-size: 0.65rem;
+.primaryFooter > div span {
+  color: var(--kpi-muted);
+  font-size: 0.66rem;
 }
 
-.kpiFooter > div strong {
-  color: var(--text);
-  font-size: 0.78rem;
-  font-weight: 650;
+.primaryFooter > div strong {
+  color: var(--kpi-text);
+  font-size: 0.82rem;
+  font-weight: 750;
 }
 
-.comparison {
-  border: 0;
-}
-
-.comparison strong {
+.kpiStatus {
+  min-height: 1.9rem;
+  padding: 0.3rem 0.65rem;
   display: inline-flex;
   align-items: center;
-  gap: 0.28rem;
+  gap: 0.35rem;
+  color: var(--kpi-red);
+  border: 1px solid var(--kpi-red);
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.secondaryGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.8rem;
+  margin-top: 0.8rem;
+}
+
+.secondaryCard {
+  min-height: 7rem;
+  padding: 0.9rem 1rem;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  border-radius: 1.2rem;
+}
+
+.secondaryCard > strong {
+  margin-top: 0.4rem;
+  color: var(--kpi-text);
+  font-size: clamp(1.35rem, 2vw, 1.8rem);
+  font-weight: 750;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.secondaryMeta {
+  min-height: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  margin-top: 0.5rem;
+  color: var(--kpi-muted);
+  font-size: 0.7rem;
+}
+
+.secondaryMeta small {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--kpi-red);
+  font-size: 0.7rem;
+  font-weight: 750;
+}
+
+.panel {
+  padding: 1.1rem;
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+  border-radius: 1.35rem;
 }
 
 .analysisGrid {
   display: grid;
   grid-template-columns: minmax(0, 1.45fr) minmax(19rem, 0.8fr);
-  gap: 0.75rem;
+  gap: 0.8rem;
   margin-top: 1.25rem;
-}
-
-.panel {
-  padding: 1.1rem;
 }
 
 .panelHeading {
@@ -259,8 +257,16 @@
   margin: 0;
   color: var(--text);
   font-size: 0.82rem;
-  font-weight: 700;
+  font-weight: 750;
   letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.panelHeading span {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.11em;
   text-transform: uppercase;
 }
 
@@ -284,10 +290,10 @@
 .chart span {
   width: 100%;
   max-width: 2rem;
-  background: color-mix(in srgb, var(--accent) 18%, transparent);
-  border: 1px solid var(--accent);
+  background: rgb(61 130 247 / 18%);
+  border: 1px solid var(--kpi-blue);
   border-bottom: 0;
-  border-radius: 0.4rem 0.4rem 0 0;
+  border-radius: 0.5rem 0.5rem 0 0;
 }
 
 .chartAxis {
@@ -297,7 +303,6 @@
   color: var(--muted);
   font-size: 0.65rem;
 }
-
 .composition {
   margin-top: 0.85rem;
 }
@@ -319,17 +324,16 @@
 .compositionRow strong {
   color: var(--text);
   font-size: 0.8rem;
-  font-weight: 650;
+  font-weight: 700;
 }
 .compositionRow small {
-  color: var(--accent);
+  color: var(--kpi-red);
   font-size: 0.7rem;
-  font-weight: 700;
+  font-weight: 750;
   text-align: right;
 }
-
 .linesPanel {
-  margin-top: 0.75rem;
+  margin-top: 0.8rem;
 }
 .linesTable {
   margin-top: 0.75rem;
@@ -354,12 +358,12 @@
 .lineRow strong {
   color: var(--text);
   font-size: 0.8rem;
-  font-weight: 650;
+  font-weight: 700;
 }
 .lineRow small {
-  color: var(--accent);
+  color: var(--kpi-red);
   font-size: 0.7rem;
-  font-weight: 700;
+  font-weight: 750;
   text-align: right;
 }
 .lineProgress {
@@ -371,12 +375,15 @@
 .lineProgress span {
   display: block;
   height: 100%;
-  background: var(--accent);
+  background: var(--kpi-blue);
   border-radius: inherit;
 }
 
 @media (max-width: 1050px) {
-  .kpiGrid {
+  .primaryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .secondaryGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .analysisGrid {
@@ -388,11 +395,9 @@
   .page {
     padding-inline: 0.75rem;
   }
-  .kpiGrid {
+  .primaryGrid,
+  .secondaryGrid {
     grid-template-columns: 1fr;
-  }
-  .kpi {
-    min-height: 13rem;
   }
   .panelHeading {
     align-items: flex-start;
