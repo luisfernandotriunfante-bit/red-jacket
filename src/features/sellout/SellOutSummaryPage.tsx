@@ -213,22 +213,14 @@ const lines = [
   ['Acessórios', 'R$ 1,16 mi', '63%'],
 ];
 
-function DonutKpi({ kpi }: { kpi: Kpi }) {
-  const [activeView, setActiveView] = useState(0);
-  const [paused, setPaused] = useState(false);
+function DonutKpi({ kpi, cycle }: { kpi: Kpi; cycle: number }) {
+  const [frozenView, setFrozenView] = useState<number | null>(null);
+  const activeView = frozenView ?? cycle;
   const view = kpi.views[activeView] ?? kpi.views[0]!;
   const Icon = kpi.icon;
   const StatusIcon = kpi.statusIcon;
   const TrendIcon =
     kpi.comparison.direction === 'up' ? TrendingUp : TrendingDown;
-
-  useEffect(() => {
-    if (paused) return;
-    const timer = window.setInterval(() => {
-      setActiveView((current) => (current + 1) % kpi.views.length);
-    }, 2000);
-    return () => window.clearInterval(timer);
-  }, [kpi.views.length, paused]);
 
   const toneClass = styles[view.tone];
 
@@ -242,8 +234,8 @@ function DonutKpi({ kpi }: { kpi: Kpi }) {
       </div>
       <div
         className={styles.rotatingMetric}
-        onMouseEnter={() => setPaused(true)}
-        onMouseLeave={() => setPaused(false)}
+        onMouseEnter={() => setFrozenView(cycle)}
+        onMouseLeave={() => setFrozenView(null)}
       >
         <div
           className={`${styles.metricValue} ${toneClass}`}
@@ -266,21 +258,21 @@ function DonutKpi({ kpi }: { kpi: Kpi }) {
               pathLength="100"
             />
             <circle
-              className={`${styles.donutSegment} ${styles.donutPrimary} ${view.tone === 'secondary' ? styles.dimmed : ''}`}
+              className={`${styles.donutSegment} ${styles.donutPrimary}`}
               cx="60"
               cy="60"
               r="48"
               pathLength="100"
-              strokeDasharray={`${kpi.primaryPercent} ${100 - kpi.primaryPercent}`}
+              strokeDasharray={`${Math.max(kpi.primaryPercent - 0.8, 0)} ${100 - Math.max(kpi.primaryPercent - 0.8, 0)}`}
             />
             <circle
-              className={`${styles.donutSegment} ${styles.donutSecondary} ${view.tone === 'primary' ? styles.dimmed : ''}`}
+              className={`${styles.donutSegment} ${styles.donutSecondary}`}
               cx="60"
               cy="60"
               r="48"
               pathLength="100"
               strokeDasharray={`${kpi.secondaryPercent} ${100 - kpi.secondaryPercent}`}
-              strokeDashoffset={-kpi.primaryPercent}
+              strokeDashoffset={-(kpi.primaryPercent + 0.8)}
             />
           </svg>
           <div className={`${styles.donutValue} ${toneClass}`}>
@@ -295,7 +287,7 @@ function DonutKpi({ kpi }: { kpi: Kpi }) {
               key={item.label}
               className={index === activeView ? styles.activeDot : undefined}
               aria-label={`Mostrar ${item.label.toLowerCase()}`}
-              onClick={() => setActiveView(index)}
+              onClick={() => setFrozenView(index)}
             />
           ))}
         </div>
@@ -322,11 +314,20 @@ function DonutKpi({ kpi }: { kpi: Kpi }) {
 }
 
 export function SellOutSummaryPage() {
+  const [cycle, setCycle] = useState(0);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setCycle((current) => (current + 1) % 3);
+    }, 5000);
+    return () => window.clearInterval(timer);
+  }, []);
+
   return (
     <section className={styles.page} aria-label="Resumo de sell out">
       <div className={styles.kpiGrid}>
         {kpis.map((kpi) => (
-          <DonutKpi kpi={kpi} key={kpi.title} />
+          <DonutKpi kpi={kpi} cycle={cycle} key={kpi.title} />
         ))}
       </div>
 
