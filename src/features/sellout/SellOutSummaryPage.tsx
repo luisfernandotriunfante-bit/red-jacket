@@ -93,95 +93,100 @@ const secondaryKpis: SecondaryKpi[] = [
 
 type DailyResult = {
   date: string;
-  sellOut: number;
-  billed: number;
-  positive: number;
-  billedPositive: number;
-  variation: number;
+  sellOut: number | null;
+  billed: number | null;
+  positive: number | null;
+  billedPositive: number | null;
+  variation: number | null;
 };
 
-const dailyResults: DailyResult[] = [
-  {
-    date: '09/11',
+const currentDay = 19;
+const observedResults: Record<number, Omit<DailyResult, 'date'>> = {
+  9: {
     sellOut: 12680,
     billed: 12370,
     positive: 14,
     billedPositive: 13,
     variation: 2.1,
   },
-  {
-    date: '10/11',
+  10: {
     sellOut: 95300,
     billed: 91760,
     positive: 41,
     billedPositive: 37,
     variation: 7.8,
   },
-  {
-    date: '11/11',
+  11: {
     sellOut: 11620,
     billed: -12490,
     positive: 24,
     billedPositive: 12,
     variation: -4.2,
   },
-  {
-    date: '12/11',
+  12: {
     sellOut: -327580,
     billed: -331300,
     positive: 12,
     billedPositive: 6,
     variation: -18.6,
   },
-  {
-    date: '13/11',
+  13: {
     sellOut: 224380,
     billed: 183980,
     positive: 26,
     billedPositive: 20,
     variation: 12.4,
   },
-  {
-    date: '14/11',
+  14: {
     sellOut: 242120,
     billed: 242120,
     positive: 4,
     billedPositive: 4,
     variation: 4.7,
   },
-  {
-    date: '16/11',
+  16: {
     sellOut: 115150,
     billed: 90560,
     positive: 16,
     billedPositive: 9,
     variation: -3.1,
   },
-  {
-    date: '17/11',
+  17: {
     sellOut: 195420,
     billed: 190580,
     positive: 72,
     billedPositive: 64,
     variation: 9.3,
   },
-  {
-    date: '18/11',
+  18: {
     sellOut: 320290,
     billed: 192440,
     positive: 87,
     billedPositive: 44,
     variation: 14.8,
   },
-  {
-    date: '19/11',
+  19: {
     sellOut: 896490,
     billed: 770980,
     positive: 173,
     billedPositive: 144,
     variation: 21.6,
   },
-];
+};
+
+const dailyResults: DailyResult[] = Array.from({ length: 30 }, (_, index) => {
+  const day = index + 1;
+  const observed = observedResults[day];
+  const emptyValue = day <= currentDay ? 0 : null;
+  return {
+    date: `${String(day).padStart(2, '0')}/11`,
+    sellOut: observed?.sellOut ?? emptyValue,
+    billed: observed?.billed ?? emptyValue,
+    positive: observed?.positive ?? emptyValue,
+    billedPositive: observed?.billedPositive ?? emptyValue,
+    variation: observed?.variation ?? (day <= currentDay ? 0 : null),
+  };
+});
 
 const brlCompact = new Intl.NumberFormat('pt-BR', {
   style: 'currency',
@@ -194,31 +199,40 @@ const brl = new Intl.NumberFormat('pt-BR', {
   currency: 'BRL',
   maximumFractionDigits: 0,
 });
+const formatMoney = (value: number | null, compact = false) =>
+  value === null ? '—' : (compact ? brlCompact : brl).format(value);
 
 function sumUntil(index: number, field: 'sellOut' | 'billed') {
   return dailyResults
     .slice(0, index + 1)
-    .reduce((total, day) => total + day[field], 0);
+    .reduce((total, day) => total + (day[field] ?? 0), 0);
 }
 
 function DailyPerformance() {
   const [mode, setMode] = useState<'daily' | 'cumulative'>('daily');
-  const [selectedIndex, setSelectedIndex] = useState(dailyResults.length - 1);
+  const [selectedIndex, setSelectedIndex] = useState(currentDay - 1);
   const chartData = useMemo(
     () =>
       dailyResults.map((day, index) => ({
         ...day,
         plottedSellOut:
-          mode === 'daily' ? day.sellOut : sumUntil(index, 'sellOut'),
+          day.sellOut === null
+            ? null
+            : mode === 'daily'
+              ? day.sellOut
+              : sumUntil(index, 'sellOut'),
         plottedBilled:
-          mode === 'daily' ? day.billed : sumUntil(index, 'billed'),
+          day.billed === null
+            ? null
+            : mode === 'daily'
+              ? day.billed
+              : sumUntil(index, 'billed'),
       })),
     [mode],
   );
-  const values = chartData.flatMap((day) => [
-    day.plottedSellOut,
-    day.plottedBilled,
-  ]);
+  const values = chartData
+    .flatMap((day) => [day.plottedSellOut, day.plottedBilled])
+    .filter((value): value is number => value !== null);
   const min = Math.min(0, ...values);
   const max = Math.max(...values);
   const range = Math.max(max - min, 1);
@@ -231,16 +245,25 @@ function DailyPerformance() {
   const y = (value: number) =>
     insetY + ((max - value) / range) * (height - insetY * 2);
   const points = (field: 'plottedSellOut' | 'plottedBilled') =>
-    chartData.map((day, index) => `${x(index)},${y(day[field])}`).join(' ');
+    chartData
+      .map((day, index) => {
+        const value = day[field];
+        return value === null ? null : `${x(index)},${y(value)}`;
+      })
+      .filter(Boolean)
+      .join(' ');
   const selected = dailyResults[selectedIndex]!;
-  const pending = selected.sellOut - selected.billed;
+  const pending =
+    selected.sellOut === null || selected.billed === null
+      ? null
+      : selected.sellOut - selected.billed;
 
   return (
     <article className={styles.dailyPanel}>
       <div className={styles.dailyHeader}>
         <div>
           <h2>Desempenho diário</h2>
-          <span>09/11 — 19/11</span>
+          <span>01/11 — 30/11</span>
         </div>
         <div
           className={styles.chartControls}
@@ -297,7 +320,7 @@ function DailyPerformance() {
                 />
               ))}
               <polygon
-                points={`${points('plottedBilled')} ${x(chartData.length - 1)},${height - insetY} ${x(0)},${height - insetY}`}
+                points={`${points('plottedBilled')} ${x(currentDay - 1)},${height - insetY} ${x(0)},${height - insetY}`}
                 className={styles.chartArea}
               />
               <polyline
@@ -308,43 +331,51 @@ function DailyPerformance() {
                 points={points('plottedBilled')}
                 className={styles.billedLine}
               />
-              {chartData.map((day, index) => (
-                <g
-                  key={day.date}
-                  onMouseEnter={() => setSelectedIndex(index)}
-                  onClick={() => setSelectedIndex(index)}
-                  className={styles.chartPoint}
-                >
-                  <rect
-                    x={x(index) - 20}
-                    y="0"
-                    width="40"
-                    height={height}
-                    fill="transparent"
-                  />
-                  {selectedIndex === index && (
-                    <line
-                      x1={x(index)}
-                      x2={x(index)}
-                      y1={insetY}
-                      y2={height - insetY}
-                      className={styles.selectedGuide}
+              {chartData.map((day, index) => {
+                const sellOut = day.plottedSellOut;
+                const billed = day.plottedBilled;
+                return (
+                  <g
+                    key={day.date}
+                    onMouseEnter={() => setSelectedIndex(index)}
+                    onClick={() => setSelectedIndex(index)}
+                    className={styles.chartPoint}
+                  >
+                    <rect
+                      x={x(index) - 20}
+                      y="0"
+                      width="40"
+                      height={height}
+                      fill="transparent"
                     />
-                  )}
-                  <circle
-                    cx={x(index)}
-                    cy={y(day.plottedSellOut)}
-                    r={selectedIndex === index ? 5 : 3}
-                    className={styles.sellOutPoint}
-                  />
-                  <circle
-                    cx={x(index)}
-                    cy={y(day.plottedBilled)}
-                    r={selectedIndex === index ? 5 : 3}
-                    className={styles.billedPoint}
-                  />
-                </g>
-              ))}
+                    {selectedIndex === index && (
+                      <line
+                        x1={x(index)}
+                        x2={x(index)}
+                        y1={insetY}
+                        y2={height - insetY}
+                        className={styles.selectedGuide}
+                      />
+                    )}
+                    {sellOut !== null && (
+                      <circle
+                        cx={x(index)}
+                        cy={y(sellOut)}
+                        r={selectedIndex === index ? 5 : 3}
+                        className={styles.sellOutPoint}
+                      />
+                    )}
+                    {billed !== null && (
+                      <circle
+                        cx={x(index)}
+                        cy={y(billed)}
+                        r={selectedIndex === index ? 5 : 3}
+                        className={styles.billedPoint}
+                      />
+                    )}
+                  </g>
+                );
+              })}
             </svg>
             <div className={styles.chartDates}>
               {dailyResults.map((day, index) => (
@@ -357,7 +388,9 @@ function DailyPerformance() {
                   onMouseEnter={() => setSelectedIndex(index)}
                   onClick={() => setSelectedIndex(index)}
                 >
-                  {day.date}
+                  {[0, 4, 9, 14, 19, 24, 29].includes(index)
+                    ? day.date.slice(0, 2)
+                    : ''}
                 </button>
               ))}
             </div>
@@ -365,21 +398,27 @@ function DailyPerformance() {
           <div className={styles.selectedSummary}>
             <div>
               <span>Sell out</span>
-              <strong>{brl.format(selected.sellOut)}</strong>
+              <strong>{formatMoney(selected.sellOut)}</strong>
             </div>
             <div>
               <span>Faturado</span>
-              <strong>{brl.format(selected.billed)}</strong>
+              <strong>{formatMoney(selected.billed)}</strong>
             </div>
             <div>
               <span>A faturar</span>
-              <strong className={pending > 0 ? styles.pendingValue : undefined}>
-                {brl.format(pending)}
+              <strong
+                className={
+                  pending !== null && pending > 0
+                    ? styles.pendingValue
+                    : undefined
+                }
+              >
+                {formatMoney(pending)}
               </strong>
             </div>
             <div>
               <span>Positivados</span>
-              <strong>{selected.positive}</strong>
+              <strong>{selected.positive ?? '—'}</strong>
             </div>
           </div>
         </section>
@@ -409,37 +448,43 @@ function DailyPerformance() {
               </thead>
               <tbody>
                 {dailyResults.map((day, index) => {
-                  const dayPending = day.sellOut - day.billed;
+                  const dayPending =
+                    day.sellOut === null || day.billed === null
+                      ? null
+                      : day.sellOut - day.billed;
                   return (
                     <tr
                       key={day.date}
-                      className={
-                        selectedIndex === index ? styles.selectedRow : undefined
-                      }
+                      className={`${selectedIndex === index ? styles.selectedRow : ''} ${day.sellOut === null ? styles.futureRow : ''}`}
                       onMouseEnter={() => setSelectedIndex(index)}
                       onClick={() => setSelectedIndex(index)}
                     >
                       <td>{day.date}</td>
-                      <td>{brlCompact.format(day.sellOut)}</td>
-                      <td>{brlCompact.format(day.billed)}</td>
+                      <td>{formatMoney(day.sellOut, true)}</td>
+                      <td>{formatMoney(day.billed, true)}</td>
                       <td
                         className={
-                          dayPending > 0 ? styles.pendingCell : undefined
+                          dayPending !== null && dayPending > 0
+                            ? styles.pendingCell
+                            : undefined
                         }
                       >
-                        {brlCompact.format(dayPending)}
+                        {formatMoney(dayPending, true)}
                       </td>
-                      <td>{day.positive}</td>
-                      <td>{day.billedPositive}</td>
+                      <td>{day.positive ?? '—'}</td>
+                      <td>{day.billedPositive ?? '—'}</td>
                       <td
                         className={
-                          day.variation < 0
+                          day.variation !== null && day.variation < 0
                             ? styles.negativeCell
-                            : styles.positiveCell
+                            : day.variation !== null
+                              ? styles.positiveCell
+                              : undefined
                         }
                       >
-                        {day.variation > 0 ? '+' : ''}
-                        {day.variation.toFixed(1).replace('.', ',')}%
+                        {day.variation === null
+                          ? '—'
+                          : `${day.variation > 0 ? '+' : ''}${day.variation.toFixed(1).replace('.', ',')}%`}
                       </td>
                     </tr>
                   );
