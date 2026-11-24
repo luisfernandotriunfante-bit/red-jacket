@@ -40,10 +40,19 @@ export const navigation = [
     tabs: [],
   },
   {
-    path: '/configuracoes',
+    path: '/configuracoes/motores',
     rootPath: '/configuracoes',
     label: 'Configurações',
     icon: Settings,
-    tabs: [],
+    tabs: [
+      { path: '/configuracoes/motores', label: 'Motores' },
+      { path: '/configuracoes/auditoria', label: 'Auditoria' },
+      { path: '/configuracoes/equipe', label: 'Equipe' },
+      {
+        path: '/configuracoes/ajustes-comerciais',
+        label: 'Ajustes comerciais',
+      },
+      { path: '/configuracoes/competencias', label: 'Competências' },
+    ],
   },
 ] as const;

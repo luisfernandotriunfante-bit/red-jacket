@@ -5,6 +5,7 @@ import { LoginPage } from '../features/auth/LoginPage';
 import { ProtectedRoute } from '../features/auth/ProtectedRoute';
 import { PasswordSetupPage } from '../features/auth/PasswordSetupPage';
 import { useAuth } from '../features/auth/useAuth';
+import { SettingsPage } from '../features/settings/SettingsPage';
 import { ProfilePage } from '../features/profile/ProfilePage';
 import { navigation } from './navigation';
 
@@ -27,8 +28,16 @@ export function App() {
           <Route path="/sell-out/gerencial" element={<BlankWorkspace />} />
           <Route path="/sell-out/clientes" element={<BlankWorkspace />} />
           <Route path="/perfil" element={<ProfilePage />} />
+          <Route
+            path="/configuracoes"
+            element={<Navigate to="/configuracoes/motores" replace />}
+          />
+          <Route path="/configuracoes/:section" element={<SettingsPage />} />
           {navigation
-            .filter(({ rootPath }) => rootPath !== '/sell-out')
+            .filter(
+              ({ rootPath }) =>
+                rootPath !== '/sell-out' && rootPath !== '/configuracoes',
+            )
             .map(({ path }) => (
               <Route key={path} path={path} element={<BlankWorkspace />} />
             ))}
