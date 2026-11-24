@@ -27,12 +27,26 @@
 }
 
 .profile {
-  min-height: 7.4rem;
+  min-height: 2.85rem;
   display: grid;
-  grid-template-columns: 2.85rem minmax(0, 1fr) 2.2rem;
-  grid-template-rows: 2.85rem 2.25rem;
+  grid-template-columns: minmax(0, 1fr) 2.2rem;
   align-items: center;
   column-gap: 0.85rem;
+}
+
+.profileLink {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 2.85rem minmax(0, 1fr);
+  align-items: center;
+  column-gap: 0.85rem;
+  border-radius: 999px;
+}
+
+.profileLink:hover .avatar,
+.profileLink:focus-visible .avatar {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .avatar {
@@ -91,79 +105,14 @@
   color: var(--accent);
 }
 
-.themeControl {
-  grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.25rem;
-  min-width: 14.2rem;
-  padding: 0.2rem;
-  opacity: 0;
-  transform: translateY(-0.25rem);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  transition: 160ms ease;
-}
-
-.themeControl button {
-  height: 1.75rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  border: 1px solid transparent;
-  border-radius: 999px;
-  background: transparent;
-  color: var(--muted);
-  font-size: 0.62rem;
-  font-weight: 650;
-  letter-spacing: 0.12em;
-  cursor: pointer;
-}
-
-.themeControl button.themeActive {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
 .sidebar:hover .profileCopy,
 .sidebar:hover .signOut,
-.sidebar:hover .themeControl,
-.sidebar:hover .passwordAction,
 .sidebar:focus-within .profileCopy,
 .sidebar:focus-within .signOut,
-.sidebar:focus-within .themeControl,
-.sidebar:focus-within .passwordAction,
 .sidebar.open .profileCopy,
-.sidebar.open .signOut,
-.sidebar.open .themeControl,
-.sidebar.open .passwordAction {
+.sidebar.open .signOut {
   opacity: 1;
   transform: none;
-}
-
-.passwordAction {
-  grid-column: 1 / -1;
-  min-height: 2.15rem;
-  padding: 0 0.8rem;
-  opacity: 0;
-  transform: translateY(-0.25rem);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: transparent;
-  color: var(--text);
-  font-family: var(--font-display);
-  font-size: 0.62rem;
-  font-weight: 650;
-  letter-spacing: 0.12em;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: 160ms ease;
-}
-
-.passwordAction:hover {
-  border-color: var(--accent);
-  color: var(--accent);
 }
 
 .primaryNav {
@@ -327,8 +276,6 @@
 
   .sidebar.open .profileCopy,
   .sidebar.open .signOut,
-  .sidebar.open .themeControl,
-  .sidebar.open .passwordAction,
   .sidebar.open .navLabel,
   .sidebar.open .brand {
     opacity: 1;
@@ -404,12 +351,7 @@
 @media (prefers-reduced-motion: reduce) {
   .sidebar,
   .primaryNav a,
-  .profileCopy,
-  .themeControl {
-    transition: none;
-  }
-
-  .passwordAction {
+  .profileCopy {
     transition: none;
   }
 }
