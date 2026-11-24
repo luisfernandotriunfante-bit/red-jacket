@@ -2,6 +2,7 @@ import {
   Boxes,
   ChartNoAxesCombined,
   Megaphone,
+  Settings,
   UsersRound,
 } from 'lucide-react';
 
@@ -36,6 +37,13 @@ export const navigation = [
     rootPath: '/campanhas',
     label: 'Campanhas',
     icon: Megaphone,
+    tabs: [],
+  },
+  {
+    path: '/configuracoes',
+    rootPath: '/configuracoes',
+    label: 'Configurações',
+    icon: Settings,
     tabs: [],
   },
 ] as const;

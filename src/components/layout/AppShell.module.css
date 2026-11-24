@@ -129,20 +129,51 @@
 .sidebar:hover .profileCopy,
 .sidebar:hover .signOut,
 .sidebar:hover .themeControl,
+.sidebar:hover .passwordAction,
 .sidebar:focus-within .profileCopy,
 .sidebar:focus-within .signOut,
 .sidebar:focus-within .themeControl,
+.sidebar:focus-within .passwordAction,
 .sidebar.open .profileCopy,
 .sidebar.open .signOut,
-.sidebar.open .themeControl {
+.sidebar.open .themeControl,
+.sidebar.open .passwordAction {
   opacity: 1;
   transform: none;
 }
 
+.passwordAction {
+  grid-column: 1 / -1;
+  min-height: 2.15rem;
+  padding: 0 0.8rem;
+  opacity: 0;
+  transform: translateY(-0.25rem);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 0.62rem;
+  font-weight: 650;
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: 160ms ease;
+}
+
+.passwordAction:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .primaryNav {
+  position: absolute;
+  top: 50%;
+  right: 0.7rem;
+  left: 0.7rem;
   display: grid;
   gap: 0.55rem;
-  margin-top: 0.9rem;
+  transform: translateY(-50%);
 }
 
 .primaryNav a {
@@ -226,20 +257,24 @@
 }
 
 .topbar {
+  position: relative;
   height: var(--topbar-height);
   padding: 0 clamp(1rem, 3vw, 2.5rem);
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   border-bottom: 1px solid var(--line);
   background: var(--canvas);
 }
 
 .secondaryNav {
+  position: absolute;
+  left: 50%;
   height: 100%;
   display: flex;
   align-items: center;
   gap: 0.45rem;
+  transform: translateX(-50%);
 }
 
 .secondaryNav a {
@@ -293,6 +328,7 @@
   .sidebar.open .profileCopy,
   .sidebar.open .signOut,
   .sidebar.open .themeControl,
+  .sidebar.open .passwordAction,
   .sidebar.open .navLabel,
   .sidebar.open .brand {
     opacity: 1;
@@ -348,6 +384,8 @@
   }
 
   .secondaryNav {
+    position: static;
+    transform: none;
     max-width: calc(100vw - 7rem);
     overflow-x: auto;
     scrollbar-width: none;
@@ -368,6 +406,10 @@
   .primaryNav a,
   .profileCopy,
   .themeControl {
+    transition: none;
+  }
+
+  .passwordAction {
     transition: none;
   }
 }

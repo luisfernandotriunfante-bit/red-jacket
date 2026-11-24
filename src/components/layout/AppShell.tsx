@@ -3,11 +3,13 @@ import { useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { navigation } from '../../app/navigation';
 import { useAuth } from '../../features/auth/useAuth';
+import { ChangePasswordDialog } from '../../features/auth/ChangePasswordDialog';
 import { useTheme } from '../../features/theme/useTheme';
 import styles from './AppShell.module.css';
 
 export function AppShell() {
   const [open, setOpen] = useState(false);
+  const [passwordOpen, setPasswordOpen] = useState(false);
   const location = useLocation();
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
@@ -51,6 +53,12 @@ export function AppShell() {
               <span>ESCURO</span>
             </button>
           </div>
+          <button
+            className={styles.passwordAction}
+            onClick={() => setPasswordOpen(true)}
+          >
+            ALTERAR SENHA
+          </button>
         </section>
         <button
           className={styles.close}
@@ -129,6 +137,9 @@ export function AppShell() {
           <Outlet />
         </main>
       </section>
+      {passwordOpen && (
+        <ChangePasswordDialog onClose={() => setPasswordOpen(false)} />
+      )}
     </div>
   );
 }
