@@ -1,15 +1,13 @@
 import { LogOut, Menu, Moon, Sun, X } from 'lucide-react';
 import { useState } from 'react';
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { navigation } from '../../app/navigation';
 import { useAuth } from '../../features/auth/useAuth';
-import { ChangePasswordDialog } from '../../features/auth/ChangePasswordDialog';
 import { useTheme } from '../../features/theme/useTheme';
 import styles from './AppShell.module.css';
 
 export function AppShell() {
   const [open, setOpen] = useState(false);
-  const [passwordOpen, setPasswordOpen] = useState(false);
   const location = useLocation();
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
@@ -22,42 +20,28 @@ export function AppShell() {
   return (
     <div className={styles.shell}>
       <aside className={`${styles.sidebar} ${open ? styles.open : ''}`}>
-        <section className={styles.profile} aria-label="Perfil e aparência">
-          <div className={styles.avatar}>{initials}</div>
-          <div className={styles.profileCopy}>
-            <small>OLÁ,</small>
-            <strong>{userName}</strong>
-          </div>
+        <section className={styles.profile} aria-label="Perfil do usuário">
+          <Link
+            to="/perfil"
+            className={styles.profileLink}
+            onClick={(event) => {
+              setOpen(false);
+              event.currentTarget.blur();
+            }}
+            aria-label="Abrir perfil do usuário"
+          >
+            <span className={styles.avatar}>{initials}</span>
+            <span className={styles.profileCopy}>
+              <small>OLÁ,</small>
+              <strong>{userName}</strong>
+            </span>
+          </Link>
           <button
             className={styles.signOut}
             onClick={() => void signOut()}
             aria-label="Sair"
           >
             <LogOut size={16} />
-          </button>
-          <div className={styles.themeControl} aria-label="Aparência">
-            <button
-              className={theme === 'light' ? styles.themeActive : undefined}
-              onClick={theme === 'dark' ? toggleTheme : undefined}
-              aria-label="Usar tema claro"
-            >
-              <Sun size={14} />
-              <span>CLARO</span>
-            </button>
-            <button
-              className={theme === 'dark' ? styles.themeActive : undefined}
-              onClick={theme === 'light' ? toggleTheme : undefined}
-              aria-label="Usar tema escuro"
-            >
-              <Moon size={14} />
-              <span>ESCURO</span>
-            </button>
-          </div>
-          <button
-            className={styles.passwordAction}
-            onClick={() => setPasswordOpen(true)}
-          >
-            ALTERAR SENHA
           </button>
         </section>
         <button
@@ -72,7 +56,10 @@ export function AppShell() {
             <NavLink
               key={path}
               to={path}
-              onClick={() => setOpen(false)}
+              onClick={(event) => {
+                setOpen(false);
+                event.currentTarget.blur();
+              }}
               className={
                 location.pathname.startsWith(rootPath)
                   ? styles.active
@@ -137,9 +124,6 @@ export function AppShell() {
           <Outlet />
         </main>
       </section>
-      {passwordOpen && (
-        <ChangePasswordDialog onClose={() => setPasswordOpen(false)} />
-      )}
     </div>
   );
 }
