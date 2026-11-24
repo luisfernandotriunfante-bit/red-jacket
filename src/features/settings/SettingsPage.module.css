@@ -3,6 +3,266 @@
   margin: 0 auto;
   padding: clamp(2rem, 5vw, 4.5rem) clamp(1.25rem, 4vw, 3.5rem) 5rem;
 }
+.enginePage {
+  width: min(100%, 94rem);
+  padding: 1rem clamp(1rem, 2.4vw, 2.5rem) 5rem;
+}
+.enginePage > .header {
+  display: none;
+}
+.engineWorkspace {
+  --engine-blue: #3d82f7;
+  --engine-red: #ff2638;
+  --engine-surface: #191919;
+  --engine-muted: #aeb3bd;
+  color: #fff;
+}
+.engineToolbar {
+  min-height: 4.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.engineToolbar > div:first-child {
+  display: flex;
+  align-items: baseline;
+  gap: 0.8rem;
+}
+.engineToolbar > div:first-child span,
+.engineIdentity span {
+  color: var(--engine-red);
+  font-size: 0.65rem;
+  font-weight: 750;
+  letter-spacing: 0.11em;
+}
+.engineToolbar h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.engineToolbarActions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.engineCounter {
+  min-width: 6.5rem;
+  padding-right: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  border-right: 1px solid var(--line);
+}
+.engineCounter span {
+  color: var(--muted);
+  font-size: 0.65rem;
+}
+.engineCounter strong {
+  color: var(--text);
+  font-size: 1rem;
+}
+.engineConsole {
+  overflow: hidden;
+  color: #fff;
+  background: #0d0d0d;
+  border: 1px solid #2d2d2d;
+  border-radius: 1.35rem;
+  box-shadow: 0 18px 52px rgb(0 0 0 / 20%);
+}
+.engineConsoleHeader {
+  min-height: 8rem;
+  padding: 1.15rem 1.3rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  background: var(--engine-surface);
+  border-bottom: 1px solid #303030;
+}
+.engineIdentity {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.engineNumber {
+  width: 3.2rem;
+  height: 3.2rem;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  color: var(--engine-red);
+  border: 1px solid var(--engine-red);
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 750;
+}
+.engineIdentity h3 {
+  margin: 0.25rem 0 0;
+  color: #fff;
+  font-size: 1.15rem;
+  letter-spacing: -0.02em;
+}
+.engineIdentity p {
+  margin: 0.3rem 0 0;
+  color: var(--engine-muted);
+  font-size: 0.72rem;
+}
+.engineReadiness {
+  width: min(18rem, 35%);
+  display: grid;
+  gap: 0.45rem;
+}
+.engineReadiness > div:first-child {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+}
+.engineReadiness span {
+  color: var(--engine-muted);
+  font-size: 0.65rem;
+}
+.engineReadiness strong {
+  color: #fff;
+  font-size: 1.45rem;
+  line-height: 1;
+}
+.engineReadiness strong small {
+  color: #70757e;
+  font-size: 0.7rem;
+}
+.readinessTrack {
+  height: 0.35rem;
+  overflow: hidden;
+  background: #333;
+  border-radius: 999px;
+}
+.readinessTrack span {
+  height: 100%;
+  display: block;
+  background: var(--engine-blue);
+  border-radius: inherit;
+  transition: width 240ms ease;
+}
+.engineReadiness > small {
+  color: var(--engine-red);
+  font-size: 0.58rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-align: right;
+}
+.sourceList {
+  display: grid;
+}
+.sourceRow {
+  min-height: 5.75rem;
+  padding: 0.8rem 1.3rem;
+  display: grid;
+  grid-template-columns: 2rem minmax(12rem, 1fr) minmax(11rem, 0.8fr) minmax(
+      10rem,
+      0.65fr
+    ) auto;
+  align-items: center;
+  gap: 1rem;
+  border-bottom: 1px solid #292929;
+  transition: background 160ms ease;
+}
+.sourceRow:hover {
+  background: #121212;
+}
+.sourceReady {
+  box-shadow: inset 2px 0 var(--engine-blue);
+}
+.sourceIndex {
+  color: #646a74;
+  font-size: 0.65rem;
+  font-weight: 750;
+}
+.sourceInfo,
+.sourceFile,
+.sourceUpdated {
+  min-width: 0;
+  display: grid;
+  gap: 0.25rem;
+}
+.sourceInfo strong {
+  color: #fff;
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.045em;
+}
+.sourceInfo span {
+  color: var(--engine-muted);
+  font-size: 0.68rem;
+}
+.sourceFile small,
+.sourceUpdated small {
+  color: #666c76;
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+.sourceFile strong {
+  overflow: hidden;
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sourceUpdated span {
+  color: var(--engine-muted);
+  font-size: 0.66rem;
+}
+.sourceButton {
+  min-height: 2.15rem;
+  padding: 0.3rem 0.7rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #fff;
+  background: transparent;
+  border: 1px solid #3b3b3b;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.58rem;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+.sourceButton:hover {
+  color: var(--engine-red);
+  border-color: var(--engine-red);
+}
+.engineConsoleFooter {
+  min-height: 4.5rem;
+  padding: 0.9rem 1.3rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: var(--engine-surface);
+}
+.engineMessage {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--engine-muted);
+}
+.engineMessage svg {
+  color: var(--engine-blue);
+}
+.engineMessage span {
+  font-size: 0.68rem;
+}
+.engineWorkspace .primary:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
 .header {
   max-width: 46rem;
   margin-bottom: 2.5rem;
@@ -372,6 +632,12 @@ td {
   .source {
     grid-column: 2;
   }
+  .sourceRow {
+    grid-template-columns: 2rem minmax(11rem, 1fr) minmax(10rem, 0.8fr) auto;
+  }
+  .sourceUpdated {
+    grid-column: 3;
+  }
 }
 
 @media (max-width: 680px) {
@@ -418,5 +684,32 @@ td {
   }
   .aiSummary {
     flex-direction: column;
+  }
+  .engineToolbar,
+  .engineConsoleHeader,
+  .engineConsoleFooter {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .engineToolbarActions {
+    justify-content: space-between;
+  }
+  .engineReadiness {
+    width: 100%;
+  }
+  .sourceRow {
+    padding: 1rem;
+    grid-template-columns: 2rem 1fr;
+  }
+  .sourceFile,
+  .sourceUpdated {
+    grid-column: 2;
+  }
+  .sourceButton {
+    grid-column: 1 / -1;
+    justify-content: center;
+  }
+  .engineConsoleFooter .primary {
+    width: 100%;
   }
 }
