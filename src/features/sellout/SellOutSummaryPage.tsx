@@ -1,10 +1,13 @@
 import {
+  Activity,
   BadgePercent,
   Boxes,
+  CircleCheck,
   CircleDollarSign,
   Factory,
   Gift,
   RotateCcw,
+  TriangleAlert,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -16,8 +19,11 @@ type Kpi = {
   title: string;
   value: string;
   status: string;
+  statusIcon: LucideIcon;
   icon: LucideIcon;
-  points: string;
+  progress: number;
+  projection: number;
+  scaleLabel: string;
   details: Detail[];
 };
 
@@ -25,10 +31,12 @@ const kpis: Kpi[] = [
   {
     title: 'Meta do mês',
     value: 'R$ 6,82 mi',
-    status: '72%',
+    status: 'No ritmo',
+    statusIcon: Activity,
     icon: CircleDollarSign,
-    points:
-      '0,43 18,39 36,40 54,31 72,33 90,22 108,25 126,16 144,19 162,10 180,13 198,5',
+    progress: 72,
+    projection: 90,
+    scaleLabel: '72% realizado',
     details: [
       { label: 'Meta', value: 'R$ 9,50 mi' },
       { label: 'A faturar', value: 'R$ 1,74 mi' },
@@ -38,10 +46,12 @@ const kpis: Kpi[] = [
   {
     title: 'Margem atual',
     value: '18,7%',
-    status: '-1,3 pp',
+    status: 'Atenção',
+    statusIcon: TriangleAlert,
     icon: BadgePercent,
-    points:
-      '0,18 18,16 36,22 54,19 72,25 90,23 108,27 126,21 144,17 162,19 180,14 198,16',
+    progress: 68,
+    projection: 92,
+    scaleLabel: '1,3 pp abaixo',
     details: [
       { label: 'Meta', value: '20,0%' },
       { label: 'Projetada', value: '19,4%' },
@@ -51,10 +61,12 @@ const kpis: Kpi[] = [
   {
     title: 'Estoque a venda',
     value: 'R$ 8,90 mi',
-    status: '34 dias',
+    status: 'Saudável',
+    statusIcon: CircleCheck,
     icon: Boxes,
-    points:
-      '0,27 18,25 36,29 54,23 72,21 90,18 108,20 126,14 144,16 162,11 180,13 198,9',
+    progress: 78,
+    projection: 91,
+    scaleLabel: '34 dias de cobertura',
     details: [
       { label: 'A custo', value: 'R$ 4,28 mi' },
       { label: 'Em trânsito', value: 'R$ 1,36 mi' },
@@ -64,10 +76,12 @@ const kpis: Kpi[] = [
   {
     title: 'Devoluções',
     value: 'R$ 184 mil',
-    status: '2,1%',
+    status: 'Sob controle',
+    statusIcon: CircleCheck,
     icon: RotateCcw,
-    points:
-      '0,30 18,27 36,31 54,24 72,28 90,21 108,25 126,18 144,22 162,16 180,19 198,15',
+    progress: 84,
+    projection: 100,
+    scaleLabel: '84% do limite',
     details: [
       { label: 'Limite', value: '2,5%' },
       { label: 'Mês anterior', value: '+0,4 pp' },
@@ -77,10 +91,12 @@ const kpis: Kpi[] = [
   {
     title: 'Bonificações',
     value: 'R$ 212 mil',
-    status: '2,4%',
+    status: 'Estável',
+    statusIcon: Activity,
     icon: Gift,
-    points:
-      '0,26 18,29 36,24 54,27 72,20 90,23 108,19 126,21 144,15 162,18 180,12 198,14',
+    progress: 80,
+    projection: 100,
+    scaleLabel: '80% do teto',
     details: [
       { label: 'Teto', value: '3,0%' },
       { label: 'Saldo', value: 'R$ 74 mil' },
@@ -90,10 +106,12 @@ const kpis: Kpi[] = [
   {
     title: 'Carteira de pedidos',
     value: 'R$ 2,08 mi',
-    status: '128 itens',
+    status: 'No ritmo',
+    statusIcon: Activity,
     icon: Factory,
-    points:
-      '0,34 18,31 36,33 54,26 72,29 90,22 108,24 126,17 144,20 162,13 180,16 198,8',
+    progress: 61,
+    projection: 86,
+    scaleLabel: '128 itens ativos',
     details: [
       { label: 'Indústria', value: 'R$ 1,36 mi' },
       { label: 'Milênio', value: 'R$ 720 mil' },
@@ -117,18 +135,51 @@ const lines = [
   ['Acessórios', 'R$ 1,16 mi', '63%'],
 ];
 
-function Sparkline({ points, label }: { points: string; label: string }) {
+function MetricScale({
+  progress,
+  projection,
+  label,
+}: {
+  progress: number;
+  projection: number;
+  label: string;
+}) {
   return (
-    <svg
-      className={styles.sparkline}
-      viewBox="0 0 198 48"
-      role="img"
-      aria-label={label}
-      preserveAspectRatio="none"
-    >
-      <line x1="0" y1="38" x2="198" y2="38" className={styles.sparklineBase} />
-      <polyline points={points} className={styles.sparklineLine} />
-    </svg>
+    <div className={styles.metricScale} role="img" aria-label={label}>
+      <div className={styles.scaleLabels} aria-hidden="true">
+        <span>0</span>
+        <strong
+          style={{
+            left: `${progress}%`,
+            transform: progress > 70 ? 'translateX(-100%)' : 'translateX(-50%)',
+          }}
+        >
+          {label}
+        </strong>
+        <span>Referência</span>
+      </div>
+      <div className={styles.scaleTrack} aria-hidden="true">
+        <span className={styles.scaleFill} style={{ width: `${progress}%` }} />
+        {Array.from({ length: 11 }, (_, index) => (
+          <i key={index} style={{ left: `${index * 10}%` }} />
+        ))}
+        <b className={styles.currentMarker} style={{ left: `${progress}%` }} />
+        <b
+          className={styles.projectionMarker}
+          style={{ left: `${Math.min(projection, 98)}%` }}
+        />
+      </div>
+      <div className={styles.scaleLegend} aria-hidden="true">
+        <span>
+          <i />
+          Atual
+        </span>
+        <span>
+          <i />
+          Projeção
+        </span>
+      </div>
+    </div>
   );
 }
 
@@ -136,30 +187,46 @@ export function SellOutSummaryPage() {
   return (
     <section className={styles.page} aria-label="Resumo de sell out">
       <div className={styles.kpiGrid}>
-        {kpis.map(({ title, value, status, icon: Icon, points, details }) => (
-          <article className={styles.kpi} key={title}>
-            <div className={styles.kpiTop}>
-              <span className={styles.kpiIcon} aria-hidden="true">
-                <Icon size={17} strokeWidth={1.7} />
-              </span>
-              <span className={styles.kpiTitle}>{title}</span>
-              <span className={styles.kpiStatus}>{status}</span>
-            </div>
-            <strong className={styles.kpiValue}>{value}</strong>
-            <Sparkline
-              points={points}
-              label={`Evolução de ${title.toLowerCase()}`}
-            />
-            <dl className={styles.kpiDetails}>
-              {details.map((detail) => (
-                <div key={detail.label}>
-                  <dt>{detail.label}</dt>
-                  <dd>{detail.value}</dd>
-                </div>
-              ))}
-            </dl>
-          </article>
-        ))}
+        {kpis.map(
+          ({
+            title,
+            value,
+            status,
+            statusIcon: StatusIcon,
+            icon: Icon,
+            progress,
+            projection,
+            scaleLabel,
+            details,
+          }) => (
+            <article className={styles.kpi} key={title}>
+              <div className={styles.kpiTop}>
+                <span className={styles.kpiIcon} aria-hidden="true">
+                  <Icon size={17} strokeWidth={1.7} />
+                </span>
+                <span className={styles.kpiTitle}>{title}</span>
+                <span className={styles.kpiStatus}>
+                  <StatusIcon size={12} strokeWidth={1.8} />
+                  {status}
+                </span>
+              </div>
+              <strong className={styles.kpiValue}>{value}</strong>
+              <MetricScale
+                progress={progress}
+                projection={projection}
+                label={scaleLabel}
+              />
+              <dl className={styles.kpiDetails}>
+                {details.map((detail) => (
+                  <div key={detail.label}>
+                    <dt>{detail.label}</dt>
+                    <dd>{detail.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </article>
+          ),
+        )}
       </div>
 
       <div className={styles.analysisGrid}>
