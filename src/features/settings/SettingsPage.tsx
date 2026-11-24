@@ -73,7 +73,10 @@ export function SettingsPage() {
   const current = section as Section;
 
   return (
-    <section className={styles.page} aria-labelledby="settings-title">
+    <section
+      className={`${styles.page} ${current === 'motores' ? styles.enginePage : ''}`}
+      aria-labelledby="settings-title"
+    >
       <header className={styles.header}>
         <span>
           <Settings2 size={15} /> {copy[current].eyebrow}
@@ -92,99 +95,181 @@ export function SettingsPage() {
 
 function Engines() {
   const inputs = useRef<Array<HTMLInputElement | null>>([]);
-  const [message, setMessage] = useState('');
-  const files = [
-    ['MOVIMENTAÇÃO', 'Vendas e devoluções do período'],
-    ['CADASTRO DE CLIENTES', 'Identificação, região e carteira'],
-    ['CADASTRO DE PRODUTOS', 'Itens, marcas e categorias'],
-    ['ESTOQUE', 'Posição atual por produto'],
-    ['METAS', 'Objetivos financeiros e industriais'],
+  const [message, setMessage] = useState(
+    'Aguardando os arquivos obrigatórios.',
+  );
+  const sources = [
+    {
+      name: 'Movimentação',
+      detail: 'Vendas, faturamento e devoluções',
+      format: 'XLSX · XLS · CSV',
+    },
+    {
+      name: 'Cadastro de clientes',
+      detail: 'Clientes, regiões e carteiras',
+      format: 'XLSX · XLS · CSV',
+    },
+    {
+      name: 'Cadastro de produtos',
+      detail: 'Produtos, marcas e linhas',
+      format: 'XLSX · XLS · CSV',
+    },
+    {
+      name: 'Estoque',
+      detail: 'Posição atual e valores de custo',
+      format: 'XLSX · XLS · CSV',
+    },
+    {
+      name: 'Metas',
+      detail: 'Metas financeiras e industriais',
+      format: 'XLSX · XLS · CSV',
+    },
   ];
+  const [uploads, setUploads] = useState<
+    Array<{ name: string; updated: string } | null>
+  >(() => sources.map(() => null));
+  const uploadedCount = uploads.filter(Boolean).length;
+
+  const selectFile = (index: number, file?: File) => {
+    if (!file) return;
+    const now = new Intl.DateTimeFormat('pt-BR', {
+      dateStyle: 'short',
+      timeStyle: 'short',
+    }).format(new Date());
+    setUploads((current) =>
+      current.map((item, itemIndex) =>
+        itemIndex === index ? { name: file.name, updated: now } : item,
+      ),
+    );
+    setMessage(
+      `${sources[index]!.name}: arquivo recebido e pronto para validação.`,
+    );
+  };
+
+  const process = (all = false) => {
+    if (uploadedCount < sources.length) {
+      setMessage(
+        `Ainda faltam ${sources.length - uploadedCount} arquivo(s) obrigatório(s) para processar.`,
+      );
+      return;
+    }
+    setMessage(
+      all
+        ? 'Todos os motores foram enviados para processamento.'
+        : 'Motor comercial enviado para processamento.',
+    );
+  };
 
   return (
-    <>
-      <div className={styles.toolbar}>
-        <div className={styles.context}>
-          <span>1 MOTOR CONFIGURADO</span>
-          <strong>Motor comercial principal</strong>
+    <div className={styles.engineWorkspace}>
+      <div className={styles.engineToolbar}>
+        <div>
+          <span>ENTRADA DE DADOS</span>
+          <h2>Motores</h2>
         </div>
-        <button
-          className={styles.primary}
-          onClick={() =>
-            setMessage('Todos os motores estão prontos para processamento.')
-          }
-        >
-          PROCESSAR TODOS OS MOTORES
-        </button>
+        <div className={styles.engineToolbarActions}>
+          <div className={styles.engineCounter}>
+            <span>Motores ativos</span>
+            <strong>01</strong>
+          </div>
+          <button className={styles.primary} onClick={() => process(true)}>
+            <RefreshCw size={14} /> PROCESSAR TODOS
+          </button>
+        </div>
       </div>
-      <article className={styles.engine}>
-        <div className={styles.engineHeader}>
-          <div className={styles.roundIcon}>
-            <Gauge size={19} />
-          </div>
-          <div>
-            <span>MOTOR 01</span>
-            <h2>Motor comercial principal</h2>
-            <p>Consolida sell out, estoque, clientes e metas.</p>
-          </div>
-          <span className={styles.status}>AGUARDANDO ARQUIVOS</span>
-        </div>
-        <div className={styles.fileList}>
-          {files.map(([name, detail], index) => (
-            <div className={styles.fileRow} key={name}>
-              <div className={styles.fileIndex}>
-                {String(index + 1).padStart(2, '0')}
-              </div>
-              <div className={styles.fileName}>
-                <strong>{name}</strong>
-                <span>{detail}</span>
-              </div>
-              <div className={styles.updated}>
-                <small>ÚLTIMA ATUALIZAÇÃO</small>
-                <span>NENHUM ARQUIVO</span>
-              </div>
-              <input
-                ref={(element) => {
-                  inputs.current[index] = element;
-                }}
-                className={styles.hiddenInput}
-                type="file"
-                accept=".xlsx,.xls,.csv"
-                onChange={(event) =>
-                  setMessage(
-                    event.target.files?.[0]
-                      ? `${name}: arquivo selecionado para validação.`
-                      : '',
-                  )
-                }
-              />
-              <button
-                className={styles.outline}
-                onClick={() => inputs.current[index]?.click()}
-              >
-                <Upload size={15} /> ATUALIZAR
-              </button>
+
+      <article className={styles.engineConsole}>
+        <header className={styles.engineConsoleHeader}>
+          <div className={styles.engineIdentity}>
+            <div className={styles.engineNumber}>01</div>
+            <div>
+              <span>MOTOR COMERCIAL</span>
+              <h3>Consolidação principal</h3>
+              <p>Sell out, estoque, clientes, produtos e metas.</p>
             </div>
-          ))}
+          </div>
+          <div className={styles.engineReadiness}>
+            <div>
+              <span>Arquivos disponíveis</span>
+              <strong>
+                {uploadedCount}
+                <small>/05</small>
+              </strong>
+            </div>
+            <div className={styles.readinessTrack}>
+              <span style={{ width: `${uploadedCount * 20}%` }} />
+            </div>
+            <small>
+              {uploadedCount === 5
+                ? 'PRONTO PARA PROCESSAR'
+                : 'AGUARDANDO ARQUIVOS'}
+            </small>
+          </div>
+        </header>
+
+        <div className={styles.sourceList}>
+          {sources.map((source, index) => {
+            const upload = uploads[index];
+            return (
+              <section
+                className={`${styles.sourceRow} ${upload ? styles.sourceReady : ''}`}
+                key={source.name}
+              >
+                <div className={styles.sourceIndex}>
+                  {String(index + 1).padStart(2, '0')}
+                </div>
+                <div className={styles.sourceInfo}>
+                  <strong>{source.name}</strong>
+                  <span>{source.detail}</span>
+                </div>
+                <div className={styles.sourceFile}>
+                  <small>
+                    {upload ? 'ARQUIVO SELECIONADO' : 'FORMATOS ACEITOS'}
+                  </small>
+                  <strong title={upload?.name}>
+                    {upload?.name ?? source.format}
+                  </strong>
+                </div>
+                <div className={styles.sourceUpdated}>
+                  <small>ÚLTIMA ATUALIZAÇÃO</small>
+                  <span>{upload?.updated ?? 'NUNCA ATUALIZADO'}</span>
+                </div>
+                <input
+                  ref={(element) => {
+                    inputs.current[index] = element;
+                  }}
+                  className={styles.hiddenInput}
+                  type="file"
+                  accept=".xlsx,.xls,.csv"
+                  onChange={(event) =>
+                    selectFile(index, event.target.files?.[0])
+                  }
+                />
+                <button
+                  className={styles.sourceButton}
+                  onClick={() => inputs.current[index]?.click()}
+                >
+                  <Upload size={14} /> {upload ? 'SUBSTITUIR' : 'SELECIONAR'}
+                </button>
+              </section>
+            );
+          })}
         </div>
-        <footer className={styles.engineFooter}>
-          <p>
-            {message ||
-              'Os arquivos serão validados antes de qualquer dado ser substituído.'}
-          </p>
+        <footer className={styles.engineConsoleFooter}>
+          <div className={styles.engineMessage}>
+            <Gauge size={15} />
+            <span>{message}</span>
+          </div>
           <button
             className={styles.primary}
-            onClick={() =>
-              setMessage(
-                'Motor preparado. O processamento real será conectado na próxima etapa.',
-              )
-            }
+            onClick={() => process()}
+            disabled={uploadedCount < sources.length}
           >
-            <RefreshCw size={15} /> PROCESSAR MOTOR
+            <RefreshCw size={14} /> PROCESSAR MOTOR
           </button>
         </footer>
       </article>
-    </>
+    </div>
   );
 }
 
