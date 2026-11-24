@@ -1,15 +1,125 @@
 import {
   ArrowDownRight,
   ArrowUpRight,
+  BadgePercent,
   Boxes,
   CalendarDays,
   ChartNoAxesCombined,
   CircleDollarSign,
   Factory,
-  PackageCheck,
+  Gift,
+  RotateCcw,
   SlidersHorizontal,
+  type LucideIcon,
 } from 'lucide-react';
 import styles from './SellOutSummaryPage.module.css';
+
+const pulseHeights = [42, 68, 52, 86, 61, 100, 74, 91, 58, 82, 66, 94];
+
+const kpis: KpiData[] = [
+  {
+    icon: CircleDollarSign,
+    category: 'RESULTADO FINANCEIRO',
+    title: 'Meta do mês',
+    value: 'R$ 6,82 mi',
+    valueLabel: 'FATURADO',
+    progress: 72,
+    tone: 'positive',
+    status: 'NO RITMO',
+    details: [
+      ['META', 'R$ 9,50 mi'],
+      ['A FATURAR', 'R$ 1,74 mi'],
+      ['PROJETADO', 'R$ 8,56 mi'],
+    ],
+  },
+  {
+    icon: BadgePercent,
+    category: 'RENTABILIDADE',
+    title: 'Margem atual',
+    value: '18,7%',
+    valueLabel: 'MARGEM REALIZADA',
+    progress: 84,
+    tone: 'balanced',
+    status: '1,3 PP DA META',
+    details: [
+      ['META', '20,0%'],
+      ['PROJETADA', '19,4%'],
+      ['VARIAÇÃO', '+0,8 pp'],
+    ],
+  },
+  {
+    icon: Boxes,
+    category: 'ESTOQUE A VENDA',
+    title: 'Posição comercial',
+    value: 'R$ 8,90 mi',
+    valueLabel: 'VALOR DE VENDA',
+    progress: 66,
+    tone: 'cool',
+    status: '34 DIAS',
+    details: [
+      ['A CUSTO', 'R$ 4,28 mi'],
+      ['EM TRÂNSITO', 'R$ 1,36 mi'],
+      ['PROJETADO', 'R$ 10,26 mi'],
+    ],
+  },
+  {
+    icon: RotateCcw,
+    category: 'DEVOLUÇÕES',
+    title: 'Impacto no faturamento',
+    value: 'R$ 184 mil',
+    valueLabel: 'ACUMULADO DO MÊS',
+    progress: 78,
+    tone: 'risk',
+    status: 'ATENÇÃO',
+    details: [
+      ['ÍNDICE', '2,1%'],
+      ['LIMITE', '2,5%'],
+      ['VS. MÊS ANT.', '+0,4 pp'],
+    ],
+  },
+  {
+    icon: Gift,
+    category: 'BONIFICAÇÕES',
+    title: 'Investimento comercial',
+    value: 'R$ 212 mil',
+    valueLabel: 'ACUMULADO DO MÊS',
+    progress: 54,
+    tone: 'balanced',
+    status: 'CONTROLADO',
+    details: [
+      ['ÍNDICE', '2,4%'],
+      ['TETO', '3,0%'],
+      ['SALDO', 'R$ 74 mil'],
+    ],
+  },
+  {
+    icon: Factory,
+    category: 'CARTEIRA DE PEDIDOS',
+    title: 'Abastecimento futuro',
+    value: 'R$ 2,08 mi',
+    valueLabel: 'CARTEIRA TOTAL',
+    progress: 65,
+    tone: 'cool',
+    status: '128 ITENS',
+    details: [
+      ['INDÚSTRIA', 'R$ 1,36 mi'],
+      ['MILÊNIO', 'R$ 720 mil'],
+      ['MAIS PRÓXIMA', '3 dias'],
+    ],
+  },
+];
+
+interface KpiData {
+  icon: LucideIcon;
+  category: string;
+  title: string;
+  value: string;
+  valueLabel: string;
+  progress: number;
+  tone: 'positive' | 'balanced' | 'cool' | 'risk';
+  status: string;
+  details: [string, string][];
+}
 
 export function SellOutSummaryPage() {
   return (
@@ -21,8 +131,7 @@ export function SellOutSummaryPage() {
           </span>
           <h1 id="summary-title">Resumo comercial</h1>
           <p>
-            Uma leitura rápida do resultado, do potencial em carteira e do que
-            ainda exige ação.
+            Resultado, rentabilidade e riscos em uma única leitura executiva.
           </p>
         </div>
         <div className={styles.filters}>
@@ -35,23 +144,30 @@ export function SellOutSummaryPage() {
         </div>
       </header>
 
-      <section className={styles.kpiSection} aria-labelledby="kpi-title">
+      <section aria-labelledby="kpi-title">
         <div className={styles.sectionLabel}>
-          <span>LEITURA EXECUTIVA</span>
-          <h2 id="kpi-title">O mês em três decisões</h2>
+          <div>
+            <span>LEITURA EXECUTIVA</span>
+            <h2 id="kpi-title">Seis sinais para decidir</h2>
+          </div>
+          <p>
+            O espectro mostra intensidade: azul indica base e vermelho destaca
+            avanço ou pressão.
+          </p>
         </div>
-
         <div className={styles.kpiGrid}>
-          <GoalKpi />
-          <StockKpi />
-          <OrdersKpi />
+          {kpis.map((kpi) => (
+            <KpiCard key={kpi.category} {...kpi} />
+          ))}
         </div>
       </section>
 
       <section className={styles.analysisSection}>
         <div className={styles.sectionLabel}>
-          <span>EVOLUÇÃO E COMPOSIÇÃO</span>
-          <h2>Tabela e gráfico</h2>
+          <div>
+            <span>EVOLUÇÃO E COMPOSIÇÃO</span>
+            <h2>Tabela e gráfico</h2>
+          </div>
         </div>
         <div className={styles.analysisGrid}>
           <article className={styles.chartShell}>
@@ -60,7 +176,7 @@ export function SellOutSummaryPage() {
                 <span>RITMO DIÁRIO</span>
                 <h3>Realizado × projeção</h3>
               </div>
-              <span className={styles.exampleTag}>MODELO VISUAL</span>
+              <span>MODELO VISUAL</span>
             </div>
             <div
               className={styles.chart}
@@ -83,14 +199,13 @@ export function SellOutSummaryPage() {
               <span>30 NOV</span>
             </div>
           </article>
-
           <article className={styles.tableShell}>
             <div className={styles.shellHeader}>
               <div>
                 <span>COMPOSIÇÃO</span>
                 <h3>Movimentos do resultado</h3>
               </div>
-              <span className={styles.exampleTag}>EXEMPLO</span>
+              <span>EXEMPLO</span>
             </div>
             <div className={styles.compRows}>
               <CompositionRow
@@ -128,8 +243,10 @@ export function SellOutSummaryPage() {
 
       <section className={styles.linesSection}>
         <div className={styles.sectionLabel}>
-          <span>RESULTADOS POR LINHA</span>
-          <h2>Onde o resultado acontece</h2>
+          <div>
+            <span>RESULTADOS POR LINHA</span>
+            <h2>Onde o resultado acontece</h2>
+          </div>
         </div>
         <div className={styles.lineHeader}>
           <span>LINHA</span>
@@ -148,8 +265,16 @@ export function SellOutSummaryPage() {
               <strong>{line}</strong>
             </div>
             <strong>R$ —</strong>
-            <div className={styles.miniProgress}>
-              <span style={{ width: `${[76, 61, 43][index]}%` }} />
+            <div className={styles.miniPulse}>
+              {pulseHeights.slice(0, 8).map((height, pulseIndex) => (
+                <span
+                  key={pulseIndex}
+                  className={
+                    pulseIndex < ([6, 5, 3][index] ?? 0) ? styles.active : ''
+                  }
+                  style={{ height: `${Math.max(22, height)}%` }}
+                />
+              ))}
             </div>
             <span className={styles.emptyValue}>AGUARDANDO DADOS</span>
           </article>
@@ -159,162 +284,60 @@ export function SellOutSummaryPage() {
   );
 }
 
-function GoalKpi() {
+function KpiCard({
+  icon: Icon,
+  category,
+  title,
+  value,
+  valueLabel,
+  progress,
+  tone,
+  status,
+  details,
+}: KpiData) {
+  const activeBars = Math.round((progress / 100) * pulseHeights.length);
   return (
-    <article className={`${styles.kpi} ${styles.goalKpi}`}>
+    <article className={`${styles.kpi} ${styles[tone]}`}>
       <div className={styles.kpiTop}>
         <div className={styles.kpiIcon}>
-          <CircleDollarSign size={19} />
+          <Icon size={17} />
         </div>
         <div>
-          <span>ATINGIMENTO FINANCEIRO</span>
-          <h3>Meta do mês</h3>
+          <span>{category}</span>
+          <h3>{title}</h3>
         </div>
-        <span className={styles.signal}>
-          <ArrowUpRight size={14} /> NO RITMO
-        </span>
+        <span className={styles.status}>{status}</span>
       </div>
-      <div className={styles.goalBody}>
-        <div className={styles.arcWrap}>
-          <svg
-            viewBox="0 0 220 150"
-            role="img"
-            aria-label="72 por cento da meta faturada"
-          >
-            <path
-              className={styles.arcBase}
-              d="M 25 125 A 90 90 0 0 1 195 125"
+      <div className={styles.kpiCore}>
+        <div className={styles.mainValue}>
+          <small>{valueLabel}</small>
+          <strong>{value}</strong>
+        </div>
+        <div
+          className={styles.pulse}
+          aria-label={`${progress}% de intensidade`}
+        >
+          {pulseHeights.map((height, index) => (
+            <span
+              key={index}
+              className={index < activeBars ? styles.active : ''}
+              style={{ height: `${height}%` }}
             />
-            <path
-              className={styles.arcProjected}
-              d="M 25 125 A 90 90 0 0 1 195 125"
-              pathLength="100"
-            />
-            <path
-              className={styles.arcActual}
-              d="M 25 125 A 90 90 0 0 1 195 125"
-              pathLength="100"
-            />
-          </svg>
-          <div className={styles.arcValue}>
-            <strong>72%</strong>
-            <span>FATURADO</span>
+          ))}
+        </div>
+        <div className={styles.pulseScale}>
+          <span>BASE</span>
+          <strong>{progress}%</strong>
+          <span>ALVO</span>
+        </div>
+      </div>
+      <div className={styles.kpiDetails}>
+        {details.map(([label, detail]) => (
+          <div key={label}>
+            <span>{label}</span>
+            <strong>{detail}</strong>
           </div>
-        </div>
-        <div className={styles.goalSummary}>
-          <small>REALIZADO PROJETADO</small>
-          <strong>R$ 8,56 mi</strong>
-          <span>90% da meta com a carteira atual</span>
-        </div>
-      </div>
-      <div className={styles.financialFlow}>
-        <div>
-          <span>META</span>
-          <strong>R$ 9,50 mi</strong>
-        </div>
-        <div>
-          <span>FATURADO</span>
-          <strong>R$ 6,82 mi</strong>
-        </div>
-        <div>
-          <span>A FATURAR</span>
-          <strong>R$ 1,74 mi</strong>
-        </div>
-        <div className={styles.gap}>
-          <span>FALTA PROJETADA</span>
-          <strong>R$ 940 mil</strong>
-        </div>
-      </div>
-    </article>
-  );
-}
-
-function StockKpi() {
-  return (
-    <article className={`${styles.kpi} ${styles.stockKpi}`}>
-      <div className={styles.kpiTop}>
-        <div className={styles.kpiIcon}>
-          <Boxes size={19} />
-        </div>
-        <div>
-          <span>ESTOQUE A CUSTO</span>
-          <h3>Posição e projeção</h3>
-        </div>
-      </div>
-      <div className={styles.stockValue}>
-        <small>POSIÇÃO ATUAL</small>
-        <strong>R$ 4,28 mi</strong>
-        <span>34 dias de cobertura</span>
-      </div>
-      <div className={styles.stockScale}>
-        <div className={styles.scaleLabels}>
-          <span>ATUAL</span>
-          <span>COM CARTEIRA</span>
-        </div>
-        <div className={styles.scaleTrack}>
-          <span className={styles.stockCurrent} />
-          <span className={styles.stockProjected} />
-          <i />
-        </div>
-        <div className={styles.scaleValues}>
-          <strong>R$ 4,28 mi</strong>
-          <strong>R$ 5,64 mi</strong>
-        </div>
-      </div>
-      <div className={styles.stockInsight}>
-        <PackageCheck size={18} />
-        <div>
-          <span>PROJEÇÃO CONSOLIDADA</span>
-          <strong>+ R$ 1,36 mi em trânsito</strong>
-          <p>A entrada projetada leva a cobertura para 45 dias.</p>
-        </div>
-      </div>
-    </article>
-  );
-}
-
-function OrdersKpi() {
-  return (
-    <article className={`${styles.kpi} ${styles.ordersKpi}`}>
-      <div className={styles.kpiTop}>
-        <div className={styles.kpiIcon}>
-          <Factory size={19} />
-        </div>
-        <div>
-          <span>CARTEIRA DE PEDIDOS</span>
-          <h3>Origem do abastecimento</h3>
-        </div>
-      </div>
-      <div className={styles.orderTotal}>
-        <small>CARTEIRA TOTAL</small>
-        <strong>R$ 2,08 mi</strong>
-        <span>valor de exemplo</span>
-      </div>
-      <div className={styles.balance}>
-        <div className={styles.balanceSide}>
-          <span>INDÚSTRIA</span>
-          <strong>R$ 1,36 mi</strong>
-          <small>65%</small>
-        </div>
-        <div className={styles.balanceVisual}>
-          <span className={styles.industry} />
-          <span className={styles.millennium} />
-        </div>
-        <div className={`${styles.balanceSide} ${styles.alignRight}`}>
-          <span>MILÊNIO</span>
-          <strong>R$ 720 mil</strong>
-          <small>35%</small>
-        </div>
-      </div>
-      <div className={styles.orderFooter}>
-        <div>
-          <span>PREVISÃO MAIS PRÓXIMA</span>
-          <strong>3 dias</strong>
-        </div>
-        <div>
-          <span>ITENS EM CARTEIRA</span>
-          <strong>128</strong>
-        </div>
+        ))}
       </div>
     </article>
   );
@@ -338,7 +361,7 @@ function CompositionRow({
       <span>{label}</span>
       <strong>{value}</strong>
       <span
-        className={`${styles.movement} ${positive ? styles.positive : ''} ${neutral ? styles.neutral : ''}`}
+        className={`${styles.movement} ${positive ? styles.up : ''} ${neutral ? styles.neutral : ''}`}
       >
         {positive ? (
           <ArrowUpRight size={14} />
