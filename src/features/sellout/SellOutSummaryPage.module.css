@@ -470,8 +470,11 @@
   font-size: 0.74rem;
 }
 .tableScroll {
+  max-height: 23.5rem;
   margin-top: 0.5rem;
-  overflow-x: auto;
+  overflow: auto;
+  scrollbar-color: #3b3b3b transparent;
+  scrollbar-width: thin;
 }
 .dailyTable {
   width: 100%;
@@ -490,8 +493,12 @@
   text-align: left;
 }
 .dailyTable th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   height: 1.9rem;
   color: #858b95;
+  background: #0d0d0d;
   font-size: 0.58rem;
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -509,6 +516,12 @@
 .dailyTable tbody tr:hover,
 .dailyTable .selectedRow {
   background: #1b1b1b;
+}
+.dailyTable .futureRow td {
+  color: #5f646d;
+}
+.dailyTable .futureRow.selectedRow td:first-child {
+  color: var(--kpi-red);
 }
 .dailyTable .selectedRow td:first-child {
   color: var(--kpi-red);
