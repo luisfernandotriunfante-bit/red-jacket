@@ -497,12 +497,148 @@ function DailyPerformance() {
     </article>
   );
 }
-const lines = [
-  ['Pneus', 'R$ 2,48 mi', '81%'],
-  ['Lubrificantes', 'R$ 1,72 mi', '74%'],
-  ['Peças', 'R$ 1,46 mi', '68%'],
-  ['Acessórios', 'R$ 1,16 mi', '63%'],
+const productLines = [
+  {
+    name: 'Pneus',
+    revenue: 'R$ 2,48 mi',
+    share: 36.4,
+    target: 81,
+    growth: 12.8,
+    margin: '21,4%',
+    trend: [44, 49, 47, 56, 61, 67, 72, 78],
+  },
+  {
+    name: 'Lubrificantes',
+    revenue: 'R$ 1,72 mi',
+    share: 25.2,
+    target: 74,
+    growth: 6.4,
+    margin: '18,9%',
+    trend: [42, 45, 48, 47, 54, 56, 59, 63],
+  },
+  {
+    name: 'Peças',
+    revenue: 'R$ 1,46 mi',
+    share: 21.4,
+    target: 68,
+    growth: -2.1,
+    margin: '16,7%',
+    trend: [62, 59, 61, 57, 55, 58, 54, 52],
+  },
+  {
+    name: 'Acessórios',
+    revenue: 'R$ 1,16 mi',
+    share: 17,
+    target: 63,
+    growth: 18.7,
+    margin: '24,6%',
+    trend: [31, 34, 39, 43, 48, 51, 59, 66],
+  },
 ];
+
+function ProductLinePerformance() {
+  return (
+    <article className={styles.portfolioPanel}>
+      <div className={styles.portfolioHeader}>
+        <div>
+          <h2>Desempenho por linha</h2>
+          <span>Faturamento, crescimento e rentabilidade</span>
+        </div>
+        <div className={styles.portfolioTotal}>
+          <span>Total das linhas</span>
+          <strong>R$ 6,82 mi</strong>
+        </div>
+      </div>
+      <div
+        className={styles.compositionRail}
+        aria-label="Participação das linhas no faturamento"
+      >
+        {productLines.map((line, index) => (
+          <span
+            key={line.name}
+            style={{ width: `${line.share}%` }}
+            className={styles[`railTone${index + 1}`]}
+          />
+        ))}
+      </div>
+      <div className={styles.portfolioLegend}>
+        {productLines.map((line, index) => (
+          <span key={line.name}>
+            <i className={styles[`railTone${index + 1}`]} />
+            {line.name}{' '}
+            <strong>{line.share.toFixed(1).replace('.', ',')}%</strong>
+          </span>
+        ))}
+      </div>
+      <div className={styles.lineCards}>
+        {productLines.map((line, index) => {
+          const min = Math.min(...line.trend);
+          const max = Math.max(...line.trend);
+          const range = Math.max(max - min, 1);
+          const sparkPoints = line.trend
+            .map(
+              (value, pointIndex) =>
+                `${(pointIndex * 120) / (line.trend.length - 1)},${36 - ((value - min) / range) * 28}`,
+            )
+            .join(' ');
+          const GrowthIcon = line.growth >= 0 ? TrendingUp : TrendingDown;
+          return (
+            <section className={styles.lineCard} key={line.name}>
+              <div className={styles.lineCardTop}>
+                <span>0{index + 1}</span>
+                <h3>{line.name}</h3>
+                <span
+                  className={
+                    line.growth >= 0
+                      ? styles.growthPositive
+                      : styles.growthNegative
+                  }
+                >
+                  <GrowthIcon size={13} />
+                  {line.growth > 0 ? '+' : ''}
+                  {line.growth.toFixed(1).replace('.', ',')}%
+                </span>
+              </div>
+              <div className={styles.lineValue}>
+                <strong>{line.revenue}</strong>
+                <span>vs. mês anterior</span>
+              </div>
+              <svg
+                className={styles.sparkline}
+                viewBox="0 0 120 42"
+                preserveAspectRatio="none"
+                aria-label={`Tendência de ${line.name}`}
+              >
+                <polyline points={sparkPoints} />
+                <circle
+                  cx="120"
+                  cy={sparkPoints.split(' ').at(-1)?.split(',')[1]}
+                  r="2.7"
+                />
+              </svg>
+              <div className={styles.lineMetrics}>
+                <div>
+                  <span>Meta</span>
+                  <strong>{line.target}%</strong>
+                </div>
+                <div>
+                  <span>Margem</span>
+                  <strong>{line.margin}</strong>
+                </div>
+              </div>
+              <div
+                className={styles.targetTrack}
+                aria-label={`${line.target}% da meta`}
+              >
+                <span style={{ width: `${line.target}%` }} />
+              </div>
+            </section>
+          );
+        })}
+      </div>
+    </article>
+  );
+}
 
 function PrimaryCard({ kpi, cycle }: { kpi: PrimaryKpi; cycle: number }) {
   const [frozenView, setFrozenView] = useState<number | null>(null);
@@ -627,26 +763,7 @@ export function SellOutSummaryPage() {
         ))}
       </div>
       <DailyPerformance />
-      <article className={`${styles.panel} ${styles.linesPanel}`}>
-        <div className={styles.panelHeading}>
-          <h2>Resultados por linha</h2>
-        </div>
-        <div className={styles.linesTable}>
-          {lines.map(([label, value, share]) => (
-            <div className={styles.lineRow} key={label}>
-              <span>{label}</span>
-              <strong>{value}</strong>
-              <div
-                className={styles.lineProgress}
-                aria-label={`${share} da meta`}
-              >
-                <span style={{ width: share }} />
-              </div>
-              <small>{share}</small>
-            </div>
-          ))}
-        </div>
-      </article>
+      <ProductLinePerformance />
     </section>
   );
 }
