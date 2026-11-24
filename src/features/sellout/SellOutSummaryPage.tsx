@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import {
   Activity,
   BadgePercent,
@@ -7,6 +8,8 @@ import {
   Factory,
   Gift,
   RotateCcw,
+  TrendingDown,
+  TrendingUp,
   TriangleAlert,
   type LucideIcon,
 } from 'lucide-react';
@@ -15,107 +18,182 @@ import styles from './SellOutSummaryPage.module.css';
 
 type Detail = { label: string; value: string };
 
+type KpiView = Detail & {
+  percent: string;
+  tone: 'primary' | 'secondary' | 'combined';
+};
+
 type Kpi = {
   title: string;
-  value: string;
   status: string;
   statusIcon: LucideIcon;
   icon: LucideIcon;
-  progress: number;
-  projection: number;
-  scaleLabel: string;
-  details: Detail[];
+  primaryPercent: number;
+  secondaryPercent: number;
+  reference: Detail;
+  comparison: { value: string; direction: 'up' | 'down' };
+  views: KpiView[];
 };
 
 const kpis: Kpi[] = [
   {
     title: 'Meta do mês',
-    value: 'R$ 6,82 mi',
     status: 'No ritmo',
     statusIcon: Activity,
     icon: CircleDollarSign,
-    progress: 72,
-    projection: 90,
-    scaleLabel: '72% realizado',
-    details: [
-      { label: 'Meta', value: 'R$ 9,50 mi' },
-      { label: 'A faturar', value: 'R$ 1,74 mi' },
-      { label: 'Projetado', value: 'R$ 8,56 mi' },
+    primaryPercent: 72,
+    secondaryPercent: 18,
+    reference: { label: 'Meta', value: 'R$ 9,50 mi' },
+    comparison: { value: '+8,4%', direction: 'up' },
+    views: [
+      {
+        label: 'Faturado',
+        value: 'R$ 6,82 mi',
+        percent: '72%',
+        tone: 'primary',
+      },
+      {
+        label: 'A faturar',
+        value: 'R$ 1,74 mi',
+        percent: '18%',
+        tone: 'secondary',
+      },
+      {
+        label: 'Realizado',
+        value: 'R$ 8,56 mi',
+        percent: '90%',
+        tone: 'combined',
+      },
     ],
   },
   {
     title: 'Margem atual',
-    value: '18,7%',
     status: 'Atenção',
     statusIcon: TriangleAlert,
     icon: BadgePercent,
-    progress: 68,
-    projection: 92,
-    scaleLabel: '1,3 pp abaixo',
-    details: [
-      { label: 'Meta', value: '20,0%' },
-      { label: 'Projetada', value: '19,4%' },
-      { label: 'Mês anterior', value: '+0,8 pp' },
+    primaryPercent: 68,
+    secondaryPercent: 24,
+    reference: { label: 'Meta', value: '20,0%' },
+    comparison: { value: '+0,8 pp', direction: 'up' },
+    views: [
+      { label: 'Atual', value: '18,7%', percent: '68%', tone: 'primary' },
+      {
+        label: 'A conquistar',
+        value: '1,3 pp',
+        percent: '24%',
+        tone: 'secondary',
+      },
+      { label: 'Projetada', value: '19,4%', percent: '92%', tone: 'combined' },
     ],
   },
   {
     title: 'Estoque a venda',
-    value: 'R$ 8,90 mi',
     status: 'Saudável',
     statusIcon: CircleCheck,
     icon: Boxes,
-    progress: 78,
-    projection: 91,
-    scaleLabel: '34 dias de cobertura',
-    details: [
-      { label: 'A custo', value: 'R$ 4,28 mi' },
-      { label: 'Em trânsito', value: 'R$ 1,36 mi' },
-      { label: 'Projetado', value: 'R$ 10,26 mi' },
+    primaryPercent: 78,
+    secondaryPercent: 13,
+    reference: { label: 'Cobertura', value: '34 dias' },
+    comparison: { value: '-2,6%', direction: 'down' },
+    views: [
+      {
+        label: 'A venda',
+        value: 'R$ 8,90 mi',
+        percent: '78%',
+        tone: 'primary',
+      },
+      {
+        label: 'Em trânsito',
+        value: 'R$ 1,36 mi',
+        percent: '13%',
+        tone: 'secondary',
+      },
+      {
+        label: 'Projetado',
+        value: 'R$ 10,26 mi',
+        percent: '91%',
+        tone: 'combined',
+      },
     ],
   },
   {
     title: 'Devoluções',
-    value: 'R$ 184 mil',
     status: 'Sob controle',
     statusIcon: CircleCheck,
     icon: RotateCcw,
-    progress: 84,
-    projection: 100,
-    scaleLabel: '84% do limite',
-    details: [
-      { label: 'Limite', value: '2,5%' },
-      { label: 'Mês anterior', value: '+0,4 pp' },
-      { label: 'Impacto', value: 'R$ 184 mil' },
+    primaryPercent: 84,
+    secondaryPercent: 16,
+    reference: { label: 'Limite', value: 'R$ 220 mil' },
+    comparison: { value: '+0,4 pp', direction: 'up' },
+    views: [
+      {
+        label: 'Apurado',
+        value: 'R$ 184 mil',
+        percent: '84%',
+        tone: 'primary',
+      },
+      { label: 'Saldo', value: 'R$ 36 mil', percent: '16%', tone: 'secondary' },
+      {
+        label: 'Limite total',
+        value: 'R$ 220 mil',
+        percent: '100%',
+        tone: 'combined',
+      },
     ],
   },
   {
     title: 'Bonificações',
-    value: 'R$ 212 mil',
     status: 'Estável',
     statusIcon: Activity,
     icon: Gift,
-    progress: 80,
-    projection: 100,
-    scaleLabel: '80% do teto',
-    details: [
-      { label: 'Teto', value: '3,0%' },
-      { label: 'Saldo', value: 'R$ 74 mil' },
-      { label: 'Mês anterior', value: '-0,2 pp' },
+    primaryPercent: 74,
+    secondaryPercent: 26,
+    reference: { label: 'Teto', value: 'R$ 286 mil' },
+    comparison: { value: '-0,2 pp', direction: 'down' },
+    views: [
+      {
+        label: 'Utilizado',
+        value: 'R$ 212 mil',
+        percent: '74%',
+        tone: 'primary',
+      },
+      { label: 'Saldo', value: 'R$ 74 mil', percent: '26%', tone: 'secondary' },
+      {
+        label: 'Disponível',
+        value: 'R$ 286 mil',
+        percent: '100%',
+        tone: 'combined',
+      },
     ],
   },
   {
     title: 'Carteira de pedidos',
-    value: 'R$ 2,08 mi',
     status: 'No ritmo',
     statusIcon: Activity,
     icon: Factory,
-    progress: 61,
-    projection: 86,
-    scaleLabel: '128 itens ativos',
-    details: [
-      { label: 'Indústria', value: 'R$ 1,36 mi' },
-      { label: 'Milênio', value: 'R$ 720 mil' },
-      { label: 'Próximos 3 dias', value: 'R$ 840 mil' },
+    primaryPercent: 65,
+    secondaryPercent: 35,
+    reference: { label: 'Pedidos', value: '128 itens' },
+    comparison: { value: '+12,7%', direction: 'up' },
+    views: [
+      {
+        label: 'Indústria',
+        value: 'R$ 1,36 mi',
+        percent: '65%',
+        tone: 'primary',
+      },
+      {
+        label: 'Milênio',
+        value: 'R$ 720 mil',
+        percent: '35%',
+        tone: 'secondary',
+      },
+      {
+        label: 'Carteira total',
+        value: 'R$ 2,08 mi',
+        percent: '100%',
+        tone: 'combined',
+      },
     ],
   },
 ];
@@ -135,51 +213,111 @@ const lines = [
   ['Acessórios', 'R$ 1,16 mi', '63%'],
 ];
 
-function MetricScale({
-  progress,
-  projection,
-  label,
-}: {
-  progress: number;
-  projection: number;
-  label: string;
-}) {
+function DonutKpi({ kpi }: { kpi: Kpi }) {
+  const [activeView, setActiveView] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const view = kpi.views[activeView] ?? kpi.views[0]!;
+  const Icon = kpi.icon;
+  const StatusIcon = kpi.statusIcon;
+  const TrendIcon =
+    kpi.comparison.direction === 'up' ? TrendingUp : TrendingDown;
+
+  useEffect(() => {
+    if (paused) return;
+    const timer = window.setInterval(() => {
+      setActiveView((current) => (current + 1) % kpi.views.length);
+    }, 2000);
+    return () => window.clearInterval(timer);
+  }, [kpi.views.length, paused]);
+
+  const toneClass = styles[view.tone];
+
   return (
-    <div className={styles.metricScale} role="img" aria-label={label}>
-      <div className={styles.scaleLabels} aria-hidden="true">
-        <span>0</span>
-        <strong
-          style={{
-            left: `${progress}%`,
-            transform: progress > 70 ? 'translateX(-100%)' : 'translateX(-50%)',
-          }}
+    <article className={styles.kpi}>
+      <div className={styles.kpiTop}>
+        <span className={styles.kpiIcon} aria-hidden="true">
+          <Icon size={17} strokeWidth={1.7} />
+        </span>
+        <span className={styles.kpiTitle}>{kpi.title}</span>
+      </div>
+      <div
+        className={styles.rotatingMetric}
+        onMouseEnter={() => setPaused(true)}
+        onMouseLeave={() => setPaused(false)}
+      >
+        <div
+          className={`${styles.metricValue} ${toneClass}`}
+          aria-live="polite"
         >
-          {label}
-        </strong>
-        <span>Referência</span>
+          <span>{view.label}</span>
+          <strong>{view.value}</strong>
+        </div>
+        <div className={styles.donutWrap}>
+          <svg
+            className={styles.donut}
+            viewBox="0 0 120 120"
+            aria-hidden="true"
+          >
+            <circle
+              className={styles.donutTrack}
+              cx="60"
+              cy="60"
+              r="48"
+              pathLength="100"
+            />
+            <circle
+              className={`${styles.donutSegment} ${styles.donutPrimary} ${view.tone === 'secondary' ? styles.dimmed : ''}`}
+              cx="60"
+              cy="60"
+              r="48"
+              pathLength="100"
+              strokeDasharray={`${kpi.primaryPercent} ${100 - kpi.primaryPercent}`}
+            />
+            <circle
+              className={`${styles.donutSegment} ${styles.donutSecondary} ${view.tone === 'primary' ? styles.dimmed : ''}`}
+              cx="60"
+              cy="60"
+              r="48"
+              pathLength="100"
+              strokeDasharray={`${kpi.secondaryPercent} ${100 - kpi.secondaryPercent}`}
+              strokeDashoffset={-kpi.primaryPercent}
+            />
+          </svg>
+          <div className={`${styles.donutValue} ${toneClass}`}>
+            <strong>{view.percent}</strong>
+            <span>{view.label}</span>
+          </div>
+        </div>
+        <div className={styles.viewDots} aria-label="Alternância do indicador">
+          {kpi.views.map((item, index) => (
+            <button
+              type="button"
+              key={item.label}
+              className={index === activeView ? styles.activeDot : undefined}
+              aria-label={`Mostrar ${item.label.toLowerCase()}`}
+              onClick={() => setActiveView(index)}
+            />
+          ))}
+        </div>
       </div>
-      <div className={styles.scaleTrack} aria-hidden="true">
-        <span className={styles.scaleFill} style={{ width: `${progress}%` }} />
-        {Array.from({ length: 11 }, (_, index) => (
-          <i key={index} style={{ left: `${index * 10}%` }} />
-        ))}
-        <b className={styles.currentMarker} style={{ left: `${progress}%` }} />
-        <b
-          className={styles.projectionMarker}
-          style={{ left: `${Math.min(projection, 98)}%` }}
-        />
-      </div>
-      <div className={styles.scaleLegend} aria-hidden="true">
-        <span>
-          <i />
-          Atual
+      <div className={styles.kpiFooter}>
+        <div className={styles.reference}>
+          <span>{kpi.reference.label}</span>
+          <strong>{kpi.reference.value}</strong>
+        </div>
+        <div className={styles.comparison}>
+          <span>Mês anterior</span>
+          <strong>
+            <TrendIcon size={13} strokeWidth={1.8} />
+            {kpi.comparison.value}
+          </strong>
+        </div>
+        <span className={styles.kpiStatus}>
+          <StatusIcon size={12} strokeWidth={1.8} />
+          {kpi.status}
         </span>
-        <span>
-          <i />
-          Projeção
-        </span>
       </div>
-    </div>
+    </article>
   );
 }
 
@@ -187,46 +325,9 @@ export function SellOutSummaryPage() {
   return (
     <section className={styles.page} aria-label="Resumo de sell out">
       <div className={styles.kpiGrid}>
-        {kpis.map(
-          ({
-            title,
-            value,
-            status,
-            statusIcon: StatusIcon,
-            icon: Icon,
-            progress,
-            projection,
-            scaleLabel,
-            details,
-          }) => (
-            <article className={styles.kpi} key={title}>
-              <div className={styles.kpiTop}>
-                <span className={styles.kpiIcon} aria-hidden="true">
-                  <Icon size={17} strokeWidth={1.7} />
-                </span>
-                <span className={styles.kpiTitle}>{title}</span>
-                <span className={styles.kpiStatus}>
-                  <StatusIcon size={12} strokeWidth={1.8} />
-                  {status}
-                </span>
-              </div>
-              <strong className={styles.kpiValue}>{value}</strong>
-              <MetricScale
-                progress={progress}
-                projection={projection}
-                label={scaleLabel}
-              />
-              <dl className={styles.kpiDetails}>
-                {details.map((detail) => (
-                  <div key={detail.label}>
-                    <dt>{detail.label}</dt>
-                    <dd>{detail.value}</dd>
-                  </div>
-                ))}
-              </dl>
-            </article>
-          ),
-        )}
+        {kpis.map((kpi) => (
+          <DonutKpi kpi={kpi} key={kpi.title} />
+        ))}
       </div>
 
       <div className={styles.analysisGrid}>
