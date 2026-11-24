@@ -4,8 +4,8 @@
   background: var(--canvas);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
-  --font-body: 'Inter Variable', Inter, sans-serif;
-  --font-display: 'Space Grotesk Variable', 'Arial Narrow', sans-serif;
+  --font-body: 'Manrope Variable', Manrope, Arial, sans-serif;
+  --font-display: 'Manrope Variable', Manrope, Arial, sans-serif;
   --canvas: #ffffff;
   --surface-0: #ffffff;
   --surface-1: #ffffff;
@@ -19,8 +19,8 @@
   --line-strong: #b8b8b8;
   --border: #dedede;
   --border-strong: #b8b8b8;
-  --accent: #0000ff;
-  --accent-soft: rgb(0 0 255 / 7%);
+  --accent: #ff2638;
+  --accent-soft: rgb(255 38 56 / 8%);
   --warning: #855d00;
   --warning-soft: rgb(255 187 0 / 12%);
   --rail-shadow: rgb(0 0 0 / 8%);
@@ -44,8 +44,8 @@
   --line-strong: #484848;
   --border: #272727;
   --border-strong: #484848;
-  --accent: #ff0000;
-  --accent-soft: rgb(255 0 0 / 9%);
+  --accent: #ff2638;
+  --accent-soft: rgb(255 38 56 / 9%);
   --warning: #ffc400;
   --warning-soft: rgb(255 196 0 / 12%);
   --rail-shadow: rgb(255 255 255 / 5%);
