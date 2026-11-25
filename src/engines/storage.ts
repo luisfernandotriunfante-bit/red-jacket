@@ -55,6 +55,67 @@ export async function saveEngineBase(
   return typeof runId === 'string' ? runId : '';
 }
 
+const CHUNK_ROWS = 2000;
+
+function keyedRows(result: EngineResult, keyColumn: string) {
+  const seen = new Set<string>();
+  return result.rows.map((data, index) => {
+    const key = rowKey(data, keyColumn, index);
+    if (seen.has(key)) throw new Error(`Chave repetida na base: ${key}`);
+    seen.add(key);
+    return { key, data };
+  });
+}
+
+/**
+ * Grava bases grandes em lotes: a versão anterior continua valendo até a nova ser finalizada
+ * (contagem conferida no banco). Só depois as linhas antigas são apagadas, em pedaços.
+ */
+export async function saveEngineBaseChunked(
+  result: EngineResult,
+  keyColumn: string,
+  sources: SourceInfo[],
+  onProgress: (message: string) => void = () => undefined,
+): Promise<string> {
+  const client = requireClient();
+  const rows = keyedRows(result, keyColumn);
+  const begin = await client.rpc('begin_engine_run', {
+    p_engine: result.engine,
+  });
+  if (begin.error) throw new Error(begin.error.message);
+  const runId = String(begin.data);
+  for (let from = 0; from < rows.length; from += CHUNK_ROWS) {
+    onProgress(
+      `Gravando a base no Supabase… ${Math.min(from + CHUNK_ROWS, rows.length)} de ${rows.length} linhas`,
+    );
+    const part = await client.rpc('append_engine_rows', {
+      p_run: runId,
+      p_rows: rows.slice(from, from + CHUNK_ROWS),
+    });
+    if (part.error) throw new Error(part.error.message);
+  }
+  onProgress('Conferindo a gravação…');
+  const done = await client.rpc('finalize_engine_run', {
+    p_run: runId,
+    p_columns: result.columns,
+    p_audit: result.audit,
+    p_sources: sources,
+    p_row_count: rows.length,
+  });
+  if (done.error) throw new Error(done.error.message);
+  onProgress('Limpando a versão anterior…');
+  for (;;) {
+    const purge = await client.rpc('purge_engine_rows', {
+      p_engine: result.engine,
+      p_keep: runId,
+      p_limit: 20000,
+    });
+    if (purge.error) throw new Error(purge.error.message);
+    if (Number(purge.data) === 0) break;
+  }
+  return runId;
+}
+
 function isAuditList(value: unknown): value is AuditItem[] {
   return Array.isArray(value);
 }
@@ -68,6 +129,7 @@ export async function loadLastRun(
     .from('engine_runs')
     .select('id, engine, row_count, audit, sources, created_at')
     .eq('engine', engine)
+    .eq('finalized', true)
     .order('created_at', { ascending: false })
     .limit(1);
   if (response.error) throw new Error(response.error.message);
@@ -88,6 +150,18 @@ export async function loadLastRun(
 /** Base vigente de um motor (todas as linhas), para os motores que dependem dela. */
 export async function loadBaseRows(engine: string): Promise<BaseRow[]> {
   const client = requireClient();
+  const last = await client
+    .from('engine_runs')
+    .select('id')
+    .eq('engine', engine)
+    .eq('finalized', true)
+    .order('created_at', { ascending: false })
+    .limit(1);
+  if (last.error) throw new Error(last.error.message);
+  const lastList: unknown = last.data;
+  const lastRow: unknown = Array.isArray(lastList) ? lastList[0] : null;
+  if (!lastRow || typeof lastRow !== 'object') return [];
+  const runId = String((lastRow as Record<string, unknown>).id);
   const rows: BaseRow[] = [];
   const page = 1000;
   for (let from = 0; ; from += page) {
@@ -95,6 +169,7 @@ export async function loadBaseRows(engine: string): Promise<BaseRow[]> {
       .from('engine_base_rows')
       .select('data')
       .eq('engine', engine)
+      .eq('run_id', runId)
       .order('row_key', { ascending: true })
       .range(from, from + page - 1);
     if (response.error) throw new Error(response.error.message);
@@ -104,4 +179,82 @@ export async function loadBaseRows(engine: string): Promise<BaseRow[]> {
     if (list.length < page) break;
   }
   return rows;
+}
+
+// ------------------------------------------------------- arquivos enviados
+const BUCKET = 'engine-sources';
+
+export type SourceFileInfo = {
+  engine: string;
+  slot: string;
+  fileName: string;
+  sizeBytes: number;
+  uploadedAt: string;
+};
+
+async function gzip(file: Blob): Promise<Blob> {
+  const stream = file.stream().pipeThrough(new CompressionStream('gzip'));
+  return new Response(stream).blob();
+}
+
+async function gunzip(blob: Blob): Promise<Blob> {
+  const stream = blob.stream().pipeThrough(new DecompressionStream('gzip'));
+  return new Response(stream).blob();
+}
+
+/** Guarda o arquivo do slot (compactado) para as próximas atualizações. */
+export async function saveSourceFile(
+  engine: string,
+  slot: string,
+  file: File,
+): Promise<void> {
+  const client = requireClient();
+  const packed = await gzip(file);
+  const sent = await client.storage
+    .from(BUCKET)
+    .upload(`${engine}/${slot}.gz`, packed, {
+      upsert: true,
+      contentType: 'application/gzip',
+    });
+  if (sent.error) throw new Error(sent.error.message);
+  const row = await client.from('engine_source_files').upsert({
+    engine,
+    slot,
+    file_name: file.name,
+    size_bytes: file.size,
+    uploaded_at: new Date().toISOString(),
+  });
+  if (row.error) throw new Error(row.error.message);
+}
+
+/** Arquivos já guardados (de todos os motores). */
+export async function listSourceFiles(): Promise<SourceFileInfo[]> {
+  const client = requireClient();
+  const response = await client
+    .from('engine_source_files')
+    .select('engine, slot, file_name, size_bytes, uploaded_at');
+  if (response.error) throw new Error(response.error.message);
+  const list: unknown = response.data;
+  if (!Array.isArray(list)) return [];
+  return (list as Record<string, unknown>[]).map((r) => ({
+    engine: String(r.engine),
+    slot: String(r.slot),
+    fileName: String(r.file_name),
+    sizeBytes: Number(r.size_bytes),
+    uploadedAt: String(r.uploaded_at),
+  }));
+}
+
+/** Baixa um arquivo guardado e devolve o original. */
+export async function loadSourceFile(
+  engine: string,
+  slot: string,
+  fileName: string,
+): Promise<File> {
+  const client = requireClient();
+  const got = await client.storage
+    .from(BUCKET)
+    .download(`${engine}/${slot}.gz`);
+  if (got.error) throw new Error(got.error.message);
+  return new File([await gunzip(got.data)], fileName);
 }

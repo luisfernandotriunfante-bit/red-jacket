@@ -23,6 +23,10 @@ import {
   loadBaseRows,
   loadLastRun,
   saveEngineBase,
+  saveEngineBaseChunked,
+  listSourceFiles,
+  loadSourceFile,
+  saveSourceFile,
 } from '../../engines/storage';
 import styles from './SettingsPage.module.css';
 
@@ -51,6 +55,37 @@ type EngineDefinition = {
 };
 
 const engines: EngineDefinition[] = [
+  {
+    id: 'movimentacoes',
+    name: 'Movimentações',
+    description: 'Histórico e movimentação comercial vigente.',
+    slots: [
+      {
+        id: '379-2025',
+        name: '379 de 2025',
+        detail: 'Base histórica fechada',
+        period: 0,
+      },
+      {
+        id: '379-2026-julho',
+        name: '379 de 2026',
+        detail: 'Movimentações até julho',
+        period: 0,
+      },
+      {
+        id: '8022-agosto',
+        name: '8022 — agosto em diante',
+        detail: 'Base consolidada do período',
+        period: 30,
+      },
+      {
+        id: '8022-atual',
+        name: '8022 — mês atual',
+        detail: 'Movimentação da competência aberta',
+        period: 1,
+      },
+    ],
+  },
   {
     id: 'produtos',
     name: 'Produtos',
@@ -95,33 +130,27 @@ const engines: EngineDefinition[] = [
     ],
   },
   {
-    id: 'movimentacoes',
-    name: 'Movimentações',
-    description: 'Histórico e movimentação comercial vigente.',
+    id: 'compras-industria',
+    name: 'Compras da indústria',
+    description: 'Compras realizadas e carteira industrial.',
     slots: [
       {
-        id: '379-2025',
-        name: '379 de 2025',
-        detail: 'Base histórica fechada',
-        period: 0,
-      },
-      {
-        id: '379-2026-julho',
-        name: '379 de 2026',
-        detail: 'Movimentações até julho',
-        period: 0,
-      },
-      {
-        id: '8022-agosto',
-        name: '8022 — agosto em diante',
-        detail: 'Base consolidada do período',
+        id: '12322',
+        name: '12322',
+        detail: 'Compras da indústria',
         period: 30,
       },
       {
-        id: '8022-atual',
-        name: '8022 — mês atual',
-        detail: 'Movimentação da competência aberta',
-        period: 1,
+        id: '218',
+        name: '218',
+        detail: 'Compras do ano inteiro (do começo do ano até o fim)',
+        period: 30,
+      },
+      {
+        id: 'carteira-17-11',
+        name: 'CARTEIRA_17.11',
+        detail: 'Carteira industrial de referência',
+        period: 30,
       },
     ],
   },
@@ -153,37 +182,6 @@ const engines: EngineDefinition[] = [
         id: 'roteiro-consolidado',
         name: 'Roteiro consolidado',
         detail: 'Roteiro vigente das equipes',
-        period: 30,
-      },
-    ],
-  },
-  {
-    id: 'compras-industria',
-    name: 'Compras da indústria',
-    description: 'Compras realizadas e carteira industrial.',
-    slots: [
-      {
-        id: '12322',
-        name: '12322',
-        detail: 'Compras da indústria',
-        period: 30,
-      },
-      {
-        id: '218-outubro',
-        name: '218 — até outubro',
-        detail: 'Base histórica fechada',
-        period: 0,
-      },
-      {
-        id: '218-atual',
-        name: '218 — mês atual',
-        detail: 'Compras da competência aberta',
-        period: 1,
-      },
-      {
-        id: 'carteira-17-11',
-        name: 'CARTEIRA_17.11',
-        detail: 'Carteira industrial de referência',
         period: 30,
       },
     ],
@@ -276,6 +274,21 @@ function Engines() {
   useEffect(() => {
     let active = true;
     void (async () => {
+      try {
+        const stored = await listSourceFiles();
+        if (active)
+          setUploads((current) => ({
+            ...current,
+            ...Object.fromEntries(
+              stored.map((f) => [
+                f.slot,
+                { name: f.fileName, updatedAt: f.uploadedAt },
+              ]),
+            ),
+          }));
+      } catch {
+        // sem conexão ou sem permissão: segue sem a lista de arquivos guardados
+      }
       for (const engineId of Object.keys(runners)) {
         try {
           const run = await loadLastRun(engineId);
@@ -284,15 +297,6 @@ function Engines() {
           const warnings = run.audit.filter(
             (a) => a.severity === 'AVISO',
           ).length;
-          setUploads((current) => ({
-            ...current,
-            ...Object.fromEntries(
-              run.sources.map((source) => [
-                source.slot,
-                { name: source.fileName, updatedAt: run.createdAt },
-              ]),
-            ),
-          }));
           setResults((current) => ({
             ...current,
             [engineId]: `${run.rowCount} linhas gravadas · ${errors} erro(s) · ${warnings} aviso(s)`,
@@ -341,7 +345,21 @@ function Engines() {
       ...current,
       [slot.id]: { name: file.name, updatedAt: now },
     }));
-    setMessage(`${slot.name}: arquivo recebido e pronto para validação.`);
+    const owner = engines.find((e) => e.slots.some((x) => x.id === slot.id));
+    setMessage(
+      `${slot.name}: arquivo recebido, guardando para as próximas atualizações…`,
+    );
+    if (!owner) return;
+    void saveSourceFile(owner.id, slot.id, file).then(
+      () =>
+        setMessage(
+          `${slot.name}: arquivo guardado. Nas próximas atualizações não precisa enviar de novo.`,
+        ),
+      (error: unknown) =>
+        setMessage(
+          `${slot.name}: recebido, mas não consegui guardar para depois (${error instanceof Error ? error.message : 'erro'}). Vale só para esta sessão.`,
+        ),
+    );
   };
 
   const runEngine = async (engine: EngineDefinition): Promise<string> => {
@@ -368,7 +386,22 @@ function Engines() {
         ...current,
         [engine.id]: 'Lendo e calculando os arquivos…',
       }));
-      const result = await runner.run(files.current, bases);
+      const all: Record<string, File> = { ...files.current };
+      for (const slot of engine.slots) {
+        if (all[slot.id]) continue;
+        const saved = uploads[slot.id];
+        if (!saved) continue;
+        setResults((current) => ({
+          ...current,
+          [engine.id]: `Baixando o arquivo guardado de ${slot.name}…`,
+        }));
+        all[slot.id] = await loadSourceFile(engine.id, slot.id, saved.name);
+      }
+      setResults((current) => ({
+        ...current,
+        [engine.id]: 'Lendo e calculando os arquivos…',
+      }));
+      const result = await runner.run(all, bases);
       setResults((current) => ({
         ...current,
         [engine.id]: 'Gravando a base no Supabase…',
@@ -377,14 +410,21 @@ function Engines() {
       const warnings = result.audit.filter(
         (a) => a.severity === 'AVISO',
       ).length;
-      await saveEngineBase(
-        result,
-        runner.keyColumn,
-        engine.slots.map((slot) => ({
-          slot: slot.id,
-          fileName: uploads[slot.id]?.name ?? '',
-        })),
-      );
+      const sources = engine.slots.map((slot) => ({
+        slot: slot.id,
+        fileName: uploads[slot.id]?.name ?? '',
+      }));
+      if (runner.chunked) {
+        await saveEngineBaseChunked(
+          result,
+          runner.keyColumn,
+          sources,
+          (progress) =>
+            setResults((current) => ({ ...current, [engine.id]: progress })),
+        );
+      } else {
+        await saveEngineBase(result, runner.keyColumn, sources);
+      }
       const summary = `${result.rows.length} linhas gravadas · ${errors} erro(s) · ${warnings} aviso(s)`;
       setResults((current) => ({ ...current, [engine.id]: summary }));
       return `Motor ${engine.name} processado: ${summary}.`;
@@ -403,17 +443,18 @@ function Engines() {
   };
 
   const process = async (engine?: EngineDefinition) => {
-    const targets = engine ? [engine] : engines;
-    const pending = targets.reduce(
-      (total, item) =>
-        total +
-        item.slots.filter((slot) => !uploads[slot.id] || isExpired(slot.id))
-          .length,
-      0,
+    // Vale o que já está guardado: só falta o que nunca foi enviado.
+    const missing = (item: EngineDefinition) =>
+      item.slots.filter((slot) => !uploads[slot.id]);
+    const targets = (engine ? [engine] : engines).filter(
+      (item) => missing(item).length === 0,
     );
-    if (pending > 0) {
+    const skipped = (engine ? [engine] : engines).filter(
+      (item) => missing(item).length > 0,
+    );
+    if (targets.length === 0) {
       setMessage(
-        `${engine?.name ?? 'Todos os motores'}: existem ${pending} arquivo(s) pendente(s) ou vencido(s).`,
+        `${engine?.name ?? 'Nenhum motor'}: falta enviar pela primeira vez ${skipped.flatMap(missing).length} arquivo(s).`,
       );
       return;
     }
@@ -422,6 +463,10 @@ function Engines() {
       setMessage(`Processando ${item.name}…`);
       messages.push(await runEngine(item));
     }
+    if (skipped.length)
+      messages.push(
+        `Sem arquivos ainda: ${skipped.map((item) => item.name).join(', ')}.`,
+      );
     setMessage(messages.join(' '));
   };
 
@@ -460,7 +505,7 @@ function Engines() {
       <div className={styles.engineGrid}>
         {engines.map((engine, engineIndex) => {
           const currentCount = engine.slots.filter(
-            (slot) => uploads[slot.id] && !isExpired(slot.id),
+            (slot) => uploads[slot.id],
           ).length;
           return (
             <article className={styles.engineConsole} key={engine.id}>
@@ -604,16 +649,10 @@ function Engines() {
                 {currentCount < engine.slots.length && (
                   <div className={styles.engineMessage}>
                     <span>
-                      Para processar, envie:{' '}
+                      Falta enviar pela primeira vez:{' '}
                       {engine.slots
-                        .filter(
-                          (slot) => !uploads[slot.id] || isExpired(slot.id),
-                        )
-                        .map((slot) =>
-                          uploads[slot.id]
-                            ? `${slot.name} (vencido)`
-                            : slot.name,
-                        )
+                        .filter((slot) => !uploads[slot.id])
+                        .map((slot) => slot.name)
                         .join(', ')}
                     </span>
                   </div>
