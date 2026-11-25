@@ -6,6 +6,7 @@ import {
 } from './core/types';
 import { processClientes } from './clientes/process';
 import { processCortes } from './cortes/process';
+import { processRoteiro } from './roteiro/process';
 import { processProdutos } from './produtos/process';
 
 export type EngineRunner = {
@@ -113,6 +114,17 @@ export const runners: Record<string, EngineRunner> = {
         arquivos.push({ nome, matrix: wb.sheet() });
       }
       return processCortes({ arquivos, produtos, clientes });
+    },
+  },
+  roteiro: {
+    keyColumn: 'id_visita',
+    needs: ['clientes'],
+    run: async (files, bases) => {
+      const wb = readWorkbook(await bytes(need(files, 'roteiro-consolidado')));
+      return processRoteiro({
+        matrix: wb.sheet(),
+        clientes: bases.clientes ?? [],
+      });
     },
   },
 };
