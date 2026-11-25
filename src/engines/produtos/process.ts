@@ -4,6 +4,7 @@ import {
   type BaseRow,
   type BaseValue,
   type Cell,
+  type AuditRecord,
   type ColumnSpec,
   type EngineResult,
   type Matrix,
@@ -98,7 +99,8 @@ export function processProdutos(input: ProdutosInput): EngineResult {
     severity: AuditItem['severity'],
     message: string,
     count?: number,
-  ) => audit.push({ code, severity, message, count });
+    records?: AuditRecord[],
+  ) => audit.push({ code, severity, message, count, records });
 
   // ---------- 286 ----------
   const t286Raw = Table.fromMatrix(input.itens286, [

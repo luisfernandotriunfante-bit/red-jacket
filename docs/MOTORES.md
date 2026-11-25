@@ -31,3 +31,14 @@ Aplique o arquivo no Supabase antes de publicar. As políticas atuais liberam le
 - Unidades por caixa: 286, depois lista, 8013, 8011 e 322.
 - Sortimento por canal: 0, 1 ou 2; o valor 5 vira 1.
 - `ativo` = não está fora de linha no 286.
+
+## Auditoria (preparação)
+
+Cada processamento devolve uma lista de itens de auditoria (`AuditItem`). Os de severidade `ERRO` e `AVISO` viram **casos** na tabela `engine_audit_items`, prontos para a aba de auditoria listar e tratar:
+
+- `status`: `aberto`, `em_analise`, `tratado` ou `ignorado`; `note`, `treated_by` e `treated_at` registram o tratamento.
+- `records`: até 200 registros afetados (`{ key, info }`); o total real fica em `count`.
+- `fingerprint` (motor + código + mensagem): se o mesmo caso já foi tratado ou ignorado antes, o novo processamento herda o tratamento.
+- Itens `INFO` (conferências e contagens) ficam só no resumo do processamento (`engine_runs.audit`).
+
+Os avisos do motor Produtos ainda trazem só a contagem; os próximos motores já preenchem `records`.

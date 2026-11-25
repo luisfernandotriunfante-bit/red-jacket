@@ -3,11 +3,16 @@ export type Matrix = Cell[][];
 
 export type AuditSeverity = 'ERRO' | 'AVISO' | 'INFO';
 
+/** Registro afetado por um caso de auditoria (para a aba de auditoria listar e tratar). */
+export type AuditRecord = { key: string; info?: string };
+
 export type AuditItem = {
   code: string;
   severity: AuditSeverity;
   message: string;
   count?: number;
+  /** Até 200 registros afetados; o total real fica em `count`. */
+  records?: AuditRecord[];
 };
 
 export type ColumnSpec = {
