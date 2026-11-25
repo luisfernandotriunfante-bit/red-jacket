@@ -1,0 +1,68 @@
+.card {
+  border: 1px solid var(--line, #e3d6d6);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  background: var(--panel, transparent);
+}
+.card header div {
+  display: grid;
+  gap: 2px;
+  margin-bottom: 12px;
+}
+.card header span {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--accent, #c0272d);
+}
+.card header small {
+  color: var(--muted, #777);
+}
+.card table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.card th,
+.card td {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--line, #e3d6d6);
+}
+.card th {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--muted, #777);
+}
+.card input,
+.card select {
+  width: 100%;
+  min-height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--line, #e3d6d6);
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+.card button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--accent, #c0272d);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--accent, #c0272d);
+  font: inherit;
+  cursor: pointer;
+}
+.card button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.error {
+  color: var(--accent, #c0272d);
+  margin: 0 0 8px;
+}

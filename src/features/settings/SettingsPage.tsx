@@ -32,6 +32,14 @@ import {
   updateAuditCaseStatus,
   type EngineAuditCase,
 } from '../../engines/storage';
+import { useAuth } from '../auth/useAuth';
+import {
+  canChangeSite,
+  canMaintainData,
+  canSeeEngines,
+  roleLabels,
+} from '../auth/roles';
+import { OperacoesTable } from './OperacoesTable';
 import styles from './SettingsPage.module.css';
 
 const sections = [
@@ -230,10 +238,25 @@ const copy: Record<
 
 export function SettingsPage() {
   const { section } = useParams();
+  const { roleInfo, roleLoading } = useAuth();
   if (!sections.includes(section as Section)) {
     return <Navigate to="/configuracoes/motores" replace />;
   }
   const current = section as Section;
+  const role = roleInfo?.role ?? null;
+  const noAccess = (
+    <EmptyState
+      icon={<AlertTriangle size={18} />}
+      title={
+        roleLoading
+          ? 'Verificando seu acesso…'
+          : role
+            ? `O perfil ${roleLabels[role]} não acessa esta tela`
+            : 'Seu usuário ainda não tem um perfil definido'
+      }
+      text="Os perfis são definidos pelo CEO. Peça a liberação do acesso."
+    />
+  );
 
   return (
     <section
@@ -247,16 +270,20 @@ export function SettingsPage() {
         <h1 id="settings-title">{copy[current].title}</h1>
         <p>{copy[current].description}</p>
       </header>
-      {current === 'motores' && <Engines />}
-      {current === 'auditoria' && <Audit />}
+      {current === 'motores' && (canSeeEngines(role) ? <Engines /> : noAccess)}
+      {current === 'auditoria' && (canSeeEngines(role) ? <Audit /> : noAccess)}
       {current === 'equipe' && <Team />}
-      {current === 'ajustes-comerciais' && <CommercialSettings />}
+      {current === 'ajustes-comerciais' &&
+        (canSeeEngines(role) ? <CommercialSettings /> : noAccess)}
       {current === 'competencias' && <Periods />}
     </section>
   );
 }
 
 function Engines() {
+  const { roleInfo } = useAuth();
+  const maintain = canMaintainData(roleInfo?.role);
+  const changeSite = canChangeSite(roleInfo?.role);
   const inputs = useRef<Record<string, HTMLInputElement | null>>({});
   const allSlots = engines.flatMap((engine) => engine.slots);
   const [message, setMessage] = useState(
@@ -367,7 +394,7 @@ function Engines() {
   };
 
   const selectFile = (slot: EngineSlot, file?: File) => {
-    if (!file) return;
+    if (!file || !maintain) return;
     const now = new Date().toISOString();
     files.current[slot.id] = file;
     setReferenceTime(new Date(now).getTime());
@@ -484,6 +511,12 @@ function Engines() {
   };
 
   const process = async (engine?: EngineDefinition) => {
+    if (!maintain) {
+      setMessage(
+        'Seu perfil só consulta os dados: enviar e processar é do CEO e do administrador.',
+      );
+      return;
+    }
     // Vale o que já está guardado: só falta o que nunca foi enviado.
     const missing = (item: EngineDefinition) =>
       item.slots.filter((slot) => !uploads[slot.id]);
@@ -542,7 +575,7 @@ function Engines() {
           </div>
           <button
             className={styles.primary}
-            disabled={busy !== null}
+            disabled={busy !== null || !maintain}
             onClick={() => void process()}
           >
             <RefreshCw size={14} /> ATUALIZAR TODOS OS MOTORES
@@ -657,6 +690,7 @@ function Engines() {
                       <label className={styles.sourceSchedule}>
                         <span>ATUALIZAR A CADA</span>
                         <select
+                          disabled={!changeSite}
                           value={updatePeriods[slot.id]}
                           onChange={(event) => {
                             const days = Number(event.target.value);
@@ -690,6 +724,7 @@ function Engines() {
                       />
                       <button
                         className={styles.sourceButton}
+                        disabled={!maintain}
                         onClick={() => inputs.current[slot.id]?.click()}
                       >
                         <Upload size={14} />{' '}
@@ -728,7 +763,11 @@ function Engines() {
                 <button
                   className={styles.primary}
                   onClick={() => void process(engine)}
-                  disabled={currentCount < engine.slots.length || busy !== null}
+                  disabled={
+                    currentCount < engine.slots.length ||
+                    busy !== null ||
+                    !maintain
+                  }
                 >
                   <RefreshCw size={14} /> ATUALIZAR MOTOR
                 </button>
@@ -742,6 +781,8 @@ function Engines() {
 }
 
 function Audit() {
+  const { roleInfo } = useAuth();
+  const readOnly = !canMaintainData(roleInfo?.role);
   const [cases, setCases] = useState<EngineAuditCase[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -781,9 +822,8 @@ function Audit() {
       );
     } catch (reason) {
       setError(
-        reason instanceof Error
-          ? reason.message
-          : 'Não foi possível atualizar a ocorrência.',
+        'Não foi possível atualizar a ocorrência. Casos tratados pelo CEO só o CEO altera' +
+          (reason instanceof Error ? ` (${reason.message})` : '.'),
       );
     } finally {
       setBusyId(null);
@@ -860,15 +900,17 @@ function Audit() {
               {item.status.replace('_', ' ').toUpperCase()}
             </span>
             <div className={styles.auditActions}>
-              {item.status !== 'em_analise' && item.status !== 'tratado' && (
-                <button
-                  onClick={() => void changeStatus(item, 'em_analise')}
-                  disabled={busyId === item.id}
-                >
-                  EM ANÁLISE
-                </button>
-              )}
-              {item.status !== 'tratado' && (
+              {!readOnly &&
+                item.status !== 'em_analise' &&
+                item.status !== 'tratado' && (
+                  <button
+                    onClick={() => void changeStatus(item, 'em_analise')}
+                    disabled={busyId === item.id}
+                  >
+                    EM ANÁLISE
+                  </button>
+                )}
+              {!readOnly && item.status !== 'tratado' && (
                 <button
                   className={styles.auditResolve}
                   onClick={() => void changeStatus(item, 'tratado')}
@@ -942,6 +984,7 @@ function Team() {
 }
 
 function CommercialSettings() {
+  const { roleInfo } = useAuth();
   const groups = [
     [
       'SAÚDE COMERCIAL',
@@ -964,6 +1007,7 @@ function CommercialSettings() {
   ];
   return (
     <>
+      <OperacoesTable canEdit={canChangeSite(roleInfo?.role)} />
       <div className={styles.toolbar}>
         <div className={styles.context}>
           <span>PARÂMETROS ATIVOS</span>

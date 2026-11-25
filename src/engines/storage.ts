@@ -398,3 +398,58 @@ export async function loadOperacoesMovimentacoes(): Promise<
   }
   return map;
 }
+
+export type OperacaoMovimentacao = {
+  operacao: string;
+  cfop: string;
+  classe: 'VENDA' | 'DEVOLUCAO' | 'TROCA' | 'BONIFICACAO';
+  descricao: string;
+};
+
+export const CLASSES_OPERACAO: OperacaoMovimentacao['classe'][] = [
+  'VENDA',
+  'DEVOLUCAO',
+  'TROCA',
+  'BONIFICACAO',
+];
+
+export async function listOperacoes(): Promise<OperacaoMovimentacao[]> {
+  const client = requireClient();
+  const response = await client
+    .from('movimentacoes_operacoes')
+    .select('operacao, cfop, classe, descricao')
+    .order('operacao', { ascending: true });
+  if (response.error) throw new Error(response.error.message);
+  const list: unknown = response.data;
+  if (!Array.isArray(list)) return [];
+  return (list as Record<string, unknown>[]).map((r) => ({
+    operacao: String(r.operacao),
+    cfop: typeof r.cfop === 'string' ? r.cfop : '',
+    classe: CLASSES_OPERACAO.find((c) => c === r.classe) ?? 'VENDA',
+    descricao: typeof r.descricao === 'string' ? r.descricao : '',
+  }));
+}
+
+export async function saveOperacao(item: OperacaoMovimentacao): Promise<void> {
+  const client = requireClient();
+  const response = await client.from('movimentacoes_operacoes').upsert({
+    operacao: item.operacao,
+    cfop: item.cfop,
+    classe: item.classe,
+    descricao: item.descricao || null,
+  });
+  if (response.error) throw new Error(response.error.message);
+}
+
+export async function deleteOperacao(
+  operacao: string,
+  cfop: string,
+): Promise<void> {
+  const client = requireClient();
+  const response = await client
+    .from('movimentacoes_operacoes')
+    .delete()
+    .eq('operacao', operacao)
+    .eq('cfop', cfop);
+  if (response.error) throw new Error(response.error.message);
+}
