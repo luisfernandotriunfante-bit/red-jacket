@@ -515,7 +515,6 @@ function Engines() {
                         }}
                         className={styles.hiddenInput}
                         type="file"
-                        accept=".xlsx,.xls,.csv,.txt"
                         onChange={(event) =>
                           selectFile(slot, event.target.files?.[0])
                         }

@@ -37,12 +37,15 @@ export const runners: Record<string, EngineRunner> = {
         await need(files, '322').arrayBuffer(),
       );
       return processProdutos({
-        itens286: itens.sheet(),
+        itens286: itens.sheetWith(['Código', 'Cód. Barras', 'Custo real']),
         texto322: text322,
-        logistico8013: logistico.sheet(),
-        listaPreco: lista.sheet('data'),
-        precos8011: precos.sheet(),
-        sortimento: sortimento.sheet('Base_Sortimento_Nacional'),
+        logistico8013: logistico.sheetWith(['SUB BRANDS']),
+        listaPreco: lista.sheetWith(['SKU', 'PRECO BASE'], 'data'),
+        precos8011: precos.sheetWith(['CODPROD', 'PRECO']),
+        sortimento: sortimento.sheetWith(
+          ['STATUS', 'COD', 'EAN'],
+          'Base_Sortimento_Nacional',
+        ),
       });
     },
   },

@@ -5,6 +5,8 @@ import { key, text } from './normalize';
 export type Workbook = {
   sheetNames: string[];
   sheet: (name?: string) => Matrix;
+  /** Escolhe a aba pelo conteúdo: a que tem os cabeçalhos exigidos (o nome da aba é só uma dica). */
+  sheetWith: (required: string[], hint?: string) => Matrix;
 };
 
 function fromRaw(value: unknown): Cell {
@@ -22,19 +24,44 @@ function fromRaw(value: unknown): Cell {
 /** Lê um xlsx/xls já carregado em memória. */
 export function readWorkbook(data: ArrayBuffer | Uint8Array): Workbook {
   const wb = XLSX.read(data, { type: 'array', cellDates: true });
+  const read = (target: string | undefined): Matrix => {
+    const ws = target ? wb.Sheets[target] : undefined;
+    if (!ws) throw new EngineBlockError(`aba não encontrada: ${target ?? ''}`);
+    const raw = XLSX.utils.sheet_to_json<unknown[]>(ws, {
+      header: 1,
+      raw: true,
+      defval: null,
+      blankrows: true,
+    });
+    return raw.map((line) => line.map(fromRaw));
+  };
+  const hasHeaders = (matrix: Matrix, required: string[]): boolean => {
+    const need = required.map(key);
+    return matrix.slice(0, 30).some((line) => {
+      const present = new Set(
+        line.filter((c) => text(c) !== '').map((c) => key(text(c))),
+      );
+      return need.every((n) => present.has(n));
+    });
+  };
   return {
     sheetNames: wb.SheetNames,
-    sheet: (name) => {
-      const target = name ?? wb.SheetNames[0];
-      const ws = target ? wb.Sheets[target] : undefined;
-      if (!ws) throw new EngineBlockError(`aba não encontrada: ${name ?? ''}`);
-      const raw = XLSX.utils.sheet_to_json<unknown[]>(ws, {
-        header: 1,
-        raw: true,
-        defval: null,
-        blankrows: true,
-      });
-      return raw.map((line) => line.map(fromRaw));
+    sheet: (name) => read(name ?? wb.SheetNames[0]),
+    sheetWith: (required, hint) => {
+      const hinted = hint
+        ? wb.SheetNames.find((n) => key(n) === key(hint))
+        : undefined;
+      const order = [
+        ...(hinted ? [hinted] : []),
+        ...wb.SheetNames.filter((n) => n !== hinted),
+      ];
+      for (const n of order) {
+        const matrix = read(n);
+        if (hasHeaders(matrix, required)) return matrix;
+      }
+      throw new EngineBlockError(
+        `nenhuma aba tem as colunas exigidas: ${required.join(', ')}`,
+      );
     },
   };
 }
