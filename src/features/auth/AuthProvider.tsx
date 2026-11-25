@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type PropsWithChildren } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { AuthContext } from './auth-context';
+import { isAppRole, type RoleInfo } from './roles';
 import { initialAuthUrl, isSupabaseConfigured, supabase } from './supabase';
 
 const arrivedFromInvitation =
@@ -10,6 +11,10 @@ const arrivedFromInvitation =
 export function AuthProvider({ children }: PropsWithChildren) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(isSupabaseConfigured);
+  const [fetched, setFetched] = useState<{
+    userId: string;
+    info: RoleInfo | null;
+  } | null>(null);
   const [needsPasswordSetup, setNeedsPasswordSetup] = useState(
     arrivedFromInvitation,
   );
@@ -27,10 +32,49 @@ export function AuthProvider({ children }: PropsWithChildren) {
     return () => data.subscription.unsubscribe();
   }, []);
 
+  const userId = user?.id ?? null;
+  useEffect(() => {
+    if (!supabase || !userId) return;
+    let active = true;
+    void supabase
+      .from('user_roles')
+      .select('role, supervisor_code, vendedor_code')
+      .eq('user_id', userId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!active) return;
+        const row = data as Record<string, unknown> | null;
+        setFetched({
+          userId,
+          info:
+            row && isAppRole(row.role)
+              ? {
+                  role: row.role,
+                  supervisorCode:
+                    typeof row.supervisor_code === 'string'
+                      ? row.supervisor_code
+                      : null,
+                  vendedorCode:
+                    typeof row.vendedor_code === 'string'
+                      ? row.vendedor_code
+                      : null,
+                }
+              : null,
+        });
+      });
+    return () => {
+      active = false;
+    };
+  }, [userId]);
+  const roleInfo = fetched && fetched.userId === userId ? fetched.info : null;
+  const roleLoading = Boolean(userId) && fetched?.userId !== userId;
+
   const value = useMemo(
     () => ({
       user,
       loading,
+      roleInfo,
+      roleLoading,
       configured: isSupabaseConfigured,
       needsPasswordSetup,
       signIn: async (email: string, password: string) => {
@@ -59,7 +103,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         if (supabase) await supabase.auth.signOut();
       },
     }),
-    [user, loading, needsPasswordSetup],
+    [user, loading, needsPasswordSetup, roleInfo, roleLoading],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
