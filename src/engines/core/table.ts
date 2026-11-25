@@ -22,8 +22,16 @@ function fromRaw(value: unknown): Cell {
 }
 
 /** Lê um xlsx/xls já carregado em memória. */
-export function readWorkbook(data: ArrayBuffer | Uint8Array): Workbook {
-  const wb = XLSX.read(data, { type: 'array', cellDates: true });
+export function readWorkbook(
+  data: ArrayBuffer | Uint8Array,
+  options: { serialDates?: boolean } = {},
+): Workbook {
+  // serialDates: datas chegam como número serial do Excel (sem conversão de fuso),
+  // para relatórios em que a hora do dia importa.
+  const wb = XLSX.read(data, {
+    type: 'array',
+    cellDates: !options.serialDates,
+  });
   const read = (target: string | undefined): Matrix => {
     const ws = target ? wb.Sheets[target] : undefined;
     if (!ws) throw new EngineBlockError(`aba não encontrada: ${target ?? ''}`);

@@ -1,13 +1,23 @@
 import { readWorkbook } from './core/table';
-import { EngineBlockError, type EngineResult } from './core/types';
+import {
+  EngineBlockError,
+  type BaseRow,
+  type EngineResult,
+} from './core/types';
 import { processClientes } from './clientes/process';
+import { processCortes } from './cortes/process';
 import { processProdutos } from './produtos/process';
 
 export type EngineRunner = {
   /** Coluna que identifica cada linha da base. */
   keyColumn: string;
+  /** Motores cuja base vigente este motor precisa (ex.: Cortes usa Produtos e Clientes). */
+  needs?: string[];
   /** Lê os arquivos (por id de slot) e devolve a base. */
-  run: (files: Record<string, File>) => Promise<EngineResult>;
+  run: (
+    files: Record<string, File>,
+    bases: Record<string, BaseRow[]>,
+  ) => Promise<EngineResult>;
 };
 
 function need(files: Record<string, File>, slot: string): File {
@@ -76,6 +86,33 @@ export const runners: Record<string, EngineRunner> = {
           piramide: 'piramide (aba Pirâmide ativa)',
         },
       );
+    },
+  },
+  cortes: {
+    keyColumn: 'id_corte',
+    needs: ['produtos', 'clientes'],
+    run: async (files, bases) => {
+      const produtos = bases.produtos ?? [];
+      const clientes = bases.clientes ?? [];
+      if (!produtos.length)
+        throw new EngineBlockError(
+          'a base de Produtos está vazia: processe o motor Produtos antes',
+        );
+      if (!clientes.length)
+        throw new EngineBlockError(
+          'a base de Clientes está vazia: processe o motor Clientes antes',
+        );
+      const arquivos = [];
+      for (const [slot, nome] of [
+        ['1454-agosto', '1454 de agosto em diante'],
+        ['1454-atual', '1454 do mês atual'],
+      ] as const) {
+        const wb = readWorkbook(await bytes(need(files, slot)), {
+          serialDates: true,
+        });
+        arquivos.push({ nome, matrix: wb.sheet() });
+      }
+      return processCortes({ arquivos, produtos, clientes });
     },
   },
 };

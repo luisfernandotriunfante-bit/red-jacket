@@ -17,9 +17,13 @@ import {
 } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Navigate, useParams } from 'react-router-dom';
-import { EngineBlockError } from '../../engines/core/types';
+import { EngineBlockError, type BaseRow } from '../../engines/core/types';
 import { runners } from '../../engines/registry';
-import { loadLastRun, saveEngineBase } from '../../engines/storage';
+import {
+  loadBaseRows,
+  loadLastRun,
+  saveEngineBase,
+} from '../../engines/storage';
 import styles from './SettingsPage.module.css';
 
 const sections = [
@@ -347,7 +351,23 @@ function Engines() {
     }
     setBusy(engine.id);
     try {
-      const result = await runner.run(files.current);
+      const bases: Record<string, BaseRow[]> = {};
+      for (const dep of runner.needs ?? []) {
+        setResults((current) => ({
+          ...current,
+          [engine.id]: `Lendo a base de ${dep}…`,
+        }));
+        bases[dep] = await loadBaseRows(dep);
+      }
+      setResults((current) => ({
+        ...current,
+        [engine.id]: 'Lendo e calculando os arquivos…',
+      }));
+      const result = await runner.run(files.current, bases);
+      setResults((current) => ({
+        ...current,
+        [engine.id]: 'Gravando a base no Supabase…',
+      }));
       const errors = result.audit.filter((a) => a.severity === 'ERRO').length;
       const warnings = result.audit.filter(
         (a) => a.severity === 'AVISO',
@@ -568,6 +588,23 @@ function Engines() {
                 {results[engine.id] && (
                   <div className={styles.engineMessage}>
                     <span>{results[engine.id]}</span>
+                  </div>
+                )}
+                {currentCount < engine.slots.length && (
+                  <div className={styles.engineMessage}>
+                    <span>
+                      Para processar, envie:{' '}
+                      {engine.slots
+                        .filter(
+                          (slot) => !uploads[slot.id] || isExpired(slot.id),
+                        )
+                        .map((slot) =>
+                          uploads[slot.id]
+                            ? `${slot.name} (vencido)`
+                            : slot.name,
+                        )
+                        .join(', ')}
+                    </span>
                   </div>
                 )}
                 <button

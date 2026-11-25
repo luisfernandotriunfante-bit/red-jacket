@@ -1,5 +1,5 @@
 import { supabase } from '../features/auth/supabase';
-import type { AuditItem, EngineResult } from './core/types';
+import type { AuditItem, BaseRow, EngineResult } from './core/types';
 
 export type SourceInfo = { slot: string; fileName: string };
 
@@ -83,4 +83,25 @@ export async function loadLastRun(
     sources: Array.isArray(r.sources) ? (r.sources as SourceInfo[]) : [],
     createdAt: String(r.created_at),
   };
+}
+
+/** Base vigente de um motor (todas as linhas), para os motores que dependem dela. */
+export async function loadBaseRows(engine: string): Promise<BaseRow[]> {
+  const client = requireClient();
+  const rows: BaseRow[] = [];
+  const page = 1000;
+  for (let from = 0; ; from += page) {
+    const response = await client
+      .from('engine_base_rows')
+      .select('data')
+      .eq('engine', engine)
+      .order('row_key', { ascending: true })
+      .range(from, from + page - 1);
+    if (response.error) throw new Error(response.error.message);
+    const list: unknown = response.data;
+    if (!Array.isArray(list) || list.length === 0) break;
+    for (const item of list as { data: BaseRow }[]) rows.push(item.data);
+    if (list.length < page) break;
+  }
+  return rows;
 }
