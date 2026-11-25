@@ -15,8 +15,11 @@ import {
   UserRoundPlus,
   UsersRound,
 } from 'lucide-react';
-import { useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Navigate, useParams } from 'react-router-dom';
+import { EngineBlockError } from '../../engines/core/types';
+import { runners } from '../../engines/registry';
+import { loadLastRun, saveEngineBase } from '../../engines/storage';
 import styles from './SettingsPage.module.css';
 
 const sections = [
@@ -256,10 +259,49 @@ function Engines() {
   const [uploads, setUploads] = useState<
     Record<string, { name: string; updatedAt: string } | undefined>
   >({});
+  const files = useRef<Record<string, File>>({});
+  const [busy, setBusy] = useState<string | null>(null);
+  const [results, setResults] = useState<Record<string, string | undefined>>(
+    {},
+  );
   const [updatePeriods, setUpdatePeriods] = useState<Record<string, number>>(
     () => Object.fromEntries(allSlots.map((slot) => [slot.id, slot.period])),
   );
   const [referenceTime, setReferenceTime] = useState(() => Date.now());
+  // Ao abrir a página, recupera do banco o último processamento de cada motor.
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      for (const engineId of Object.keys(runners)) {
+        try {
+          const run = await loadLastRun(engineId);
+          if (!run || !active) continue;
+          const errors = run.audit.filter((a) => a.severity === 'ERRO').length;
+          const warnings = run.audit.filter(
+            (a) => a.severity === 'AVISO',
+          ).length;
+          setUploads((current) => ({
+            ...current,
+            ...Object.fromEntries(
+              run.sources.map((source) => [
+                source.slot,
+                { name: source.fileName, updatedAt: run.createdAt },
+              ]),
+            ),
+          }));
+          setResults((current) => ({
+            ...current,
+            [engineId]: `${run.rowCount} linhas gravadas · ${errors} erro(s) · ${warnings} aviso(s)`,
+          }));
+        } catch {
+          // sem conexão ou sem permissão: a tela segue vazia, como antes
+        }
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
   const isExpired = (slotId: string) => {
     const upload = uploads[slotId];
     if (!upload) return false;
@@ -289,6 +331,7 @@ function Engines() {
   const selectFile = (slot: EngineSlot, file?: File) => {
     if (!file) return;
     const now = new Date().toISOString();
+    files.current[slot.id] = file;
     setReferenceTime(new Date(now).getTime());
     setUploads((current) => ({
       ...current,
@@ -297,22 +340,64 @@ function Engines() {
     setMessage(`${slot.name}: arquivo recebido e pronto para validação.`);
   };
 
-  const process = (engine?: EngineDefinition) => {
-    const slots = engine?.slots ?? allSlots;
-    const currentCount = slots.filter(
-      (slot) => uploads[slot.id] && !isExpired(slot.id),
-    ).length;
-    if (currentCount < slots.length) {
+  const runEngine = async (engine: EngineDefinition): Promise<string> => {
+    const runner = runners[engine.id];
+    if (!runner) {
+      return `${engine.name}: arquivos recebidos; o processamento deste motor ainda não foi ligado.`;
+    }
+    setBusy(engine.id);
+    try {
+      const result = await runner.run(files.current);
+      const errors = result.audit.filter((a) => a.severity === 'ERRO').length;
+      const warnings = result.audit.filter(
+        (a) => a.severity === 'AVISO',
+      ).length;
+      await saveEngineBase(
+        result,
+        runner.keyColumn,
+        engine.slots.map((slot) => ({
+          slot: slot.id,
+          fileName: uploads[slot.id]?.name ?? '',
+        })),
+      );
+      const summary = `${result.rows.length} linhas gravadas · ${errors} erro(s) · ${warnings} aviso(s)`;
+      setResults((current) => ({ ...current, [engine.id]: summary }));
+      return `Motor ${engine.name} processado: ${summary}.`;
+    } catch (error) {
+      const reason =
+        error instanceof EngineBlockError
+          ? error.message
+          : error instanceof Error
+            ? error.message
+            : 'falha desconhecida';
+      setResults((current) => ({ ...current, [engine.id]: reason }));
+      return `Motor ${engine.name} não foi atualizado. ${reason}`;
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const process = async (engine?: EngineDefinition) => {
+    const targets = engine ? [engine] : engines;
+    const pending = targets.reduce(
+      (total, item) =>
+        total +
+        item.slots.filter((slot) => !uploads[slot.id] || isExpired(slot.id))
+          .length,
+      0,
+    );
+    if (pending > 0) {
       setMessage(
-        `${engine?.name ?? 'Todos os motores'}: existem ${slots.length - currentCount} arquivo(s) pendente(s) ou vencido(s).`,
+        `${engine?.name ?? 'Todos os motores'}: existem ${pending} arquivo(s) pendente(s) ou vencido(s).`,
       );
       return;
     }
-    setMessage(
-      engine
-        ? `Motor ${engine.name} enviado para processamento.`
-        : 'Todos os motores foram enviados para processamento.',
-    );
+    const messages: string[] = [];
+    for (const item of targets) {
+      setMessage(`Processando ${item.name}…`);
+      messages.push(await runEngine(item));
+    }
+    setMessage(messages.join(' '));
   };
 
   return (
@@ -327,7 +412,11 @@ function Engines() {
             <span>Motores ativos</span>
             <strong>{String(engines.length).padStart(2, '0')}</strong>
           </div>
-          <button className={styles.primary} onClick={() => process()}>
+          <button
+            className={styles.primary}
+            disabled={busy !== null}
+            onClick={() => void process()}
+          >
             <RefreshCw size={14} /> ATUALIZAR TODOS OS MOTORES
           </button>
         </div>
@@ -421,7 +510,7 @@ function Engines() {
                         <strong title={upload?.name}>
                           {upload?.name ?? 'Nenhum arquivo selecionado'}
                         </strong>
-                        <span>XLSX · XLS · CSV</span>
+                        <span>XLSX · XLS · CSV · TXT</span>
                       </div>
                       <div className={styles.sourceUpdated}>
                         <div>
@@ -460,7 +549,6 @@ function Engines() {
                         }}
                         className={styles.hiddenInput}
                         type="file"
-                        accept=".xlsx,.xls,.csv"
                         onChange={(event) =>
                           selectFile(slot, event.target.files?.[0])
                         }
@@ -477,10 +565,15 @@ function Engines() {
                 })}
               </div>
               <footer className={styles.engineConsoleFooter}>
+                {results[engine.id] && (
+                  <div className={styles.engineMessage}>
+                    <span>{results[engine.id]}</span>
+                  </div>
+                )}
                 <button
                   className={styles.primary}
-                  onClick={() => process(engine)}
-                  disabled={currentCount < engine.slots.length}
+                  onClick={() => void process(engine)}
+                  disabled={currentCount < engine.slots.length || busy !== null}
                 >
                   <RefreshCw size={14} /> ATUALIZAR MOTOR
                 </button>
