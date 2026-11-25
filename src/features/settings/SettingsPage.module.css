@@ -163,7 +163,7 @@
 }
 .sourceRow {
   position: relative;
-  min-height: 13rem;
+  min-height: 18.25rem;
   padding: 1rem;
   display: flex;
   flex-direction: column;
@@ -185,6 +185,9 @@
 }
 .sourceReady {
   border-color: rgb(61 130 247 / 55%);
+}
+.sourceExpired {
+  border-color: rgb(255 38 56 / 55%);
 }
 .sourceIndex {
   position: absolute;
@@ -212,9 +215,38 @@
   font-size: 0.65rem;
   line-height: 1.45;
 }
+.sourceStatus {
+  width: fit-content;
+  min-height: 1.55rem;
+  margin-top: 0.75rem;
+  padding: 0.2rem 0.55rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border: 1px solid;
+  border-radius: 999px;
+  font-size: 0.52rem;
+  font-weight: 750;
+  letter-spacing: 0.07em;
+}
+.statusCurrent {
+  color: var(--engine-blue);
+  background: rgb(61 130 247 / 7%);
+  border-color: rgb(61 130 247 / 48%);
+}
+.statusExpired {
+  color: var(--engine-red);
+  background: rgb(255 38 56 / 7%);
+  border-color: rgb(255 38 56 / 48%);
+}
+.statusPending {
+  color: #8b9098;
+  background: #111;
+  border-color: #3b3b3b;
+}
 .sourceFile {
   min-height: 4.75rem;
-  margin: 1rem 0 0.8rem;
+  margin: 0.75rem 0;
   padding: 0.8rem;
   place-content: center;
   text-align: center;
@@ -251,11 +283,42 @@
   color: var(--engine-blue);
 }
 .sourceUpdated {
-  margin-top: auto;
+  margin-top: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+.sourceUpdated > div {
+  min-width: 0;
+  display: grid;
+  gap: 0.2rem;
 }
 .sourceUpdated span {
   color: var(--engine-muted);
   font-size: 0.62rem;
+}
+.sourceSchedule {
+  margin-top: auto;
+  padding-top: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: #70757e;
+  font-size: 0.54rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+}
+.sourceSchedule select {
+  min-height: 1.9rem;
+  padding: 0 1.7rem 0 0.65rem;
+  color: #fff;
+  background: #101010;
+  border: 1px solid #3b3b3b;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.55rem;
+  cursor: pointer;
 }
 .sourceButton {
   min-height: 2.1rem;
