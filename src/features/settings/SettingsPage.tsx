@@ -332,153 +332,163 @@ function Engines() {
           </button>
         </div>
       </div>
+      <div className={styles.engineGlobalMessage}>
+        <Gauge size={14} />
+        <span>{message}</span>
+      </div>
 
-      {engines.map((engine, engineIndex) => {
-        const currentCount = engine.slots.filter(
-          (slot) => uploads[slot.id] && !isExpired(slot.id),
-        ).length;
-        return (
-          <article className={styles.engineConsole} key={engine.id}>
-            <header className={styles.engineConsoleHeader}>
-              <div className={styles.engineIdentity}>
-                <div className={styles.engineNumber}>
-                  {String(engineIndex + 1).padStart(2, '0')}
+      <div className={styles.engineGrid}>
+        {engines.map((engine, engineIndex) => {
+          const currentCount = engine.slots.filter(
+            (slot) => uploads[slot.id] && !isExpired(slot.id),
+          ).length;
+          return (
+            <article className={styles.engineConsole} key={engine.id}>
+              <header className={styles.engineConsoleHeader}>
+                <div className={styles.engineIdentity}>
+                  <div className={styles.engineNumber}>
+                    {String(engineIndex + 1).padStart(2, '0')}
+                  </div>
+                  <div>
+                    <span>
+                      MOTOR {String(engineIndex + 1).padStart(2, '0')}
+                    </span>
+                    <h3>{engine.name}</h3>
+                    <p>{engine.description}</p>
+                  </div>
                 </div>
-                <div>
-                  <span>MOTOR {String(engineIndex + 1).padStart(2, '0')}</span>
-                  <h3>{engine.name}</h3>
-                  <p>{engine.description}</p>
-                </div>
-              </div>
-              <div className={styles.engineReadiness}>
-                <div>
-                  <span>Arquivos em dia</span>
-                  <strong>
-                    {currentCount}
-                    <small>
-                      /{String(engine.slots.length).padStart(2, '0')}
-                    </small>
-                  </strong>
-                </div>
-                <div className={styles.readinessTrack}>
-                  <span
-                    style={{
-                      width: `${(currentCount / engine.slots.length) * 100}%`,
-                    }}
-                  />
-                </div>
-                <small>
-                  {currentCount === engine.slots.length
-                    ? 'PRONTO PARA PROCESSAR'
-                    : 'AGUARDANDO ARQUIVOS'}
-                </small>
-              </div>
-            </header>
-
-            <div className={styles.sourceList}>
-              {engine.slots.map((slot, index) => {
-                const upload = uploads[slot.id];
-                const expired = isExpired(slot.id);
-                return (
-                  <section
-                    className={`${styles.sourceRow} ${upload && !expired ? styles.sourceReady : ''} ${expired ? styles.sourceExpired : ''}`}
-                    key={slot.id}
-                  >
-                    <div className={styles.sourceIndex}>
-                      {String(index + 1).padStart(2, '0')}
-                    </div>
-                    <div className={styles.sourceInfo}>
-                      <strong>{slot.name}</strong>
-                      <span>{slot.detail}</span>
-                    </div>
-                    <div
-                      className={`${styles.sourceStatus} ${expired ? styles.statusExpired : upload ? styles.statusCurrent : styles.statusPending}`}
-                    >
-                      {expired ? (
-                        <AlertTriangle size={11} />
-                      ) : (
-                        <CheckCircle2 size={11} />
-                      )}
-                      {expired ? 'VENCIDO' : upload ? 'ATUALIZADO' : 'PENDENTE'}
-                    </div>
-                    <div className={styles.sourceFile}>
+                <div className={styles.engineReadiness}>
+                  <div>
+                    <span>Arquivos em dia</span>
+                    <strong>
+                      {currentCount}
                       <small>
-                        {upload ? 'ARQUIVO SELECIONADO' : 'ARQUIVO OBRIGATÓRIO'}
+                        /{String(engine.slots.length).padStart(2, '0')}
                       </small>
-                      <strong title={upload?.name}>
-                        {upload?.name ?? 'Nenhum arquivo selecionado'}
-                      </strong>
-                      <span>XLSX · XLS · CSV</span>
-                    </div>
-                    <div className={styles.sourceUpdated}>
-                      <div>
-                        <small>ÚLTIMA ATUALIZAÇÃO</small>
-                        <span>
-                          {upload
-                            ? formatMoment(upload.updatedAt)
-                            : 'NUNCA ATUALIZADO'}
-                        </span>
-                      </div>
-                      <div>
-                        <small>PRÓXIMA ATUALIZAÇÃO</small>
-                        <span>{nextUpdate(slot.id)}</span>
-                      </div>
-                    </div>
-                    <label className={styles.sourceSchedule}>
-                      <span>ATUALIZAR A CADA</span>
-                      <select
-                        value={updatePeriods[slot.id]}
-                        onChange={(event) =>
-                          setUpdatePeriods((current) => ({
-                            ...current,
-                            [slot.id]: Number(event.target.value),
-                          }))
-                        }
-                      >
-                        <option value={1}>DIÁRIO</option>
-                        <option value={30}>MENSAL</option>
-                        <option value={90}>TRIMESTRAL</option>
-                        <option value={0}>SEM VENCIMENTO</option>
-                      </select>
-                    </label>
-                    <input
-                      ref={(element) => {
-                        inputs.current[slot.id] = element;
+                    </strong>
+                  </div>
+                  <div className={styles.readinessTrack}>
+                    <span
+                      style={{
+                        width: `${(currentCount / engine.slots.length) * 100}%`,
                       }}
-                      className={styles.hiddenInput}
-                      type="file"
-                      accept=".xlsx,.xls,.csv"
-                      onChange={(event) =>
-                        selectFile(slot, event.target.files?.[0])
-                      }
                     />
-                    <button
-                      className={styles.sourceButton}
-                      onClick={() => inputs.current[slot.id]?.click()}
+                  </div>
+                  <small>
+                    {currentCount === engine.slots.length
+                      ? 'PRONTO PARA PROCESSAR'
+                      : 'AGUARDANDO ARQUIVOS'}
+                  </small>
+                </div>
+              </header>
+
+              <div className={styles.sourceList}>
+                {engine.slots.map((slot, index) => {
+                  const upload = uploads[slot.id];
+                  const expired = isExpired(slot.id);
+                  return (
+                    <section
+                      className={`${styles.sourceRow} ${upload && !expired ? styles.sourceReady : ''} ${expired ? styles.sourceExpired : ''}`}
+                      key={slot.id}
                     >
-                      <Upload size={14} />{' '}
-                      {upload ? 'SUBSTITUIR' : 'SELECIONAR'}
-                    </button>
-                  </section>
-                );
-              })}
-            </div>
-            <footer className={styles.engineConsoleFooter}>
-              <div className={styles.engineMessage}>
-                <Gauge size={15} />
-                <span>{message}</span>
+                      <div className={styles.sourceIndex}>
+                        {String(index + 1).padStart(2, '0')}
+                      </div>
+                      <div className={styles.sourceInfo}>
+                        <strong>{slot.name}</strong>
+                        <span>{slot.detail}</span>
+                      </div>
+                      <div
+                        className={`${styles.sourceStatus} ${expired ? styles.statusExpired : upload ? styles.statusCurrent : styles.statusPending}`}
+                      >
+                        {expired ? (
+                          <AlertTriangle size={11} />
+                        ) : (
+                          <CheckCircle2 size={11} />
+                        )}
+                        {expired
+                          ? 'VENCIDO'
+                          : upload
+                            ? 'ATUALIZADO'
+                            : 'PENDENTE'}
+                      </div>
+                      <div className={styles.sourceFile}>
+                        <small>
+                          {upload
+                            ? 'ARQUIVO SELECIONADO'
+                            : 'ARQUIVO OBRIGATÓRIO'}
+                        </small>
+                        <strong title={upload?.name}>
+                          {upload?.name ?? 'Nenhum arquivo selecionado'}
+                        </strong>
+                        <span>XLSX · XLS · CSV</span>
+                      </div>
+                      <div className={styles.sourceUpdated}>
+                        <div>
+                          <small>ÚLTIMA ATUALIZAÇÃO</small>
+                          <span>
+                            {upload
+                              ? formatMoment(upload.updatedAt)
+                              : 'NUNCA ATUALIZADO'}
+                          </span>
+                        </div>
+                        <div>
+                          <small>PRÓXIMA ATUALIZAÇÃO</small>
+                          <span>{nextUpdate(slot.id)}</span>
+                        </div>
+                      </div>
+                      <label className={styles.sourceSchedule}>
+                        <span>ATUALIZAR A CADA</span>
+                        <select
+                          value={updatePeriods[slot.id]}
+                          onChange={(event) =>
+                            setUpdatePeriods((current) => ({
+                              ...current,
+                              [slot.id]: Number(event.target.value),
+                            }))
+                          }
+                        >
+                          <option value={1}>DIÁRIO</option>
+                          <option value={30}>MENSAL</option>
+                          <option value={90}>TRIMESTRAL</option>
+                          <option value={0}>SEM VENCIMENTO</option>
+                        </select>
+                      </label>
+                      <input
+                        ref={(element) => {
+                          inputs.current[slot.id] = element;
+                        }}
+                        className={styles.hiddenInput}
+                        type="file"
+                        accept=".xlsx,.xls,.csv"
+                        onChange={(event) =>
+                          selectFile(slot, event.target.files?.[0])
+                        }
+                      />
+                      <button
+                        className={styles.sourceButton}
+                        onClick={() => inputs.current[slot.id]?.click()}
+                      >
+                        <Upload size={14} />{' '}
+                        {upload ? 'SUBSTITUIR' : 'SELECIONAR'}
+                      </button>
+                    </section>
+                  );
+                })}
               </div>
-              <button
-                className={styles.primary}
-                onClick={() => process(engine)}
-                disabled={currentCount < engine.slots.length}
-              >
-                <RefreshCw size={14} /> ATUALIZAR MOTOR
-              </button>
-            </footer>
-          </article>
-        );
-      })}
+              <footer className={styles.engineConsoleFooter}>
+                <button
+                  className={styles.primary}
+                  onClick={() => process(engine)}
+                  disabled={currentCount < engine.slots.length}
+                >
+                  <RefreshCw size={14} /> ATUALIZAR MOTOR
+                </button>
+              </footer>
+            </article>
+          );
+        })}
+      </div>
     </div>
   );
 }
