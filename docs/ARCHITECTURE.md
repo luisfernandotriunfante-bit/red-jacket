@@ -15,6 +15,7 @@
 - `src/components`: componentes reutilizáveis e estrutura visual.
 - `src/features`: funcionalidades isoladas, como autenticação, tema, Sell Out e Configurações.
 - `src/engines`: leitura, validação, processamento e persistência das fontes comerciais.
+- `src/features/settings`: configurações, auditoria e cadastro manual de equipes e vendedores.
 - `supabase/migrations`: estrutura versionada do banco, funções transacionais e políticas de acesso.
 - `src/styles`: identidade visual e regras globais.
 
@@ -32,6 +33,13 @@ Toda tabela criada no Supabase deverá ter Row Level Security (RLS), políticas 
 | Supabase Auth     | login, sessão e usuários                  |
 | Supabase Postgres | bases processadas, execuções e auditoria  |
 | Supabase Storage  | arquivos de origem dos motores            |
+
+## Equipes comerciais
+
+- `commercial_teams` guarda o supervisor; seu código identifica a equipe.
+- `commercial_sellers` guarda CPF, códigos antigo e novo, contrato, região e metas de cada vendedor.
+- Somente o CEO inclui, altera, inativa ou exclui. Admin e gerente consultam tudo; supervisor consulta sua equipe e vendedor consulta o próprio cadastro.
+- Inativação preserva o histórico. A exclusão de uma equipe é bloqueada enquanto ainda houver vendedores vinculados.
 
 ## Primeiro acesso de novos usuários
 

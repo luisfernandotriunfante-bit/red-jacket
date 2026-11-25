@@ -4,15 +4,12 @@ import {
   CalendarClock,
   CheckCircle2,
   CircleDollarSign,
-  FileSpreadsheet,
   Gauge,
   Plus,
   RefreshCw,
   Settings2,
   ShieldCheck,
   Upload,
-  UserRoundPlus,
-  UsersRound,
 } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Navigate, useParams } from 'react-router-dom';
@@ -40,6 +37,7 @@ import {
   roleLabels,
 } from '../auth/roles';
 import { OperacoesTable } from './OperacoesTable';
+import { TeamManagement } from './TeamManagement';
 import styles from './SettingsPage.module.css';
 
 const sections = [
@@ -260,7 +258,7 @@ export function SettingsPage() {
 
   return (
     <section
-      className={`${styles.page} ${current === 'motores' ? styles.enginePage : ''} ${current === 'auditoria' ? styles.auditPage : ''}`}
+      className={`${styles.page} ${current === 'motores' ? styles.enginePage : ''} ${current === 'auditoria' ? styles.auditPage : ''} ${current === 'equipe' ? styles.teamPage : ''} ${current === 'ajustes-comerciais' ? styles.commercialPage : ''}`}
       aria-labelledby="settings-title"
     >
       <header className={styles.header}>
@@ -272,7 +270,7 @@ export function SettingsPage() {
       </header>
       {current === 'motores' && (canSeeEngines(role) ? <Engines /> : noAccess)}
       {current === 'auditoria' && (canSeeEngines(role) ? <Audit /> : noAccess)}
-      {current === 'equipe' && <Team />}
+      {current === 'equipe' && <TeamManagement canEdit={canChangeSite(role)} />}
       {current === 'ajustes-comerciais' &&
         (canSeeEngines(role) ? <CommercialSettings /> : noAccess)}
       {current === 'competencias' && <Periods />}
@@ -930,59 +928,6 @@ function Audit() {
   );
 }
 
-function Team() {
-  return (
-    <>
-      <div className={styles.toolbar}>
-        <div className={styles.context}>
-          <span>CADASTRO CENTRAL</span>
-          <strong>Equipe comercial</strong>
-        </div>
-        <div className={styles.actions}>
-          <button className={styles.outline}>
-            <FileSpreadsheet size={15} /> IMPORTAR EXCEL
-          </button>
-          <button className={styles.primary}>
-            <UserRoundPlus size={15} /> ADICIONAR VENDEDOR
-          </button>
-        </div>
-      </div>
-      <div className={styles.tableWrap}>
-        <table>
-          <thead>
-            <tr>
-              <th>VENDEDOR</th>
-              <th>CPF</th>
-              <th>CÓD. INTOR</th>
-              <th>ERP ANTIGO</th>
-              <th>REGIÃO</th>
-              <th>SUPERVISOR</th>
-              <th>META MENSAL</th>
-              <th>STATUS</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td colSpan={9}>
-                <EmptyState
-                  icon={<UsersRound />}
-                  title="Nenhum vendedor cadastrado"
-                  text="Adicione manualmente ou importe uma planilha para começar a estruturar a equipe."
-                />
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <p className={styles.footnote}>
-        Vendedores com histórico devem ser inativados, não excluídos. Assim,
-        relatórios de competências anteriores permanecem íntegros.
-      </p>
-    </>
-  );
-}
-
 function CommercialSettings() {
   const { roleInfo } = useAuth();
   const groups = [
@@ -1006,7 +951,16 @@ function CommercialSettings() {
     ],
   ];
   return (
-    <>
+    <div className={styles.commercialWorkspace}>
+      <div className={styles.commercialToolbar}>
+        <div>
+          <span>AJUSTES COMERCIAIS</span>
+          <strong>Regras e parâmetros do sistema</strong>
+        </div>
+        <span className={styles.commercialAccess}>
+          {canChangeSite(roleInfo?.role) ? 'EDIÇÃO CEO' : 'SOMENTE CONSULTA'}
+        </span>
+      </div>
       <OperacoesTable canEdit={canChangeSite(roleInfo?.role)} />
       <div className={styles.toolbar}>
         <div className={styles.context}>
@@ -1036,7 +990,7 @@ function CommercialSettings() {
           </article>
         ))}
       </div>
-    </>
+    </div>
   );
 }
 
