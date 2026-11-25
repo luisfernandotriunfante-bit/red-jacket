@@ -1,26 +1,23 @@
-# T-001 — Casca de navegação e padrão visual
+# T-001 — navegação Red Jacket
 
-ID: T-001  
-Título: Shell de navegação e padrão visual do sistema  
-Objetivo: Fixar a navegação e o padrão visual que as próximas telas devem seguir.
+## Complemento aprovado pelo usuário — cartões de Uploads por motor
 
-## Escopo
+A tela de Uploads deve apresentar cinco cartões compactos em uma grade de duas colunas em telas largas, com o último cartão ocupando a posição restante; em telas estreitas, os cartões empilham sem overflow.
 
-- Sidebar recolhida com ícones monocromáticos; expande ao passar o ponteiro e empurra o canvas, sem sobreposição. Perfil no alto e tema no rodapé.
-- Navegação principal: Sell out, Estoque, Clientes, Campanhas, Configurações.
-- Subabas de Sell out: Painel, Gerencial, Clientes. Subabas de Configurações: Uploads, Auditoria.
-- Canvas vazio até solicitação específica do usuário.
-- Tema escuro com preto absoluto e destaque vermelho vibrante; tema claro com destaque azul vibrante.
-- Cores de acento nos estados de navegação/foco; componentes arredondados e uniformes.
-- Transição perceptível entre abas; respeitar prefers-reduced-motion.
-- Consultar o Designer antes de novas alterações visuais.
+Um cartão por motor:
+- Histórico
+- Movimentações
+- Clientes
+- Produtos
+- Chegada de NFs
 
-## Critérios de aceite
+Cada cartão mostra o nome do motor destacado pela cor do tema, o estado/data e hora da última atualização quando houver timestamp real persistido, ação Adicionar arquivo e ações de exportação Excel e JSON sanitizados. Nunca exibir data fictícia. Quando não houver dados processados reais para exportar, as ações ficam indisponíveis com estado explicativo; não gerar arquivo fictício.
 
-- Sidebar, perfil, tema, ordem de abas e subabas funcionam em teclado e toque.
-- Sem conteúdo fictício, títulos, blocos ou explicações não solicitados no canvas.
-- Sem sobreposição da sidebar sobre o conteúdo; sem fundo opaco da subaba ativa que encubra a animação.
-- Verificação em 360/768/1280 px e checks remotos verdes.
+Os arquivos de ERP antigo/atual são fontes de Movimentações, não destinos adicionais no Histórico. Remover os sete destinos históricos duplicados anteriormente listados. Upload local, processamento, persistência e exportação real só entram no escopo quando suportados por dados e implementação; não simular processamento.
 
-Dependências: T-000.  
-Status: PR #4 draft no HEAD db8f7f5; build, testes, auditoria e preview passaram. QA aprovou o HEAD 354d960; a pequena correção visual de transparência/indicador em db8f7f5 ainda aguarda rechecagem independente. Sem merge.
+### Critérios de aceitação atualizados
+- Cinco cartões simultâneos, um por motor, com a informação e ações descritas acima.
+- Grade de duas colunas em telas largas; uma coluna em telas estreitas.
+- Última atualização aparece apenas com timestamp real persistido.
+- Excel/JSON disponíveis somente para dados processados reais e sanitizados.
+- Sem destinos duplicados de ERP dentro do Histórico.
