@@ -56,6 +56,37 @@ type EngineDefinition = {
 
 const engines: EngineDefinition[] = [
   {
+    id: 'movimentacoes',
+    name: 'Movimentações',
+    description: 'Histórico e movimentação comercial vigente.',
+    slots: [
+      {
+        id: '379-2025',
+        name: '379 de 2025',
+        detail: 'Base histórica fechada',
+        period: 0,
+      },
+      {
+        id: '379-2026-julho',
+        name: '379 de 2026',
+        detail: 'Movimentações até julho',
+        period: 0,
+      },
+      {
+        id: '8022-agosto',
+        name: '8022 — agosto em diante',
+        detail: 'Base consolidada do período',
+        period: 30,
+      },
+      {
+        id: '8022-atual',
+        name: '8022 — mês atual',
+        detail: 'Movimentação da competência aberta',
+        period: 1,
+      },
+    ],
+  },
+  {
     id: 'produtos',
     name: 'Produtos',
     description: 'Cadastros, preços e sortimento nacional.',
@@ -99,33 +130,27 @@ const engines: EngineDefinition[] = [
     ],
   },
   {
-    id: 'movimentacoes',
-    name: 'Movimentações',
-    description: 'Histórico e movimentação comercial vigente.',
+    id: 'compras-industria',
+    name: 'Compras da indústria',
+    description: 'Compras realizadas e carteira industrial.',
     slots: [
       {
-        id: '379-2025',
-        name: '379 de 2025',
-        detail: 'Base histórica fechada',
-        period: 0,
-      },
-      {
-        id: '379-2026-julho',
-        name: '379 de 2026',
-        detail: 'Movimentações até julho',
-        period: 0,
-      },
-      {
-        id: '8022-agosto',
-        name: '8022 — agosto em diante',
-        detail: 'Base consolidada do período',
+        id: '12322',
+        name: '12322',
+        detail: 'Compras da indústria',
         period: 30,
       },
       {
-        id: '8022-atual',
-        name: '8022 — mês atual',
-        detail: 'Movimentação da competência aberta',
-        period: 1,
+        id: '218',
+        name: '218',
+        detail: 'Compras do ano inteiro (do começo do ano até o fim)',
+        period: 30,
+      },
+      {
+        id: 'carteira-17-11',
+        name: 'CARTEIRA_17.11',
+        detail: 'Carteira industrial de referência',
+        period: 30,
       },
     ],
   },
@@ -157,31 +182,6 @@ const engines: EngineDefinition[] = [
         id: 'roteiro-consolidado',
         name: 'Roteiro consolidado',
         detail: 'Roteiro vigente das equipes',
-        period: 30,
-      },
-    ],
-  },
-  {
-    id: 'compras-industria',
-    name: 'Compras da indústria',
-    description: 'Compras realizadas e carteira industrial.',
-    slots: [
-      {
-        id: '12322',
-        name: '12322',
-        detail: 'Compras da indústria',
-        period: 30,
-      },
-      {
-        id: '218',
-        name: '218',
-        detail: 'Compras do ano inteiro (do começo do ano até o fim)',
-        period: 30,
-      },
-      {
-        id: 'carteira-17-11',
-        name: 'CARTEIRA_17.11',
-        detail: 'Carteira industrial de referência',
         period: 30,
       },
     ],
