@@ -1,5 +1,6 @@
 import { readWorkbook } from './core/table';
 import { EngineBlockError, type EngineResult } from './core/types';
+import { processClientes } from './clientes/process';
 import { processProdutos } from './produtos/process';
 
 export type EngineRunner = {
@@ -50,6 +51,31 @@ export const runners: Record<string, EngineRunner> = {
           'Base_Sortimento_Nacional',
         ),
       });
+    },
+  },
+  clientes: {
+    keyColumn: 'cnpj_cpf',
+    run: async (files) => {
+      const cadastro = readWorkbook(await bytes(need(files, '1203')));
+      const carteira = readWorkbook(
+        await bytes(need(files, 'carteira-clientes')),
+      );
+      const piramide = readWorkbook(await bytes(need(files, 'piramide')));
+      return processClientes(
+        {
+          cadastro1203: cadastro.sheetWith(['Código', 'CPF/CNPJ', 'Nome']),
+          carteira: carteira.sheet(),
+          piramide: piramide.sheetWith(
+            ['COD CLIENTE', 'FAIXAS', 'PERFIL'],
+            'Pirâmide ativa',
+          ),
+        },
+        {
+          cadastro: '1203-clientes.xls',
+          carteira: 'relatorio_carteira_clientes.xls',
+          piramide: 'piramide (aba Pirâmide ativa)',
+        },
+      );
     },
   },
 };
