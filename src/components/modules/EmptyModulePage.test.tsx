@@ -11,5 +11,5 @@ test('exibe o módulo sem inventar dados', () => {
     />,
   );
   expect(screen.getByRole('heading', { name: 'Estoque' })).toBeInTheDocument();
-  expect(screen.getByText(/vazia de propósito/i)).toBeInTheDocument();
+  expect(screen.getByText(/ainda não foi desenhada/i)).toBeInTheDocument();
 });

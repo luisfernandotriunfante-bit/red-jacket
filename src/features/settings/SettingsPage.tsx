@@ -1,7 +1,6 @@
 import {
   AlertTriangle,
   Archive,
-  Bot,
   CalendarClock,
   CheckCircle2,
   CircleDollarSign,
@@ -26,7 +25,10 @@ import {
   saveEngineBaseChunked,
   listSourceFiles,
   loadSourceFile,
+  listAuditCases,
   saveSourceFile,
+  updateAuditCaseStatus,
+  type EngineAuditCase,
 } from '../../engines/storage';
 import styles from './SettingsPage.module.css';
 
@@ -233,7 +235,7 @@ export function SettingsPage() {
 
   return (
     <section
-      className={`${styles.page} ${current === 'motores' ? styles.enginePage : ''}`}
+      className={`${styles.page} ${current === 'motores' ? styles.enginePage : ''} ${current === 'auditoria' ? styles.auditPage : ''}`}
       aria-labelledby="settings-title"
     >
       <header className={styles.header}>
@@ -674,70 +676,149 @@ function Engines() {
 }
 
 function Audit() {
-  const alerts = [
-    {
-      level: 'CRÍTICO',
-      title: 'Estrutura de arquivo não reconhecida',
-      detail: 'Exemplo de validação: uma coluna obrigatória mudou de nome.',
-      source: 'CADASTRO DE CLIENTES',
-    },
-    {
-      level: 'ATENÇÃO',
-      title: 'Fonte sem atualização recente',
-      detail: 'Exemplo de validação: o arquivo ultrapassou o prazo definido.',
-      source: 'ESTOQUE',
-    },
-    {
-      level: 'REVISAR',
-      title: 'Registros potencialmente duplicados',
-      detail:
-        'Exemplo de validação: chaves repetidas foram encontradas na carga.',
-      source: 'MOVIMENTAÇÃO',
-    },
-  ];
+  const [cases, setCases] = useState<EngineAuditCase[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    void listAuditCases()
+      .then((items) => active && setCases(items))
+      .catch(
+        (reason: unknown) =>
+          active &&
+          setError(
+            reason instanceof Error
+              ? reason.message
+              : 'Não foi possível carregar a auditoria.',
+          ),
+      )
+      .finally(() => active && setLoading(false));
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  async function changeStatus(
+    item: EngineAuditCase,
+    status: EngineAuditCase['status'],
+  ) {
+    setBusyId(item.id);
+    setError('');
+    try {
+      await updateAuditCaseStatus(item.id, status);
+      setCases((current) =>
+        current.map((entry) =>
+          entry.id === item.id ? { ...entry, status } : entry,
+        ),
+      );
+    } catch (reason) {
+      setError(
+        reason instanceof Error
+          ? reason.message
+          : 'Não foi possível atualizar a ocorrência.',
+      );
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  const open = cases.filter((item) => item.status === 'aberto');
+  const analysis = cases.filter((item) => item.status === 'em_analise');
+  const finished = cases.filter(
+    (item) => item.status === 'tratado' || item.status === 'ignorado',
+  );
   return (
-    <>
-      <div className={styles.auditStats}>
-        <Metric icon={<AlertTriangle />} label="CRÍTICOS" value="01" />
-        <Metric icon={<ShieldCheck />} label="EM ANÁLISE" value="02" />
-        <Metric icon={<CheckCircle2 />} label="RESOLVIDOS" value="00" />
-      </div>
-      <article className={styles.aiSummary}>
-        <div className={styles.roundIcon}>
-          <Bot size={20} />
-        </div>
+    <div className={styles.auditWorkspace}>
+      <div className={styles.auditToolbar}>
         <div>
-          <span>RESUMO DA IA · CONTEÚDO ILUSTRATIVO</span>
-          <h2>O que merece sua atenção agora</h2>
-          <p>
-            Há uma mudança de estrutura que pode impedir a próxima carga, uma
-            fonte desatualizada e possíveis duplicidades. Revise primeiro o
-            cadastro de clientes; depois atualize o estoque e confira as chaves
-            da movimentação.
-          </p>
+          <span>AUDITORIA DOS MOTORES</span>
+          <strong>Qualidade das bases processadas</strong>
         </div>
-      </article>
-      <div className={styles.sectionTitle}>
-        <div>
-          <span>FILA DE AUDITORIA</span>
-          <h2>Ocorrências abertas</h2>
+        <div className={styles.auditTotals}>
+          <span>
+            <b>{open.length}</b> ABERTAS
+          </span>
+          <span>
+            <b>{analysis.length}</b> EM ANÁLISE
+          </span>
+          <span>
+            <b>{finished.length}</b> FINALIZADAS
+          </span>
         </div>
-        <button className={styles.outline}>VER HISTÓRICO</button>
       </div>
-      <div className={styles.issueList}>
-        {alerts.map((alert) => (
-          <article className={styles.issue} key={alert.title}>
-            <span className={styles.issueLevel}>{alert.level}</span>
+      {error && (
+        <div className={styles.auditError}>
+          <AlertTriangle size={15} /> {error}
+        </div>
+      )}
+      <div className={styles.auditList} aria-live="polite">
+        {loading && (
+          <div className={styles.auditEmpty}>
+            <RefreshCw size={20} /> Carregando ocorrências…
+          </div>
+        )}
+        {!loading && cases.length === 0 && (
+          <div className={styles.auditEmpty}>
+            <ShieldCheck size={24} />
+            <strong>Nenhuma ocorrência encontrada</strong>
+            <span>
+              Os próximos avisos dos motores aparecerão automaticamente aqui.
+            </span>
+          </div>
+        )}
+        {cases.map((item) => (
+          <article className={styles.auditIssue} key={item.id}>
+            <span
+              className={`${styles.auditSeverity} ${item.severity === 'ERRO' ? styles.auditCritical : ''}`}
+            >
+              {item.severity === 'ERRO' ? 'CRÍTICO' : 'AVISO'}
+            </span>
             <div>
-              <h3>{alert.title}</h3>
-              <p>{alert.detail}</p>
+              <h3>{item.message}</h3>
+              <p>
+                {item.engine.toUpperCase()} · {item.code.replaceAll('_', ' ')}
+                {item.count != null
+                  ? ` · ${item.count} registro${item.count === 1 ? '' : 's'}`
+                  : ''}
+              </p>
             </div>
-            <span className={styles.source}>{alert.source}</span>
-            <button className={styles.outline}>ANALISAR</button>
+            <time dateTime={item.createdAt}>
+              {new Intl.DateTimeFormat('pt-BR', {
+                dateStyle: 'short',
+                timeStyle: 'short',
+              }).format(new Date(item.createdAt))}
+            </time>
+            <span className={styles.auditStatus}>
+              {item.status.replace('_', ' ').toUpperCase()}
+            </span>
+            <div className={styles.auditActions}>
+              {item.status !== 'em_analise' && item.status !== 'tratado' && (
+                <button
+                  onClick={() => void changeStatus(item, 'em_analise')}
+                  disabled={busyId === item.id}
+                >
+                  EM ANÁLISE
+                </button>
+              )}
+              {item.status !== 'tratado' && (
+                <button
+                  className={styles.auditResolve}
+                  onClick={() => void changeStatus(item, 'tratado')}
+                  disabled={busyId === item.id}
+                >
+                  TRATAR
+                </button>
+              )}
+              {item.status === 'tratado' && (
+                <CheckCircle2 size={18} aria-label="Ocorrência tratada" />
+              )}
+            </div>
           </article>
         ))}
       </div>
-    </>
+    </div>
   );
 }
 
@@ -902,25 +983,6 @@ function Periods() {
         originalmente fechada nunca será apagada.
       </p>
     </>
-  );
-}
-
-function Metric({
-  icon,
-  label,
-  value,
-}: {
-  icon: ReactNode;
-  label: string;
-  value: string;
-}) {
-  return (
-    <article className={styles.metric}>
-      <div className={styles.roundIcon}>{icon}</div>
-      <span>{label}</span>
-      <strong>{value}</strong>
-      <small>DADOS DE EXEMPLO</small>
-    </article>
   );
 }
 

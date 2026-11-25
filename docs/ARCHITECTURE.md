@@ -4,7 +4,7 @@
 
 - **React + TypeScript + Vite:** interface modular, tipada e rápida de desenvolver.
 - **Supabase Auth:** login por e-mail e senha, sessão persistida e cadastro público desabilitável.
-- **Supabase Postgres:** será incorporado somente quando existir o primeiro modelo de dados aprovado. Nenhuma tabela fictícia foi criada.
+- **Supabase Postgres e Storage:** armazenam as bases processadas, execuções, arquivos de origem e ocorrências de auditoria dos motores.
 - **GitHub Pages:** hospeda exclusivamente a interface visual do aplicativo.
 - **Supabase:** hospeda autenticação, banco de dados e, futuramente, arquivos. O Supabase não hospeda a interface do Red Jacket.
 - **Variáveis de ambiente:** somente a URL e a chave pública (`anon`) chegam ao navegador. A chave `service_role` nunca pode ser usada no front-end.
@@ -13,7 +13,9 @@
 
 - `src/app`: rotas e navegação.
 - `src/components`: componentes reutilizáveis e estrutura visual.
-- `src/features`: funcionalidades isoladas, como autenticação e tema.
+- `src/features`: funcionalidades isoladas, como autenticação, tema, Sell Out e Configurações.
+- `src/engines`: leitura, validação, processamento e persistência das fontes comerciais.
+- `supabase/migrations`: estrutura versionada do banco, funções transacionais e políticas de acesso.
 - `src/styles`: identidade visual e regras globais.
 
 ## Segurança futura dos dados
@@ -28,7 +30,8 @@ Toda tabela criada no Supabase deverá ter Row Level Security (RLS), políticas 
 | GitHub Actions    | testes e publicação automática            |
 | GitHub Pages      | telas e navegação do aplicativo           |
 | Supabase Auth     | login, sessão e usuários                  |
-| Supabase Postgres | dados do produto, quando aprovados        |
+| Supabase Postgres | bases processadas, execuções e auditoria  |
+| Supabase Storage  | arquivos de origem dos motores            |
 
 ## Primeiro acesso de novos usuários
 
