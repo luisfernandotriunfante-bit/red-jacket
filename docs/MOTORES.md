@@ -70,12 +70,12 @@ Os papéis ficam na tabela `user_roles` (migração `20261125000500_user_roles.s
 
 **Somente CEOs têm o nível de alteração total.** Hoje existe um único CEO (o dono do site). Nenhum outro papel pode receber esse nível.
 
-| Papel | Alcance |
-|---|---|
-| CEO | Acesso total e irrestrito: dados, motores, ajustes comerciais (tabela de operações do 379, periodicidade) e alterações do site. Desfaz qualquer mudança. |
-| Admin | Quase tudo, inclusive manutenção de dados novos (subir arquivos, processar motores, tratar casos da auditoria). Não desfaz o que um CEO tratou e não altera nada do site/ajustes. |
-| Gerente | Visão comercial: lê os dados, não sobe nada e não altera nada. |
-| Supervisor | Visão de gerente, só da própria equipe (`supervisor_code`). |
-| Vendedor | Visão de supervisor, só do próprio setor (`vendedor_code`). |
+| Papel      | Alcance                                                                                                                                                                           |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CEO        | Acesso total e irrestrito: dados, motores, ajustes comerciais (tabela de operações do 379, periodicidade) e alterações do site. Desfaz qualquer mudança.                          |
+| Admin      | Quase tudo, inclusive manutenção de dados novos (subir arquivos, processar motores, tratar casos da auditoria). Não desfaz o que um CEO tratou e não altera nada do site/ajustes. |
+| Gerente    | Visão comercial: lê os dados, não sobe nada e não altera nada.                                                                                                                    |
+| Supervisor | Visão de gerente, só da própria equipe (`supervisor_code`).                                                                                                                       |
+| Vendedor   | Visão de supervisor, só do próprio setor (`vendedor_code`).                                                                                                                       |
 
 Supervisor e vendedor leem hoje `produtos` e `movimentacoes` (filtradas por código). Clientes, cortes, roteiro e compras ficam fechados para eles até a tabela de vendedores existir. Para cadastrar um usuário, o CEO insere uma linha em `user_roles`.
