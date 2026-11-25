@@ -224,11 +224,12 @@ function Engines() {
                 </div>
                 <div className={styles.sourceFile}>
                   <small>
-                    {upload ? 'ARQUIVO SELECIONADO' : 'FORMATOS ACEITOS'}
+                    {upload ? 'ARQUIVO SELECIONADO' : 'ARQUIVO OBRIGATÓRIO'}
                   </small>
                   <strong title={upload?.name}>
-                    {upload?.name ?? source.format}
+                    {upload?.name ?? 'Nenhum arquivo selecionado'}
                   </strong>
+                  <span>{source.format}</span>
                 </div>
                 <div className={styles.sourceUpdated}>
                   <small>ÚLTIMA ATUALIZAÇÃO</small>
