@@ -180,3 +180,81 @@ export async function loadBaseRows(engine: string): Promise<BaseRow[]> {
   }
   return rows;
 }
+
+// ------------------------------------------------------- arquivos enviados
+const BUCKET = 'engine-sources';
+
+export type SourceFileInfo = {
+  engine: string;
+  slot: string;
+  fileName: string;
+  sizeBytes: number;
+  uploadedAt: string;
+};
+
+async function gzip(file: Blob): Promise<Blob> {
+  const stream = file.stream().pipeThrough(new CompressionStream('gzip'));
+  return new Response(stream).blob();
+}
+
+async function gunzip(blob: Blob): Promise<Blob> {
+  const stream = blob.stream().pipeThrough(new DecompressionStream('gzip'));
+  return new Response(stream).blob();
+}
+
+/** Guarda o arquivo do slot (compactado) para as próximas atualizações. */
+export async function saveSourceFile(
+  engine: string,
+  slot: string,
+  file: File,
+): Promise<void> {
+  const client = requireClient();
+  const packed = await gzip(file);
+  const sent = await client.storage
+    .from(BUCKET)
+    .upload(`${engine}/${slot}.gz`, packed, {
+      upsert: true,
+      contentType: 'application/gzip',
+    });
+  if (sent.error) throw new Error(sent.error.message);
+  const row = await client.from('engine_source_files').upsert({
+    engine,
+    slot,
+    file_name: file.name,
+    size_bytes: file.size,
+    uploaded_at: new Date().toISOString(),
+  });
+  if (row.error) throw new Error(row.error.message);
+}
+
+/** Arquivos já guardados (de todos os motores). */
+export async function listSourceFiles(): Promise<SourceFileInfo[]> {
+  const client = requireClient();
+  const response = await client
+    .from('engine_source_files')
+    .select('engine, slot, file_name, size_bytes, uploaded_at');
+  if (response.error) throw new Error(response.error.message);
+  const list: unknown = response.data;
+  if (!Array.isArray(list)) return [];
+  return (list as Record<string, unknown>[]).map((r) => ({
+    engine: String(r.engine),
+    slot: String(r.slot),
+    fileName: String(r.file_name),
+    sizeBytes: Number(r.size_bytes),
+    uploadedAt: String(r.uploaded_at),
+  }));
+}
+
+/** Baixa um arquivo guardado e devolve o original. */
+export async function loadSourceFile(
+  engine: string,
+  slot: string,
+  fileName: string,
+): Promise<File> {
+  const client = requireClient();
+  const got = await client.storage
+    .from(BUCKET)
+    .download(`${engine}/${slot}.gz`);
+  if (got.error) throw new Error(got.error.message);
+  return new File([await gunzip(got.data)], fileName);
+}

@@ -179,10 +179,8 @@ export const runners: Record<string, EngineRunner> = {
         throw new EngineBlockError(
           'a base de Produtos está vazia: processe o motor Produtos antes',
         );
-      const r218 = [];
-      for (const slot of ['218-outubro', '218-atual']) {
-        r218.push(readWorkbook(await bytes(need(files, slot))).sheet());
-      }
+      // O 218 vem inteiro, do começo do ano até o fim: um arquivo só.
+      const r218 = [readWorkbook(await bytes(need(files, '218'))).sheet()];
       const carteira = readWorkbook(
         await bytes(need(files, 'carteira-17-11')),
       ).sheet();
