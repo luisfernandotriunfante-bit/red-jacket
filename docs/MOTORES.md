@@ -42,3 +42,11 @@ Cada processamento devolve uma lista de itens de auditoria (`AuditItem`). Os de 
 - Itens `INFO` (conferências e contagens) ficam só no resumo do processamento (`engine_runs.audit`).
 
 Os avisos do motor Produtos ainda trazem só a contagem; os próximos motores já preenchem `records`.
+
+## Movimentações (motor 6)
+
+- Entradas: dois relatórios 379 (ERP antigo, texto de largura fixa) e dois 8022 (ERP novo, xls/xlsx). O tipo de cada arquivo é decidido pelo **conteúdo** (assinatura de planilha ou texto), nunca pelo nome ou extensão.
+- 379: campos achados pelos vãos de espaço + nome do cabeçalho. 8022: colunas pelo nome do cabeçalho. Coluna desconhecida vira `x_…` e gera aviso; coluna obrigatória ausente bloqueia.
+- O 8022 mais recente substitui o período repetido do anterior. Devolução/troca do 379 relançada no 8022 é removida (auditada).
+- Base grande (~300 mil linhas): gravada em lotes (`begin_engine_run` → `append_engine_rows` → `finalize_engine_run` → `purge_engine_rows`, migração `20261125000200`). A base anterior só deixa de valer quando a nova é finalizada e a contagem confere.
+- Paridade: 296.377 linhas conferidas célula a célula com o motor em Python.

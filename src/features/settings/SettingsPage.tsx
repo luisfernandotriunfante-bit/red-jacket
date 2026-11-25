@@ -23,6 +23,7 @@ import {
   loadBaseRows,
   loadLastRun,
   saveEngineBase,
+  saveEngineBaseChunked,
 } from '../../engines/storage';
 import styles from './SettingsPage.module.css';
 
@@ -377,14 +378,21 @@ function Engines() {
       const warnings = result.audit.filter(
         (a) => a.severity === 'AVISO',
       ).length;
-      await saveEngineBase(
-        result,
-        runner.keyColumn,
-        engine.slots.map((slot) => ({
-          slot: slot.id,
-          fileName: uploads[slot.id]?.name ?? '',
-        })),
-      );
+      const sources = engine.slots.map((slot) => ({
+        slot: slot.id,
+        fileName: uploads[slot.id]?.name ?? '',
+      }));
+      if (runner.chunked) {
+        await saveEngineBaseChunked(
+          result,
+          runner.keyColumn,
+          sources,
+          (progress) =>
+            setResults((current) => ({ ...current, [engine.id]: progress })),
+        );
+      } else {
+        await saveEngineBase(result, runner.keyColumn, sources);
+      }
       const summary = `${result.rows.length} linhas gravadas · ${errors} erro(s) · ${warnings} aviso(s)`;
       setResults((current) => ({ ...current, [engine.id]: summary }));
       return `Motor ${engine.name} processado: ${summary}.`;

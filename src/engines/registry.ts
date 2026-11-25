@@ -9,10 +9,18 @@ import { processCompras } from './compras/process';
 import { processCortes } from './cortes/process';
 import { processRoteiro } from './roteiro/process';
 import { processProdutos } from './produtos/process';
+import {
+  decodeLatin1,
+  processMovimentacoes,
+  type Fonte379,
+  type Fonte8022,
+} from './movimentacoes/process';
 
 export type EngineRunner = {
   /** Coluna que identifica cada linha da base. */
   keyColumn: string;
+  /** Base grande: grava em lotes (a base anterior só é trocada no fim). */
+  chunked?: boolean;
   /** Motores cuja base vigente este motor precisa (ex.: Cortes usa Produtos e Clientes). */
   needs?: string[];
   /** Lê os arquivos (por id de slot) e devolve a base. */
@@ -33,6 +41,14 @@ function need(files: Record<string, File>, slot: string): File {
 
 async function bytes(file: File): Promise<Uint8Array> {
   return new Uint8Array(await file.arrayBuffer());
+}
+
+/** Planilha do Excel (xls = OLE2, xlsx = zip) ou texto de largura fixa: decidido pelo conteúdo, nunca pelo nome. */
+function isSpreadsheet(data: Uint8Array): boolean {
+  const ole = [0xd0, 0xcf, 0x11, 0xe0];
+  const zip = [0x50, 0x4b, 0x03, 0x04];
+  const starts = (sig: number[]) => sig.every((b, i) => data[i] === b);
+  return starts(ole) || starts(zip);
 }
 
 /** Motores já ligados ao processamento real. Os demais continuam só com o envio de arquivos. */
@@ -126,6 +142,32 @@ export const runners: Record<string, EngineRunner> = {
         matrix: wb.sheet(),
         clientes: bases.clientes ?? [],
       });
+    },
+  },
+  movimentacoes: {
+    keyColumn: 'id_movimento',
+    chunked: true,
+    run: async (files) => {
+      const antigos: Fonte379[] = [];
+      const novos: Fonte8022[] = [];
+      for (const slot of [
+        '379-2025',
+        '379-2026-julho',
+        '8022-agosto',
+        '8022-atual',
+      ]) {
+        const file = need(files, slot);
+        const data = await bytes(file);
+        if (isSpreadsheet(data)) {
+          novos.push({
+            nome: file.name,
+            matrix: readWorkbook(data).sheetWith(['DATA MOVIMENTO']),
+          });
+        } else {
+          antigos.push({ nome: file.name, texto: decodeLatin1(data) });
+        }
+      }
+      return processMovimentacoes({ antigos, novos });
     },
   },
   'compras-industria': {
