@@ -11,7 +11,8 @@ import {
 } from '../core/types';
 import { SPEC } from './spec';
 
-export type Fonte379 = { nome: string; texto: string };
+/** `texto` pode ser uma função: o arquivo é decodificado só na hora e liberado em seguida (economiza memória). */
+export type Fonte379 = { nome: string; texto: string | (() => string) };
 export type Fonte8022 = { nome: string; matrix: Matrix };
 
 export type MovimentacoesInput = {
@@ -19,6 +20,8 @@ export type MovimentacoesInput = {
   antigos: Fonte379[];
   /** Relatórios 8022 (ERP novo), do mais antigo para o mais recente. */
   novos: Fonte8022[];
+  /** Classificação das operações do 379 ("operação" ou "operação|cfop" → classe). Padrão: OPERACOES_ANTIGAS. */
+  operacoes?: Record<string, string>;
 };
 
 const MAX_RECORDS = 200;
@@ -635,14 +638,18 @@ const NO_MOTOR = new Set(['VENDA', 'DEVOLUCAO', 'TROCA', 'BONIFICACAO']);
 const LIQUIDO = new Set(['VENDA', 'DEVOLUCAO']);
 const NEGATIVAS = new Set(['DEVOLUCAO', 'TROCA']);
 
-function classifica(m: Mov) {
+function classifica(m: Mov, operacoes: Record<string, string>) {
   if (m.sistema === 'ERP_NOVO') {
     m.classe = NO_MOTOR.has(m.tipoNovo ?? '')
       ? (m.tipoNovo ?? '')
       : 'NAO_MAPEADA';
     m.situacao = m.statusPedido === 'FATURADO' ? 'FATURADO' : 'A_FATURAR';
   } else {
-    m.classe = (m.opAntiga && OPERACOES_ANTIGAS[m.opAntiga]) || 'NAO_MAPEADA';
+    m.classe =
+      (m.opAntiga &&
+        (operacoes[`${m.opAntiga}|${m.cfop ?? ''}`] ??
+          operacoes[m.opAntiga])) ||
+      'NAO_MAPEADA';
     m.situacao = 'FATURADO';
   }
 }
@@ -713,7 +720,10 @@ export function processMovimentacoes(input: MovimentacoesInput): EngineResult {
   // ---- leitura
   const antigos: Mov[][] = [];
   for (const f of input.antigos) {
-    const r = read379(f.texto, f.nome);
+    const r = read379(
+      typeof f.texto === 'function' ? f.texto() : f.texto,
+      f.nome,
+    );
     audit.push(...r.audit);
     antigos.push(padronizaAntigo(r.rows, f.nome));
   }
@@ -822,7 +832,11 @@ export function processMovimentacoes(input: MovimentacoesInput): EngineResult {
   }
 
   // ---- classificação
-  for (const m of todos) classifica(m);
+  const operacoes =
+    input.operacoes && Object.keys(input.operacoes).length
+      ? input.operacoes
+      : OPERACOES_ANTIGAS;
+  for (const m of todos) classifica(m, operacoes);
 
   // ---- devolução/troca lançada no ERP antigo e relançada no novo
   const chaveDup = (m: Mov) =>

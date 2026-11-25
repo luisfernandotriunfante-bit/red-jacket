@@ -154,6 +154,24 @@ export async function saveEngineBaseChunked(
   });
   if (begin.error) throw new Error(begin.error.message);
   const runId = String(begin.data);
+  try {
+    await sendChunks(client, runId, rows, result, sources, onProgress);
+  } catch (error) {
+    // gravação interrompida: descarta a versão incompleta (a vigente não é tocada)
+    await client.rpc('abort_engine_run', { p_run: runId });
+    throw error;
+  }
+  return runId;
+}
+
+async function sendChunks(
+  client: ReturnType<typeof requireClient>,
+  runId: string,
+  rows: { key: string; data: BaseRow }[],
+  result: EngineResult,
+  sources: SourceInfo[],
+  onProgress: (message: string) => void,
+): Promise<void> {
   for (let from = 0; from < rows.length; from += CHUNK_ROWS) {
     onProgress(
       `Gravando a base no Supabase… ${Math.min(from + CHUNK_ROWS, rows.length)} de ${rows.length} linhas`,
@@ -183,7 +201,6 @@ export async function saveEngineBaseChunked(
     if (purge.error) throw new Error(purge.error.message);
     if (Number(purge.data) === 0) break;
   }
-  return runId;
 }
 
 function isAuditList(value: unknown): value is AuditItem[] {
@@ -327,4 +344,57 @@ export async function loadSourceFile(
     .download(`${engine}/${slot}.gz`);
   if (got.error) throw new Error(got.error.message);
   return new File([await gunzip(got.data)], fileName);
+}
+
+// ------------------------------------------------------------ ajustes
+/** Periodicidade de atualização de cada arquivo (dias; 0 = sem vencimento). */
+export async function loadSlotPeriods(): Promise<Record<string, number>> {
+  const client = requireClient();
+  const response = await client
+    .from('engine_slot_settings')
+    .select('slot, period_days');
+  if (response.error) throw new Error(response.error.message);
+  const list: unknown = response.data;
+  if (!Array.isArray(list)) return {};
+  return Object.fromEntries(
+    (list as Record<string, unknown>[]).map((r) => [
+      String(r.slot),
+      Number(r.period_days),
+    ]),
+  );
+}
+
+export async function saveSlotPeriod(
+  slot: string,
+  periodDays: number,
+): Promise<void> {
+  const client = requireClient();
+  const response = await client.from('engine_slot_settings').upsert({
+    slot,
+    period_days: periodDays,
+    updated_at: new Date().toISOString(),
+  });
+  if (response.error) throw new Error(response.error.message);
+}
+
+/** Classificação das operações do ERP antigo: "operação" ou "operação|cfop" → classe. */
+export async function loadOperacoesMovimentacoes(): Promise<
+  Record<string, string>
+> {
+  const client = requireClient();
+  const response = await client
+    .from('movimentacoes_operacoes')
+    .select('operacao, cfop, classe');
+  if (response.error) throw new Error(response.error.message);
+  const list: unknown = response.data;
+  const map: Record<string, string> = {};
+  if (Array.isArray(list)) {
+    for (const r of list as Record<string, unknown>[]) {
+      const cfop = typeof r.cfop === 'string' ? r.cfop : '';
+      map[cfop ? `${String(r.operacao)}|${cfop}` : String(r.operacao)] = String(
+        r.classe,
+      );
+    }
+  }
+  return map;
 }

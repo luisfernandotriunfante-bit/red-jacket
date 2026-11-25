@@ -330,4 +330,40 @@ describe('processMovimentacoes', () => {
     ).toBe(1);
     expect(r.rows).toHaveLength(4);
   });
+
+  it('usa o mapa de operações recebido (e não o padrão do código)', () => {
+    const r = processMovimentacoes({
+      antigos: [{ nome: 'a.txt', texto: () => texto379 }],
+      novos: [
+        {
+          nome: 'b.xls',
+          matrix: m8022([
+            [
+              '10/08/2026',
+              900,
+              '12345678000195',
+              '7891024034415',
+              77,
+              6,
+              1,
+              100,
+              98,
+              'VENDA',
+              'FATURADO',
+              null,
+            ],
+          ]),
+        },
+      ],
+      // 59996 (baixa de estoque) agora classificada como bonificação; 51201 sem mapa
+      operacoes: { '59996': 'BONIFICACAO', '13201': 'DEVOLUCAO' },
+    });
+    const antigas = r.rows.filter((x) => x.sistema_origem === 'ERP_ANTIGO');
+    expect(antigas.map((x) => x.classe_movimento)).toEqual([
+      'DEVOLUCAO',
+      'BONIFICACAO',
+    ]);
+    const aviso = r.audit.find((a) => a.code === 'OPERACAO_NAO_MAPEADA');
+    expect(aviso?.records?.[0]?.key).toBe('51201/5102');
+  });
 });

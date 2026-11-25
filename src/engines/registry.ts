@@ -8,6 +8,7 @@ import { processClientes } from './clientes/process';
 import { processCompras } from './compras/process';
 import { processCortes } from './cortes/process';
 import { processRoteiro } from './roteiro/process';
+import { loadOperacoesMovimentacoes } from './storage';
 import { processProdutos } from './produtos/process';
 import {
   decodeLatin1,
@@ -164,10 +165,14 @@ export const runners: Record<string, EngineRunner> = {
             matrix: readWorkbook(data).sheetWith(['DATA MOVIMENTO']),
           });
         } else {
-          antigos.push({ nome: file.name, texto: decodeLatin1(data) });
+          antigos.push({ nome: file.name, texto: () => decodeLatin1(data) });
         }
       }
-      return processMovimentacoes({ antigos, novos });
+      return processMovimentacoes({
+        antigos,
+        novos,
+        operacoes: await loadOperacoesMovimentacoes(),
+      });
     },
   },
   'compras-industria': {
