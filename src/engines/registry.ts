@@ -11,7 +11,10 @@ export type EngineRunner = {
 
 function need(files: Record<string, File>, slot: string): File {
   const file = files[slot];
-  if (!file) throw new EngineBlockError(`arquivo não enviado: ${slot}`);
+  if (!file)
+    throw new EngineBlockError(
+      `arquivo não enviado nesta sessão (${slot}): envie novamente os arquivos para reprocessar`,
+    );
   return file;
 }
 

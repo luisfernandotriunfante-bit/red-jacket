@@ -15,11 +15,11 @@ import {
   UserRoundPlus,
   UsersRound,
 } from 'lucide-react';
-import { useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Navigate, useParams } from 'react-router-dom';
 import { EngineBlockError } from '../../engines/core/types';
 import { runners } from '../../engines/registry';
-import { saveEngineBase } from '../../engines/storage';
+import { loadLastRun, saveEngineBase } from '../../engines/storage';
 import styles from './SettingsPage.module.css';
 
 const sections = [
@@ -268,6 +268,40 @@ function Engines() {
     () => Object.fromEntries(allSlots.map((slot) => [slot.id, slot.period])),
   );
   const [referenceTime, setReferenceTime] = useState(() => Date.now());
+  // Ao abrir a página, recupera do banco o último processamento de cada motor.
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      for (const engineId of Object.keys(runners)) {
+        try {
+          const run = await loadLastRun(engineId);
+          if (!run || !active) continue;
+          const errors = run.audit.filter((a) => a.severity === 'ERRO').length;
+          const warnings = run.audit.filter(
+            (a) => a.severity === 'AVISO',
+          ).length;
+          setUploads((current) => ({
+            ...current,
+            ...Object.fromEntries(
+              run.sources.map((source) => [
+                source.slot,
+                { name: source.fileName, updatedAt: run.createdAt },
+              ]),
+            ),
+          }));
+          setResults((current) => ({
+            ...current,
+            [engineId]: `${run.rowCount} linhas gravadas · ${errors} erro(s) · ${warnings} aviso(s)`,
+          }));
+        } catch {
+          // sem conexão ou sem permissão: a tela segue vazia, como antes
+        }
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
   const isExpired = (slotId: string) => {
     const upload = uploads[slotId];
     if (!upload) return false;

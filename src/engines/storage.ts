@@ -8,6 +8,7 @@ export type EngineRunSummary = {
   engine: string;
   rowCount: number;
   audit: AuditItem[];
+  sources: SourceInfo[];
   createdAt: string;
 };
 
@@ -65,7 +66,7 @@ export async function loadLastRun(
   const client = requireClient();
   const response = await client
     .from('engine_runs')
-    .select('id, engine, row_count, audit, created_at')
+    .select('id, engine, row_count, audit, sources, created_at')
     .eq('engine', engine)
     .order('created_at', { ascending: false })
     .limit(1);
@@ -79,6 +80,7 @@ export async function loadLastRun(
     engine: String(r.engine),
     rowCount: Number(r.row_count),
     audit: isAuditList(r.audit) ? r.audit : [],
+    sources: Array.isArray(r.sources) ? (r.sources as SourceInfo[]) : [],
     createdAt: String(r.created_at),
   };
 }
