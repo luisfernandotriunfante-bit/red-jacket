@@ -108,9 +108,6 @@
   .card {
     overflow-x: auto;
   }
-  .card > header {
-    min-width: 46rem;
-  }
   .card table {
     min-width: 46rem;
   }
