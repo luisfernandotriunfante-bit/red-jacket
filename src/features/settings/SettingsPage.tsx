@@ -126,19 +126,44 @@ function Engines() {
     },
   ];
   const [uploads, setUploads] = useState<
-    Array<{ name: string; updated: string } | null>
+    Array<{ name: string; updatedAt: string } | null>
   >(() => sources.map(() => null));
-  const uploadedCount = uploads.filter(Boolean).length;
+  const [updatePeriods, setUpdatePeriods] = useState([1, 7, 7, 1, 30]);
+  const [referenceTime, setReferenceTime] = useState(() => Date.now());
+  const isExpired = (index: number) => {
+    const upload = uploads[index];
+    if (!upload) return false;
+    return (
+      referenceTime - new Date(upload.updatedAt).getTime() >
+      updatePeriods[index]! * 86_400_000
+    );
+  };
+  const currentCount = uploads.filter(
+    (upload, index) => upload && !isExpired(index),
+  ).length;
+  const formatMoment = (value: string) =>
+    new Intl.DateTimeFormat('pt-BR', {
+      dateStyle: 'short',
+      timeStyle: 'short',
+    }).format(new Date(value));
+  const nextUpdate = (index: number) => {
+    const upload = uploads[index];
+    if (!upload) return 'APÓS O PRIMEIRO ENVIO';
+    return formatMoment(
+      new Date(
+        new Date(upload.updatedAt).getTime() +
+          updatePeriods[index]! * 86_400_000,
+      ).toISOString(),
+    );
+  };
 
   const selectFile = (index: number, file?: File) => {
     if (!file) return;
-    const now = new Intl.DateTimeFormat('pt-BR', {
-      dateStyle: 'short',
-      timeStyle: 'short',
-    }).format(new Date());
+    const now = new Date().toISOString();
+    setReferenceTime(new Date(now).getTime());
     setUploads((current) =>
       current.map((item, itemIndex) =>
-        itemIndex === index ? { name: file.name, updated: now } : item,
+        itemIndex === index ? { name: file.name, updatedAt: now } : item,
       ),
     );
     setMessage(
@@ -147,9 +172,9 @@ function Engines() {
   };
 
   const process = (all = false) => {
-    if (uploadedCount < sources.length) {
+    if (currentCount < sources.length) {
       setMessage(
-        `Ainda faltam ${sources.length - uploadedCount} arquivo(s) obrigatório(s) para processar.`,
+        `Existem ${sources.length - currentCount} arquivo(s) pendente(s) ou vencido(s).`,
       );
       return;
     }
@@ -173,7 +198,7 @@ function Engines() {
             <strong>01</strong>
           </div>
           <button className={styles.primary} onClick={() => process(true)}>
-            <RefreshCw size={14} /> PROCESSAR TODOS
+            <RefreshCw size={14} /> ATUALIZAR TODOS OS MOTORES
           </button>
         </div>
       </div>
@@ -190,17 +215,17 @@ function Engines() {
           </div>
           <div className={styles.engineReadiness}>
             <div>
-              <span>Arquivos disponíveis</span>
+              <span>Arquivos em dia</span>
               <strong>
-                {uploadedCount}
+                {currentCount}
                 <small>/05</small>
               </strong>
             </div>
             <div className={styles.readinessTrack}>
-              <span style={{ width: `${uploadedCount * 20}%` }} />
+              <span style={{ width: `${currentCount * 20}%` }} />
             </div>
             <small>
-              {uploadedCount === 5
+              {currentCount === 5
                 ? 'PRONTO PARA PROCESSAR'
                 : 'AGUARDANDO ARQUIVOS'}
             </small>
@@ -210,9 +235,10 @@ function Engines() {
         <div className={styles.sourceList}>
           {sources.map((source, index) => {
             const upload = uploads[index];
+            const expired = isExpired(index);
             return (
               <section
-                className={`${styles.sourceRow} ${upload ? styles.sourceReady : ''}`}
+                className={`${styles.sourceRow} ${upload && !expired ? styles.sourceReady : ''} ${expired ? styles.sourceExpired : ''}`}
                 key={source.name}
               >
                 <div className={styles.sourceIndex}>
@@ -221,6 +247,16 @@ function Engines() {
                 <div className={styles.sourceInfo}>
                   <strong>{source.name}</strong>
                   <span>{source.detail}</span>
+                </div>
+                <div
+                  className={`${styles.sourceStatus} ${expired ? styles.statusExpired : upload ? styles.statusCurrent : styles.statusPending}`}
+                >
+                  {expired ? (
+                    <AlertTriangle size={11} />
+                  ) : (
+                    <CheckCircle2 size={11} />
+                  )}
+                  {expired ? 'VENCIDO' : upload ? 'ATUALIZADO' : 'PENDENTE'}
                 </div>
                 <div className={styles.sourceFile}>
                   <small>
@@ -232,9 +268,39 @@ function Engines() {
                   <span>{source.format}</span>
                 </div>
                 <div className={styles.sourceUpdated}>
-                  <small>ÚLTIMA ATUALIZAÇÃO</small>
-                  <span>{upload?.updated ?? 'NUNCA ATUALIZADO'}</span>
+                  <div>
+                    <small>ÚLTIMA ATUALIZAÇÃO</small>
+                    <span>
+                      {upload
+                        ? formatMoment(upload.updatedAt)
+                        : 'NUNCA ATUALIZADO'}
+                    </span>
+                  </div>
+                  <div>
+                    <small>PRÓXIMA ATUALIZAÇÃO</small>
+                    <span>{nextUpdate(index)}</span>
+                  </div>
                 </div>
+                <label className={styles.sourceSchedule}>
+                  <span>ATUALIZAR A CADA</span>
+                  <select
+                    value={updatePeriods[index]}
+                    onChange={(event) =>
+                      setUpdatePeriods((current) =>
+                        current.map((period, periodIndex) =>
+                          periodIndex === index
+                            ? Number(event.target.value)
+                            : period,
+                        ),
+                      )
+                    }
+                  >
+                    <option value={1}>1 DIA</option>
+                    <option value={7}>7 DIAS</option>
+                    <option value={15}>15 DIAS</option>
+                    <option value={30}>30 DIAS</option>
+                  </select>
+                </label>
                 <input
                   ref={(element) => {
                     inputs.current[index] = element;
@@ -264,9 +330,9 @@ function Engines() {
           <button
             className={styles.primary}
             onClick={() => process()}
-            disabled={uploadedCount < sources.length}
+            disabled={currentCount < sources.length}
           >
-            <RefreshCw size={14} /> PROCESSAR MOTOR
+            <RefreshCw size={14} /> ATUALIZAR MOTOR
           </button>
         </footer>
       </article>
