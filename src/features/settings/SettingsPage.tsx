@@ -347,6 +347,11 @@ function Engines() {
   const runEngine = async (engine: EngineDefinition): Promise<string> => {
     const runner = runners[engine.id];
     if (!runner) {
+      setResults((current) => ({
+        ...current,
+        [engine.id]:
+          'O processamento deste motor ainda não foi ligado nesta versão do site.',
+      }));
       return `${engine.name}: arquivos recebidos; o processamento deste motor ainda não foi ligado.`;
     }
     setBusy(engine.id);
@@ -428,6 +433,12 @@ function Engines() {
           <h2>Motores</h2>
         </div>
         <div className={styles.engineToolbarActions}>
+          <div className={styles.engineCounter} title="Versão do site em uso">
+            <span>Versão</span>
+            <strong>
+              {(import.meta.env.VITE_COMMIT ?? 'local').slice(0, 7)}
+            </strong>
+          </div>
           <div className={styles.engineCounter}>
             <span>Motores ativos</span>
             <strong>{String(engines.length).padStart(2, '0')}</strong>
