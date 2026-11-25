@@ -29,6 +29,160 @@ const sections = [
 
 type Section = (typeof sections)[number];
 
+type EngineSlot = {
+  id: string;
+  name: string;
+  detail: string;
+  period: number;
+};
+
+type EngineDefinition = {
+  id: string;
+  name: string;
+  description: string;
+  slots: EngineSlot[];
+};
+
+const engines: EngineDefinition[] = [
+  {
+    id: 'produtos',
+    name: 'Produtos',
+    description: 'Cadastros, preços e sortimento nacional.',
+    slots: [
+      { id: '286', name: '286', detail: 'Cadastro de produtos', period: 30 },
+      {
+        id: 'lista-preco-industria',
+        name: 'Lista de preço da indústria',
+        detail: 'Tabela vigente da indústria',
+        period: 30,
+      },
+      { id: '8013', name: '8013', detail: 'Relatório de produtos', period: 30 },
+      { id: '322', name: '322', detail: 'Relatório de produtos', period: 30 },
+      { id: '8011', name: '8011', detail: 'Relatório de produtos', period: 30 },
+      {
+        id: 'sortimento-nacional',
+        name: 'Base_Sortimento_Nacional',
+        detail: 'Aba do arquivo Sortimento',
+        period: 30,
+      },
+    ],
+  },
+  {
+    id: 'clientes',
+    name: 'Clientes',
+    description: 'Cadastro, carteira e classificação comercial.',
+    slots: [
+      { id: '1203', name: '1203', detail: 'Cadastro de clientes', period: 30 },
+      {
+        id: 'carteira-clientes',
+        name: 'Carteira de clientes',
+        detail: 'Vínculo comercial dos clientes',
+        period: 30,
+      },
+      {
+        id: 'piramide',
+        name: 'Pirâmide',
+        detail: 'Classificação da base de clientes',
+        period: 30,
+      },
+    ],
+  },
+  {
+    id: 'movimentacoes',
+    name: 'Movimentações',
+    description: 'Histórico e movimentação comercial vigente.',
+    slots: [
+      {
+        id: '379-2025',
+        name: '379 de 2025',
+        detail: 'Base histórica fechada',
+        period: 0,
+      },
+      {
+        id: '379-2026-julho',
+        name: '379 de 2026',
+        detail: 'Movimentações até julho',
+        period: 0,
+      },
+      {
+        id: '8022-agosto',
+        name: '8022 — agosto em diante',
+        detail: 'Base consolidada do período',
+        period: 30,
+      },
+      {
+        id: '8022-atual',
+        name: '8022 — mês atual',
+        detail: 'Movimentação da competência aberta',
+        period: 1,
+      },
+    ],
+  },
+  {
+    id: 'cortes',
+    name: 'Cortes',
+    description: 'Histórico consolidado e competência atual.',
+    slots: [
+      {
+        id: '1454-agosto',
+        name: '1454 — agosto em diante',
+        detail: 'Histórico consolidado de cortes',
+        period: 30,
+      },
+      {
+        id: '1454-atual',
+        name: '1454 — mês atual',
+        detail: 'Cortes da competência aberta',
+        period: 1,
+      },
+    ],
+  },
+  {
+    id: 'roteiro',
+    name: 'Roteiro',
+    description: 'Planejamento consolidado de visitas.',
+    slots: [
+      {
+        id: 'roteiro-consolidado',
+        name: 'Roteiro consolidado',
+        detail: 'Roteiro vigente das equipes',
+        period: 30,
+      },
+    ],
+  },
+  {
+    id: 'compras-industria',
+    name: 'Compras da indústria',
+    description: 'Compras realizadas e carteira industrial.',
+    slots: [
+      {
+        id: '12322',
+        name: '12322',
+        detail: 'Compras da indústria',
+        period: 30,
+      },
+      {
+        id: '218-outubro',
+        name: '218 — até outubro',
+        detail: 'Base histórica fechada',
+        period: 0,
+      },
+      {
+        id: '218-atual',
+        name: '218 — mês atual',
+        detail: 'Compras da competência aberta',
+        period: 1,
+      },
+      {
+        id: 'carteira-17-11',
+        name: 'CARTEIRA_17.11',
+        detail: 'Carteira industrial de referência',
+        period: 30,
+      },
+    ],
+  },
+];
+
 const copy: Record<
   Section,
   { eyebrow: string; title: string; description: string }
@@ -94,94 +248,70 @@ export function SettingsPage() {
 }
 
 function Engines() {
-  const inputs = useRef<Array<HTMLInputElement | null>>([]);
+  const inputs = useRef<Record<string, HTMLInputElement | null>>({});
+  const allSlots = engines.flatMap((engine) => engine.slots);
   const [message, setMessage] = useState(
     'Aguardando os arquivos obrigatórios.',
   );
-  const sources = [
-    {
-      name: 'Movimentação',
-      detail: 'Vendas, faturamento e devoluções',
-      format: 'XLSX · XLS · CSV',
-    },
-    {
-      name: 'Cadastro de clientes',
-      detail: 'Clientes, regiões e carteiras',
-      format: 'XLSX · XLS · CSV',
-    },
-    {
-      name: 'Cadastro de produtos',
-      detail: 'Produtos, marcas e linhas',
-      format: 'XLSX · XLS · CSV',
-    },
-    {
-      name: 'Estoque',
-      detail: 'Posição atual e valores de custo',
-      format: 'XLSX · XLS · CSV',
-    },
-    {
-      name: 'Metas',
-      detail: 'Metas financeiras e industriais',
-      format: 'XLSX · XLS · CSV',
-    },
-  ];
   const [uploads, setUploads] = useState<
-    Array<{ name: string; updatedAt: string } | null>
-  >(() => sources.map(() => null));
-  const [updatePeriods, setUpdatePeriods] = useState([1, 7, 7, 1, 30]);
+    Record<string, { name: string; updatedAt: string } | undefined>
+  >({});
+  const [updatePeriods, setUpdatePeriods] = useState<Record<string, number>>(
+    () => Object.fromEntries(allSlots.map((slot) => [slot.id, slot.period])),
+  );
   const [referenceTime, setReferenceTime] = useState(() => Date.now());
-  const isExpired = (index: number) => {
-    const upload = uploads[index];
+  const isExpired = (slotId: string) => {
+    const upload = uploads[slotId];
     if (!upload) return false;
+    const period = updatePeriods[slotId] ?? 0;
+    if (period === 0) return false;
     return (
-      referenceTime - new Date(upload.updatedAt).getTime() >
-      updatePeriods[index]! * 86_400_000
+      referenceTime - new Date(upload.updatedAt).getTime() > period * 86_400_000
     );
   };
-  const currentCount = uploads.filter(
-    (upload, index) => upload && !isExpired(index),
-  ).length;
   const formatMoment = (value: string) =>
     new Intl.DateTimeFormat('pt-BR', {
       dateStyle: 'short',
       timeStyle: 'short',
     }).format(new Date(value));
-  const nextUpdate = (index: number) => {
-    const upload = uploads[index];
+  const nextUpdate = (slotId: string) => {
+    const upload = uploads[slotId];
     if (!upload) return 'APÓS O PRIMEIRO ENVIO';
+    const period = updatePeriods[slotId] ?? 0;
+    if (period === 0) return 'SEM VENCIMENTO';
     return formatMoment(
       new Date(
-        new Date(upload.updatedAt).getTime() +
-          updatePeriods[index]! * 86_400_000,
+        new Date(upload.updatedAt).getTime() + period * 86_400_000,
       ).toISOString(),
     );
   };
 
-  const selectFile = (index: number, file?: File) => {
+  const selectFile = (slot: EngineSlot, file?: File) => {
     if (!file) return;
     const now = new Date().toISOString();
     setReferenceTime(new Date(now).getTime());
-    setUploads((current) =>
-      current.map((item, itemIndex) =>
-        itemIndex === index ? { name: file.name, updatedAt: now } : item,
-      ),
-    );
-    setMessage(
-      `${sources[index]!.name}: arquivo recebido e pronto para validação.`,
-    );
+    setUploads((current) => ({
+      ...current,
+      [slot.id]: { name: file.name, updatedAt: now },
+    }));
+    setMessage(`${slot.name}: arquivo recebido e pronto para validação.`);
   };
 
-  const process = (all = false) => {
-    if (currentCount < sources.length) {
+  const process = (engine?: EngineDefinition) => {
+    const slots = engine?.slots ?? allSlots;
+    const currentCount = slots.filter(
+      (slot) => uploads[slot.id] && !isExpired(slot.id),
+    ).length;
+    if (currentCount < slots.length) {
       setMessage(
-        `Existem ${sources.length - currentCount} arquivo(s) pendente(s) ou vencido(s).`,
+        `${engine?.name ?? 'Todos os motores'}: existem ${slots.length - currentCount} arquivo(s) pendente(s) ou vencido(s).`,
       );
       return;
     }
     setMessage(
-      all
-        ? 'Todos os motores foram enviados para processamento.'
-        : 'Motor comercial enviado para processamento.',
+      engine
+        ? `Motor ${engine.name} enviado para processamento.`
+        : 'Todos os motores foram enviados para processamento.',
     );
   };
 
@@ -195,147 +325,160 @@ function Engines() {
         <div className={styles.engineToolbarActions}>
           <div className={styles.engineCounter}>
             <span>Motores ativos</span>
-            <strong>01</strong>
+            <strong>{String(engines.length).padStart(2, '0')}</strong>
           </div>
-          <button className={styles.primary} onClick={() => process(true)}>
+          <button className={styles.primary} onClick={() => process()}>
             <RefreshCw size={14} /> ATUALIZAR TODOS OS MOTORES
           </button>
         </div>
       </div>
 
-      <article className={styles.engineConsole}>
-        <header className={styles.engineConsoleHeader}>
-          <div className={styles.engineIdentity}>
-            <div className={styles.engineNumber}>01</div>
-            <div>
-              <span>MOTOR COMERCIAL</span>
-              <h3>Consolidação principal</h3>
-              <p>Sell out, estoque, clientes, produtos e metas.</p>
-            </div>
-          </div>
-          <div className={styles.engineReadiness}>
-            <div>
-              <span>Arquivos em dia</span>
-              <strong>
-                {currentCount}
-                <small>/05</small>
-              </strong>
-            </div>
-            <div className={styles.readinessTrack}>
-              <span style={{ width: `${currentCount * 20}%` }} />
-            </div>
-            <small>
-              {currentCount === 5
-                ? 'PRONTO PARA PROCESSAR'
-                : 'AGUARDANDO ARQUIVOS'}
-            </small>
-          </div>
-        </header>
-
-        <div className={styles.sourceList}>
-          {sources.map((source, index) => {
-            const upload = uploads[index];
-            const expired = isExpired(index);
-            return (
-              <section
-                className={`${styles.sourceRow} ${upload && !expired ? styles.sourceReady : ''} ${expired ? styles.sourceExpired : ''}`}
-                key={source.name}
-              >
-                <div className={styles.sourceIndex}>
-                  {String(index + 1).padStart(2, '0')}
+      {engines.map((engine, engineIndex) => {
+        const currentCount = engine.slots.filter(
+          (slot) => uploads[slot.id] && !isExpired(slot.id),
+        ).length;
+        return (
+          <article className={styles.engineConsole} key={engine.id}>
+            <header className={styles.engineConsoleHeader}>
+              <div className={styles.engineIdentity}>
+                <div className={styles.engineNumber}>
+                  {String(engineIndex + 1).padStart(2, '0')}
                 </div>
-                <div className={styles.sourceInfo}>
-                  <strong>{source.name}</strong>
-                  <span>{source.detail}</span>
+                <div>
+                  <span>MOTOR {String(engineIndex + 1).padStart(2, '0')}</span>
+                  <h3>{engine.name}</h3>
+                  <p>{engine.description}</p>
                 </div>
-                <div
-                  className={`${styles.sourceStatus} ${expired ? styles.statusExpired : upload ? styles.statusCurrent : styles.statusPending}`}
-                >
-                  {expired ? (
-                    <AlertTriangle size={11} />
-                  ) : (
-                    <CheckCircle2 size={11} />
-                  )}
-                  {expired ? 'VENCIDO' : upload ? 'ATUALIZADO' : 'PENDENTE'}
-                </div>
-                <div className={styles.sourceFile}>
-                  <small>
-                    {upload ? 'ARQUIVO SELECIONADO' : 'ARQUIVO OBRIGATÓRIO'}
-                  </small>
-                  <strong title={upload?.name}>
-                    {upload?.name ?? 'Nenhum arquivo selecionado'}
+              </div>
+              <div className={styles.engineReadiness}>
+                <div>
+                  <span>Arquivos em dia</span>
+                  <strong>
+                    {currentCount}
+                    <small>
+                      /{String(engine.slots.length).padStart(2, '0')}
+                    </small>
                   </strong>
-                  <span>{source.format}</span>
                 </div>
-                <div className={styles.sourceUpdated}>
-                  <div>
-                    <small>ÚLTIMA ATUALIZAÇÃO</small>
-                    <span>
-                      {upload
-                        ? formatMoment(upload.updatedAt)
-                        : 'NUNCA ATUALIZADO'}
-                    </span>
-                  </div>
-                  <div>
-                    <small>PRÓXIMA ATUALIZAÇÃO</small>
-                    <span>{nextUpdate(index)}</span>
-                  </div>
+                <div className={styles.readinessTrack}>
+                  <span
+                    style={{
+                      width: `${(currentCount / engine.slots.length) * 100}%`,
+                    }}
+                  />
                 </div>
-                <label className={styles.sourceSchedule}>
-                  <span>ATUALIZAR A CADA</span>
-                  <select
-                    value={updatePeriods[index]}
-                    onChange={(event) =>
-                      setUpdatePeriods((current) =>
-                        current.map((period, periodIndex) =>
-                          periodIndex === index
-                            ? Number(event.target.value)
-                            : period,
-                        ),
-                      )
-                    }
+                <small>
+                  {currentCount === engine.slots.length
+                    ? 'PRONTO PARA PROCESSAR'
+                    : 'AGUARDANDO ARQUIVOS'}
+                </small>
+              </div>
+            </header>
+
+            <div className={styles.sourceList}>
+              {engine.slots.map((slot, index) => {
+                const upload = uploads[slot.id];
+                const expired = isExpired(slot.id);
+                return (
+                  <section
+                    className={`${styles.sourceRow} ${upload && !expired ? styles.sourceReady : ''} ${expired ? styles.sourceExpired : ''}`}
+                    key={slot.id}
                   >
-                    <option value={1}>1 DIA</option>
-                    <option value={7}>7 DIAS</option>
-                    <option value={15}>15 DIAS</option>
-                    <option value={30}>30 DIAS</option>
-                  </select>
-                </label>
-                <input
-                  ref={(element) => {
-                    inputs.current[index] = element;
-                  }}
-                  className={styles.hiddenInput}
-                  type="file"
-                  accept=".xlsx,.xls,.csv"
-                  onChange={(event) =>
-                    selectFile(index, event.target.files?.[0])
-                  }
-                />
-                <button
-                  className={styles.sourceButton}
-                  onClick={() => inputs.current[index]?.click()}
-                >
-                  <Upload size={14} /> {upload ? 'SUBSTITUIR' : 'SELECIONAR'}
-                </button>
-              </section>
-            );
-          })}
-        </div>
-        <footer className={styles.engineConsoleFooter}>
-          <div className={styles.engineMessage}>
-            <Gauge size={15} />
-            <span>{message}</span>
-          </div>
-          <button
-            className={styles.primary}
-            onClick={() => process()}
-            disabled={currentCount < sources.length}
-          >
-            <RefreshCw size={14} /> ATUALIZAR MOTOR
-          </button>
-        </footer>
-      </article>
+                    <div className={styles.sourceIndex}>
+                      {String(index + 1).padStart(2, '0')}
+                    </div>
+                    <div className={styles.sourceInfo}>
+                      <strong>{slot.name}</strong>
+                      <span>{slot.detail}</span>
+                    </div>
+                    <div
+                      className={`${styles.sourceStatus} ${expired ? styles.statusExpired : upload ? styles.statusCurrent : styles.statusPending}`}
+                    >
+                      {expired ? (
+                        <AlertTriangle size={11} />
+                      ) : (
+                        <CheckCircle2 size={11} />
+                      )}
+                      {expired ? 'VENCIDO' : upload ? 'ATUALIZADO' : 'PENDENTE'}
+                    </div>
+                    <div className={styles.sourceFile}>
+                      <small>
+                        {upload ? 'ARQUIVO SELECIONADO' : 'ARQUIVO OBRIGATÓRIO'}
+                      </small>
+                      <strong title={upload?.name}>
+                        {upload?.name ?? 'Nenhum arquivo selecionado'}
+                      </strong>
+                      <span>XLSX · XLS · CSV</span>
+                    </div>
+                    <div className={styles.sourceUpdated}>
+                      <div>
+                        <small>ÚLTIMA ATUALIZAÇÃO</small>
+                        <span>
+                          {upload
+                            ? formatMoment(upload.updatedAt)
+                            : 'NUNCA ATUALIZADO'}
+                        </span>
+                      </div>
+                      <div>
+                        <small>PRÓXIMA ATUALIZAÇÃO</small>
+                        <span>{nextUpdate(slot.id)}</span>
+                      </div>
+                    </div>
+                    <label className={styles.sourceSchedule}>
+                      <span>ATUALIZAR A CADA</span>
+                      <select
+                        value={updatePeriods[slot.id]}
+                        onChange={(event) =>
+                          setUpdatePeriods((current) => ({
+                            ...current,
+                            [slot.id]: Number(event.target.value),
+                          }))
+                        }
+                      >
+                        <option value={1}>DIÁRIO</option>
+                        <option value={30}>MENSAL</option>
+                        <option value={90}>TRIMESTRAL</option>
+                        <option value={0}>SEM VENCIMENTO</option>
+                      </select>
+                    </label>
+                    <input
+                      ref={(element) => {
+                        inputs.current[slot.id] = element;
+                      }}
+                      className={styles.hiddenInput}
+                      type="file"
+                      accept=".xlsx,.xls,.csv"
+                      onChange={(event) =>
+                        selectFile(slot, event.target.files?.[0])
+                      }
+                    />
+                    <button
+                      className={styles.sourceButton}
+                      onClick={() => inputs.current[slot.id]?.click()}
+                    >
+                      <Upload size={14} />{' '}
+                      {upload ? 'SUBSTITUIR' : 'SELECIONAR'}
+                    </button>
+                  </section>
+                );
+              })}
+            </div>
+            <footer className={styles.engineConsoleFooter}>
+              <div className={styles.engineMessage}>
+                <Gauge size={15} />
+                <span>{message}</span>
+              </div>
+              <button
+                className={styles.primary}
+                onClick={() => process(engine)}
+                disabled={currentCount < engine.slots.length}
+              >
+                <RefreshCw size={14} /> ATUALIZAR MOTOR
+              </button>
+            </footer>
+          </article>
+        );
+      })}
     </div>
   );
 }
