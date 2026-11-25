@@ -5,7 +5,8 @@ Base do aplicativo comercial Red Jacket, criada do zero para evoluir de forma se
 ## Nesta primeira etapa
 
 - interface responsiva e padronizada;
-- navegação modular sem dados fictícios;
+- navegação modular, com páginas futuras identificadas como em construção;
+- motores de dados com validação, persistência e auditoria no Supabase;
 - autenticação com Supabase;
 - interface hospedada no GitHub Pages;
 - tema claro e escuro;

@@ -12,11 +12,14 @@ Os arquivos são lidos no navegador (nada é enviado ao GitHub) e a base pronta 
 
 ## Motores ligados
 
-| Motor    | Arquivos                                                                                 | Chave |
-| -------- | ---------------------------------------------------------------------------------------- | ----- |
-| Produtos | 286, lista de preço da indústria (aba `data`), 8013, 322, 8011, Base_Sortimento_Nacional | EAN   |
-
-Os demais motores têm os slots de envio, mas ainda não processam.
+| Motor                | Situação                                     | Dependências        |
+| -------------------- | -------------------------------------------- | ------------------- |
+| Produtos             | processamento e persistência ativos          | —                   |
+| Clientes             | processamento e persistência ativos          | —                   |
+| Movimentações        | processamento em lotes e persistência ativos | —                   |
+| Cortes               | processamento e persistência ativos          | Produtos e Clientes |
+| Roteiro              | processamento e persistência ativos          | Clientes            |
+| Compras da indústria | processamento e persistência ativos          | Produtos            |
 
 ## Banco de dados
 
@@ -32,7 +35,7 @@ Aplique o arquivo no Supabase antes de publicar. As políticas atuais liberam le
 - Sortimento por canal: 0, 1 ou 2; o valor 5 vira 1.
 - `ativo` = não está fora de linha no 286.
 
-## Auditoria (preparação)
+## Auditoria
 
 Cada processamento devolve uma lista de itens de auditoria (`AuditItem`). Os de severidade `ERRO` e `AVISO` viram **casos** na tabela `engine_audit_items`, prontos para a aba de auditoria listar e tratar:
 
@@ -41,7 +44,7 @@ Cada processamento devolve uma lista de itens de auditoria (`AuditItem`). Os de 
 - `fingerprint` (motor + código + mensagem): se o mesmo caso já foi tratado ou ignorado antes, o novo processamento herda o tratamento.
 - Itens `INFO` (conferências e contagens) ficam só no resumo do processamento (`engine_runs.audit`).
 
-Os avisos do motor Produtos ainda trazem só a contagem; os próximos motores já preenchem `records`.
+A tela de Auditoria consulta esses casos reais e permite colocá-los em análise ou marcá-los como tratados.
 
 ## Movimentações (motor 6)
 

@@ -15,17 +15,17 @@ export function EmptyModulePage({ title, description, icon: Icon }: Props) {
           <Icon />
         </div>
         <div>
-          <p>MÓDULO</p>
+          <p>EM CONSTRUÇÃO</p>
           <h1>{title}</h1>
           <span>{description}</span>
         </div>
       </header>
       <div className={styles.empty}>
         <Construction size={28} />
-        <h2>Pronto para ser construído</h2>
+        <h2>Esta página ainda não foi desenhada</h2>
         <p>
-          Esta área está vazia de propósito. Layouts, dados e regras serão
-          adicionados somente quando você definir esta etapa.
+          O espaço está reservado e será desenvolvido após a aprovação do estado
+          atual.
         </p>
       </div>
     </section>

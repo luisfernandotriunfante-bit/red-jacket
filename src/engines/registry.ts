@@ -51,7 +51,7 @@ function isSpreadsheet(data: Uint8Array): boolean {
   return starts(ole) || starts(zip);
 }
 
-/** Motores já ligados ao processamento real. Os demais continuam só com o envio de arquivos. */
+/** Motores ligados ao processamento real e às bases persistidas no Supabase. */
 export const runners: Record<string, EngineRunner> = {
   produtos: {
     keyColumn: 'ean',

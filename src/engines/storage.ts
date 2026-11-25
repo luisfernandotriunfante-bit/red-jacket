@@ -12,9 +12,79 @@ export type EngineRunSummary = {
   createdAt: string;
 };
 
+export type EngineAuditCase = {
+  id: string;
+  runId: string;
+  engine: string;
+  code: string;
+  severity: 'ERRO' | 'AVISO';
+  message: string;
+  count: number | null;
+  records: { key: string; info?: string }[];
+  status: 'aberto' | 'em_analise' | 'tratado' | 'ignorado';
+  note: string | null;
+  createdAt: string;
+  treatedAt: string | null;
+};
+
 function requireClient() {
   if (!supabase) throw new Error('Supabase não configurado.');
   return supabase;
+}
+
+/** Ocorrências reais geradas pelos processamentos dos motores. */
+export async function listAuditCases(): Promise<EngineAuditCase[]> {
+  const client = requireClient();
+  const response = await client
+    .from('engine_audit_items')
+    .select(
+      'id, run_id, engine, code, severity, message, count, records, status, note, created_at, treated_at',
+    )
+    .order('created_at', { ascending: false })
+    .limit(250);
+  if (response.error) throw new Error(response.error.message);
+  if (!Array.isArray(response.data)) return [];
+  return (response.data as Record<string, unknown>[]).map((row) => ({
+    id: String(row.id),
+    runId: String(row.run_id),
+    engine: String(row.engine),
+    code: String(row.code),
+    severity: row.severity === 'ERRO' ? 'ERRO' : 'AVISO',
+    message: String(row.message),
+    count: row.count == null ? null : Number(row.count),
+    records: Array.isArray(row.records)
+      ? (row.records as { key: string; info?: string }[])
+      : [],
+    status:
+      row.status === 'em_analise' ||
+      row.status === 'tratado' ||
+      row.status === 'ignorado'
+        ? row.status
+        : 'aberto',
+    note: typeof row.note === 'string' ? row.note : null,
+    createdAt: String(row.created_at),
+    treatedAt: typeof row.treated_at === 'string' ? row.treated_at : null,
+  }));
+}
+
+/** Atualiza o tratamento de uma ocorrência sem alterar o processamento original. */
+export async function updateAuditCaseStatus(
+  id: string,
+  status: EngineAuditCase['status'],
+): Promise<void> {
+  const client = requireClient();
+  const auth = await client.auth.getUser();
+  if (auth.error) throw new Error(auth.error.message);
+  const finished = status === 'tratado' || status === 'ignorado';
+  const response = await client
+    .from('engine_audit_items')
+    .update({
+      status,
+      treated_by: finished ? (auth.data.user?.id ?? null) : null,
+      treated_at: finished ? new Date().toISOString() : null,
+    })
+    .eq('id', id);
+  if (response.error) throw new Error(response.error.message);
 }
 
 /** Chave de cada linha da base (a primeira coluna que identifica o registro). */
