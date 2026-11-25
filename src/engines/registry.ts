@@ -5,6 +5,7 @@ import {
   type EngineResult,
 } from './core/types';
 import { processClientes } from './clientes/process';
+import { processCompras } from './compras/process';
 import { processCortes } from './cortes/process';
 import { processRoteiro } from './roteiro/process';
 import { processProdutos } from './produtos/process';
@@ -125,6 +126,28 @@ export const runners: Record<string, EngineRunner> = {
         matrix: wb.sheet(),
         clientes: bases.clientes ?? [],
       });
+    },
+  },
+  'compras-industria': {
+    keyColumn: 'linha',
+    needs: ['produtos'],
+    run: async (files, bases) => {
+      const produtos = bases.produtos ?? [];
+      if (!produtos.length)
+        throw new EngineBlockError(
+          'a base de Produtos está vazia: processe o motor Produtos antes',
+        );
+      const r218 = [];
+      for (const slot of ['218-outubro', '218-atual']) {
+        r218.push(readWorkbook(await bytes(need(files, slot))).sheet());
+      }
+      const carteira = readWorkbook(
+        await bytes(need(files, 'carteira-17-11')),
+      ).sheet();
+      const texto12322 = new TextDecoder('windows-1252').decode(
+        await need(files, '12322').arrayBuffer(),
+      );
+      return processCompras({ texto12322, r218, carteira, produtos });
     },
   },
 };
