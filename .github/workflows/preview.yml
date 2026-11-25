@@ -2,7 +2,7 @@ name: Publicação do site
 
 on:
   push:
-    branches: [main, feat/app-foundation]
+    branches: [main, feat/app-foundation, feat/motor-produtos]
   workflow_dispatch:
 
 permissions:
