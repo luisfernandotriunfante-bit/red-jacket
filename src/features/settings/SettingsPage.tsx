@@ -17,9 +17,13 @@ import {
 } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Navigate, useParams } from 'react-router-dom';
-import { EngineBlockError } from '../../engines/core/types';
+import { EngineBlockError, type BaseRow } from '../../engines/core/types';
 import { runners } from '../../engines/registry';
-import { loadLastRun, saveEngineBase } from '../../engines/storage';
+import {
+  loadBaseRows,
+  loadLastRun,
+  saveEngineBase,
+} from '../../engines/storage';
 import styles from './SettingsPage.module.css';
 
 const sections = [
@@ -347,7 +351,11 @@ function Engines() {
     }
     setBusy(engine.id);
     try {
-      const result = await runner.run(files.current);
+      const bases: Record<string, BaseRow[]> = {};
+      for (const dep of runner.needs ?? []) {
+        bases[dep] = await loadBaseRows(dep);
+      }
+      const result = await runner.run(files.current, bases);
       const errors = result.audit.filter((a) => a.severity === 'ERRO').length;
       const warnings = result.audit.filter(
         (a) => a.severity === 'AVISO',
