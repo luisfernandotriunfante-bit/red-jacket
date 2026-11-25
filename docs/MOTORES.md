@@ -78,4 +78,4 @@ Os papéis ficam na tabela `user_roles` (migração `20261125000500_user_roles.s
 | Supervisor | Visão de gerente, só da própria equipe (`supervisor_code`).                                                                                                                       |
 | Vendedor   | Visão de supervisor, só do próprio setor (`vendedor_code`).                                                                                                                       |
 
-Supervisor e vendedor leem hoje `produtos` e `movimentacoes` (filtradas por código). Clientes, cortes, roteiro e compras ficam fechados para eles até a tabela de vendedores existir. Para cadastrar um usuário, o CEO insere uma linha em `user_roles`.
+O cadastro de Equipes usa `commercial_teams` e `commercial_sellers`. O código do supervisor identifica a equipe e o código novo identifica o vendedor. Esses mesmos códigos devem ser informados em `user_roles` quando o acesso do usuário for criado. Somente o CEO altera a estrutura comercial; supervisor consulta sua equipe e vendedor consulta o próprio cadastro.

@@ -1,68 +1,117 @@
 .card {
-  border: 1px solid var(--line, #e3d6d6);
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 16px;
-  background: var(--panel, transparent);
+  overflow: hidden;
+  margin-bottom: 1rem;
+  color: var(--commercial-text, var(--text));
+  background: var(--commercial-panel, var(--surface-1));
+  border: 1px solid var(--commercial-line, var(--line));
+  border-radius: 1.35rem;
+  box-shadow: 0 18px 52px rgb(0 0 0 / 10%);
+}
+.card > header {
+  min-height: 5.5rem;
+  padding: 1rem 1.2rem;
+  display: flex;
+  align-items: center;
+  background: var(--commercial-surface, var(--surface-2));
+  border-bottom: 1px solid var(--commercial-line, var(--line));
 }
 .card header div {
   display: grid;
-  gap: 2px;
-  margin-bottom: 12px;
+  gap: 0.25rem;
 }
 .card header span {
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  color: var(--accent, #c0272d);
+  color: var(--accent);
+  font-size: 0.64rem;
+  font-weight: 750;
+  letter-spacing: 0.1em;
+}
+.card header strong {
+  font-size: 0.9rem;
 }
 .card header small {
-  color: var(--muted, #777);
+  max-width: 60rem;
+  color: var(--commercial-muted, var(--muted));
+  font-size: 0.66rem;
+  line-height: 1.5;
 }
 .card table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: 0.68rem;
 }
 .card th,
 .card td {
+  height: 3rem;
+  padding: 0.55rem 1rem;
   text-align: left;
-  padding: 6px 8px;
-  border-bottom: 1px solid var(--line, #e3d6d6);
+  border-bottom: 1px solid var(--commercial-line, var(--line));
 }
 .card th {
-  font-size: 11px;
-  letter-spacing: 0.06em;
-  color: var(--muted, #777);
+  color: var(--commercial-muted, var(--muted));
+  background: var(--commercial-panel, var(--surface-1));
+  font-size: 0.58rem;
+  font-weight: 750;
+  letter-spacing: 0.07em;
+  white-space: nowrap;
+}
+.card tbody tr:hover {
+  background: var(--commercial-surface, var(--surface-2));
 }
 .card input,
 .card select {
   width: 100%;
-  min-height: 30px;
-  padding: 0 8px;
-  border: 1px solid var(--line, #e3d6d6);
-  border-radius: 6px;
-  background: transparent;
+  min-height: 2.2rem;
+  padding: 0 0.7rem;
   color: inherit;
+  background: var(--commercial-surface, var(--surface-2));
+  border: 1px solid var(--commercial-line, var(--line));
+  border-radius: 0.7rem;
   font: inherit;
+  outline: none;
+}
+.card input:focus,
+.card select:focus {
+  border-color: #3d82f7;
+  box-shadow: 0 0 0 3px rgb(61 130 247 / 10%);
 }
 .card button {
+  min-height: 2rem;
+  padding: 0 0.65rem;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  min-height: 30px;
-  padding: 0 10px;
-  border: 1px solid var(--accent, #c0272d);
-  border-radius: 6px;
+  justify-content: center;
+  gap: 0.35rem;
+  color: var(--accent);
   background: transparent;
-  color: var(--accent, #c0272d);
+  border: 1px solid var(--accent);
+  border-radius: 999px;
   font: inherit;
+  font-size: 0.58rem;
+  font-weight: 750;
+  letter-spacing: 0.05em;
   cursor: pointer;
 }
 .card button:disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 .error {
-  color: var(--accent, #c0272d);
-  margin: 0 0 8px;
+  margin: 0.75rem 1rem 0;
+  padding: 0.7rem 0.85rem;
+  color: var(--accent);
+  background: rgb(255 38 56 / 7%);
+  border: 1px solid rgb(255 38 56 / 35%);
+  border-radius: 0.8rem;
+  font-size: 0.68rem;
+}
+@media (max-width: 780px) {
+  .card {
+    overflow-x: auto;
+  }
+  .card > header {
+    min-width: 46rem;
+  }
+  .card table {
+    min-width: 46rem;
+  }
 }

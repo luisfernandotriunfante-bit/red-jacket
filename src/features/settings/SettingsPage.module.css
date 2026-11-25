@@ -17,6 +17,20 @@
 .auditPage > .header {
   display: none;
 }
+.teamPage {
+  width: min(100%, 94rem);
+  padding: 1rem clamp(1rem, 2.4vw, 2.5rem) 5rem;
+}
+.teamPage > .header {
+  display: none;
+}
+.commercialPage {
+  width: min(100%, 94rem);
+  padding: 1rem clamp(1rem, 2.4vw, 2.5rem) 5rem;
+}
+.commercialPage > .header {
+  display: none;
+}
 .engineWorkspace {
   --engine-blue: #3d82f7;
   --engine-red: #ff2638;
@@ -732,6 +746,64 @@ td {
   grid-template-columns: repeat(3, 1fr);
   gap: 1rem;
 }
+.commercialWorkspace {
+  --commercial-panel: #fff;
+  --commercial-surface: #f4f4f4;
+  --commercial-line: #d8d8d8;
+  --commercial-text: #000;
+  --commercial-muted: #656b74;
+  color: var(--commercial-text);
+}
+:global(:root[data-theme='dark']) .commercialWorkspace {
+  --commercial-panel: #0d0d0d;
+  --commercial-surface: #191919;
+  --commercial-line: #303030;
+  --commercial-text: #fff;
+  --commercial-muted: #aeb3bd;
+}
+.commercialToolbar {
+  min-height: 4.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.commercialToolbar > div {
+  display: flex;
+  align-items: baseline;
+  gap: 0.8rem;
+}
+.commercialToolbar > div span {
+  color: var(--accent);
+  font-size: 0.65rem;
+  font-weight: 750;
+  letter-spacing: 0.11em;
+}
+.commercialToolbar strong {
+  font-size: 0.95rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.commercialAccess {
+  min-height: 1.8rem;
+  padding: 0.25rem 0.65rem;
+  display: inline-flex;
+  align-items: center;
+  color: var(--commercial-muted);
+  border: 1px solid var(--commercial-line);
+  border-radius: 999px;
+  font-size: 0.61rem;
+  font-weight: 750;
+  letter-spacing: 0.05em;
+}
+.commercialWorkspace .toolbar {
+  margin-top: 1.25rem;
+}
+.commercialWorkspace .settingCard {
+  background: var(--commercial-panel);
+  border-color: var(--commercial-line);
+  box-shadow: 0 16px 42px rgb(0 0 0 / 8%);
+}
 .settingCard {
   padding: 1.3rem;
 }
@@ -999,6 +1071,11 @@ td {
   .currentPeriod {
     align-items: flex-start;
     flex-direction: column;
+  }
+  .commercialToolbar {
+    align-items: flex-start;
+    flex-direction: column;
+    padding-block: 0.8rem;
   }
   .toolbar .primary,
   .actions,
