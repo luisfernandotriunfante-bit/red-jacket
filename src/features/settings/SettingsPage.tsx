@@ -353,9 +353,21 @@ function Engines() {
     try {
       const bases: Record<string, BaseRow[]> = {};
       for (const dep of runner.needs ?? []) {
+        setResults((current) => ({
+          ...current,
+          [engine.id]: `Lendo a base de ${dep}…`,
+        }));
         bases[dep] = await loadBaseRows(dep);
       }
+      setResults((current) => ({
+        ...current,
+        [engine.id]: 'Lendo e calculando os arquivos…',
+      }));
       const result = await runner.run(files.current, bases);
+      setResults((current) => ({
+        ...current,
+        [engine.id]: 'Gravando a base no Supabase…',
+      }));
       const errors = result.audit.filter((a) => a.severity === 'ERRO').length;
       const warnings = result.audit.filter(
         (a) => a.severity === 'AVISO',
@@ -576,6 +588,23 @@ function Engines() {
                 {results[engine.id] && (
                   <div className={styles.engineMessage}>
                     <span>{results[engine.id]}</span>
+                  </div>
+                )}
+                {currentCount < engine.slots.length && (
+                  <div className={styles.engineMessage}>
+                    <span>
+                      Para processar, envie:{' '}
+                      {engine.slots
+                        .filter(
+                          (slot) => !uploads[slot.id] || isExpired(slot.id),
+                        )
+                        .map((slot) =>
+                          uploads[slot.id]
+                            ? `${slot.name} (vencido)`
+                            : slot.name,
+                        )
+                        .join(', ')}
+                    </span>
                   </div>
                 )}
                 <button
