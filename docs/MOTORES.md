@@ -53,3 +53,13 @@ A tela de Auditoria consulta esses casos reais e permite colocá-los em análise
 - O 8022 mais recente substitui o período repetido do anterior. Devolução/troca do 379 relançada no 8022 é removida (auditada).
 - Base grande (~300 mil linhas): gravada em lotes (`begin_engine_run` → `append_engine_rows` → `finalize_engine_run` → `purge_engine_rows`, migração `20261125000200`). A base anterior só deixa de valer quando a nova é finalizada e a contagem confere.
 - Paridade: 296.377 linhas conferidas célula a célula com o motor em Python.
+
+## Ajustes da conferência (lógica)
+
+- **Arquivos guardados:** cada arquivo enviado fica no Supabase (compactado); atualizar só parte dos arquivos, ou nenhum, reaproveita os guardados. O 218 é um arquivo só (ano inteiro).
+- **Dependências:** ao atualizar todos, quem depende de outra base roda depois dela. Cada processamento registra a versão das bases usadas (`base:<motor>` nas fontes); se a base mudar depois, o card avisa que o motor está defasado.
+- **Periodicidade** de cada arquivo: tabela `engine_slot_settings`.
+- **Operações do ERP antigo (379):** tabela `movimentacoes_operacoes` (operação, CFOP opcional, classe). Operação fora do mapa vira aviso e fica fora da base.
+- **Gravação em lotes:** trava contra duas gravações do mesmo motor ao mesmo tempo; gravação que falha é cancelada (`abort_engine_run`) e a base vigente não é tocada.
+- **Produtos:** os avisos listam os EAN afetados.
+- **Deploy:** o site publicado vem só da `main` (branches de feature não publicam mais por cima).

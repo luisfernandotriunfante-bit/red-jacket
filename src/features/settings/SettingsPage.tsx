@@ -24,6 +24,8 @@ import {
   saveEngineBase,
   saveEngineBaseChunked,
   listSourceFiles,
+  loadSlotPeriods,
+  saveSlotPeriod,
   loadSourceFile,
   listAuditCases,
   saveSourceFile,
@@ -272,6 +274,22 @@ function Engines() {
     () => Object.fromEntries(allSlots.map((slot) => [slot.id, slot.period])),
   );
   const [referenceTime, setReferenceTime] = useState(() => Date.now());
+  // Último processamento de cada motor (id e fontes), para avisar quando uma base da qual ele depende mudou.
+  const [runs, setRuns] = useState<
+    Record<
+      string,
+      { id: string; sources: { slot: string; fileName: string }[] }
+    >
+  >({});
+  const staleDeps = (engineId: string): string[] => {
+    const own = runs[engineId];
+    if (!own) return [];
+    return (runners[engineId]?.needs ?? []).filter((dep) => {
+      const used = own.sources.find((x) => x.slot === `base:${dep}`);
+      const current = runs[dep];
+      return current !== undefined && used?.fileName !== current.id;
+    });
+  };
   // Ao abrir a página, recupera do banco o último processamento de cada motor.
   useEffect(() => {
     let active = true;
@@ -291,10 +309,20 @@ function Engines() {
       } catch {
         // sem conexão ou sem permissão: segue sem a lista de arquivos guardados
       }
+      try {
+        const saved = await loadSlotPeriods();
+        if (active) setUpdatePeriods((current) => ({ ...current, ...saved }));
+      } catch {
+        // sem conexão: mantém a periodicidade padrão
+      }
       for (const engineId of Object.keys(runners)) {
         try {
           const run = await loadLastRun(engineId);
           if (!run || !active) continue;
+          setRuns((current) => ({
+            ...current,
+            [engineId]: { id: run.id, sources: run.sources },
+          }));
           const errors = run.audit.filter((a) => a.severity === 'ERRO').length;
           const warnings = run.audit.filter(
             (a) => a.severity === 'AVISO',
@@ -377,7 +405,10 @@ function Engines() {
     setBusy(engine.id);
     try {
       const bases: Record<string, BaseRow[]> = {};
+      const usedBases: { slot: string; fileName: string }[] = [];
       for (const dep of runner.needs ?? []) {
+        const depRun = await loadLastRun(dep);
+        usedBases.push({ slot: `base:${dep}`, fileName: depRun?.id ?? '' });
         setResults((current) => ({
           ...current,
           [engine.id]: `Lendo a base de ${dep}…`,
@@ -412,12 +443,16 @@ function Engines() {
       const warnings = result.audit.filter(
         (a) => a.severity === 'AVISO',
       ).length;
-      const sources = engine.slots.map((slot) => ({
-        slot: slot.id,
-        fileName: uploads[slot.id]?.name ?? '',
-      }));
+      const sources = [
+        ...engine.slots.map((slot) => ({
+          slot: slot.id,
+          fileName: uploads[slot.id]?.name ?? '',
+        })),
+        ...usedBases,
+      ];
+      let runId: string;
       if (runner.chunked) {
-        await saveEngineBaseChunked(
+        runId = await saveEngineBaseChunked(
           result,
           runner.keyColumn,
           sources,
@@ -425,8 +460,12 @@ function Engines() {
             setResults((current) => ({ ...current, [engine.id]: progress })),
         );
       } else {
-        await saveEngineBase(result, runner.keyColumn, sources);
+        runId = await saveEngineBase(result, runner.keyColumn, sources);
       }
+      setRuns((current) => ({
+        ...current,
+        [engine.id]: { id: runId, sources },
+      }));
       const summary = `${result.rows.length} linhas gravadas · ${errors} erro(s) · ${warnings} aviso(s)`;
       setResults((current) => ({ ...current, [engine.id]: summary }));
       return `Motor ${engine.name} processado: ${summary}.`;
@@ -460,8 +499,19 @@ function Engines() {
       );
       return;
     }
+    // Quem depende de outra base roda depois dela (independe da ordem das telas).
+    const ordered: EngineDefinition[] = [];
+    const place = (item: EngineDefinition) => {
+      if (ordered.includes(item)) return;
+      for (const dep of runners[item.id]?.needs ?? []) {
+        const d = targets.find((t) => t.id === dep);
+        if (d) place(d);
+      }
+      ordered.push(item);
+    };
+    targets.forEach(place);
     const messages: string[] = [];
-    for (const item of targets) {
+    for (const item of ordered) {
       setMessage(`Processando ${item.name}…`);
       messages.push(await runEngine(item));
     }
@@ -608,12 +658,19 @@ function Engines() {
                         <span>ATUALIZAR A CADA</span>
                         <select
                           value={updatePeriods[slot.id]}
-                          onChange={(event) =>
+                          onChange={(event) => {
+                            const days = Number(event.target.value);
                             setUpdatePeriods((current) => ({
                               ...current,
-                              [slot.id]: Number(event.target.value),
-                            }))
-                          }
+                              [slot.id]: days,
+                            }));
+                            void saveSlotPeriod(slot.id, days).catch(
+                              (error: unknown) =>
+                                setMessage(
+                                  `Não consegui guardar a periodicidade (${error instanceof Error ? error.message : 'erro'}).`,
+                                ),
+                            );
+                          }}
                         >
                           <option value={1}>DIÁRIO</option>
                           <option value={30}>MENSAL</option>
@@ -646,6 +703,15 @@ function Engines() {
                 {results[engine.id] && (
                   <div className={styles.engineMessage}>
                     <span>{results[engine.id]}</span>
+                  </div>
+                )}
+                {staleDeps(engine.id).length > 0 && (
+                  <div className={styles.engineMessage}>
+                    <span>
+                      Atenção: a base de {staleDeps(engine.id).join(', ')} mudou
+                      depois do último processamento deste motor. Atualize-o
+                      para refletir a mudança.
+                    </span>
                   </div>
                 )}
                 {currentCount < engine.slots.length && (

@@ -158,13 +158,23 @@ export function processProdutos(input: ProdutosInput): EngineResult {
   const ean13 = t13.rows.map((r) => resolveEan(t13.at(r, pEan13), known));
   const l13 = new Map<string, Cell[]>();
   let dup13 = 0;
+  const dup13Eans: string[] = [];
   t13.rows.forEach((r, i) => {
     const e = ean13[i] ?? '';
-    if (l13.has(e)) dup13 += 1;
+    if (l13.has(e)) {
+      dup13 += 1;
+      dup13Eans.push(e);
+    }
     l13.set(e, r);
   });
   if (dup13)
-    addAudit('P08', 'AVISO', '8013: EAN repetido (vale a última linha)', dup13);
+    addAudit(
+      'P08',
+      'AVISO',
+      '8013: EAN repetido (vale a última linha)',
+      dup13,
+      [...new Set(dup13Eans)].slice(0, 200).map((key) => ({ key })),
+    );
 
   // ---------- lista de preço da indústria ----------
   const tl = Table.fromMatrix(input.listaPreco, ['SKU', 'PRECO BASE']);
@@ -188,12 +198,20 @@ export function processProdutos(input: ProdutosInput): EngineResult {
       code(t11All.get(r, 'CODFILIALNF')) === '11' &&
       text(t11All.get(r, 'UFDESTINO')).toUpperCase() === 'MS',
   );
+  const keepSet = new Set(keep11);
   if (keep11.length !== t11All.rows.length) {
     addAudit(
       'P09',
       'AVISO',
       '8011: linhas fora de filial 11 / UF MS ignoradas',
       t11All.rows.length - keep11.length,
+      t11All.rows
+        .filter((r) => !keepSet.has(r))
+        .slice(0, 200)
+        .map((r) => ({
+          key: code(t11All.get(r, 'CODPROD')),
+          info: `filial ${code(t11All.get(r, 'CODFILIALNF'))} / UF ${text(t11All.get(r, 'UFDESTINO'))}`,
+        })),
     );
   }
   const t11 = t11All.withRows(keep11);
@@ -225,9 +243,13 @@ export function processProdutos(input: ProdutosInput): EngineResult {
   const eanSort = ts.rows.map((r) => resolveEan(ts.get(r, 'EAN'), known));
   const sdic = new Map<string, Cell[]>();
   let dupSort = 0;
+  const dupSortEans: string[] = [];
   ts.rows.forEach((r, i) => {
     const e = eanSort[i] ?? '';
-    if (sdic.has(e)) dupSort += 1;
+    if (sdic.has(e)) {
+      dupSort += 1;
+      dupSortEans.push(e);
+    }
     sdic.set(e, r);
   });
   if (dupSort)
@@ -236,6 +258,7 @@ export function processProdutos(input: ProdutosInput): EngineResult {
       'AVISO',
       'Sortimento: EAN repetido (vale a última linha)',
       dupSort,
+      [...new Set(dupSortEans)].slice(0, 200).map((key) => ({ key })),
     );
 
   // ---------- colunas de saída ----------
@@ -269,6 +292,13 @@ export function processProdutos(input: ProdutosInput): EngineResult {
     sortInvalido: 0,
     custoZeroAtivo: 0,
     estNeg: 0,
+  };
+
+  // Itens (EAN) afetados por cada conferência que vira aviso.
+  const hits: Record<string, string[]> = {};
+  const hit = (name: keyof typeof chk, itemEan: string) => {
+    chk[name] += 1;
+    (hits[name] ??= []).push(itemEan);
   };
 
   const NOMES_286 = {
@@ -312,11 +342,11 @@ export function processProdutos(input: ProdutosInput): EngineResult {
       const sel = cand.filter((j) => listaRows[j]?.sku === fab);
       if (sel.length >= 1) L = listaRows[sel[0] ?? 0];
       else if (cand.length === 1) L = listaRows[cand[0] ?? 0];
-      else chk.skuSemEscolha += 1;
+      else hit('skuSemEscolha', e);
     }
     if (L) {
       chk.nLista += 1;
-      if (L.cp && L.cp !== cp) chk.listaEanCpDif += 1;
+      if (L.cp && L.cp !== cp) hit('listaEanCpDif', e);
     }
     const g13 = l13.get(e);
     const s = sdic.get(e);
@@ -326,7 +356,7 @@ export function processProdutos(input: ProdutosInput): EngineResult {
     if (s) chk.nSort += 1;
     if (m11) {
       chk.n8011 += 1;
-      if (resolveEan(t11.get(m11, 'EAN'), known) !== e) chk.ean8011Dif += 1;
+      if (resolveEan(t11.get(m11, 'EAN'), known) !== e) hit('ean8011Dif', e);
     }
     if (a3) chk.n322 += 1;
 
@@ -379,8 +409,8 @@ export function processProdutos(input: ProdutosInput): EngineResult {
     const u322 =
       first322 && /^\d+$/.test(first322.conv) ? Number(first322.conv) : null;
     row.un_por_caixa = firstTruthy([u86, uLista, u13, u11, u322]);
-    if (u86 && uLista && u86 !== uLista) chk.unDifLista += 1;
-    if (u86 && u13 && u86 !== u13) chk.unDif8013 += 1;
+    if (u86 && uLista && u86 !== uLista) hit('unDifLista', e);
+    if (u86 && u13 && u86 !== u13) hit('unDif8013', e);
 
     row.validade_meses = LV('Validade (meses)');
     row.ncm =
@@ -431,9 +461,9 @@ export function processProdutos(input: ProdutosInput): EngineResult {
         if (v === null) continue;
         if (v === 5) {
           v = 1;
-          chk.sortCinco += 1;
+          hit('sortCinco', e);
         } else if (![0, 1, 2].includes(v)) {
-          chk.sortInvalido += 1;
+          hit('sortInvalido', e);
           continue;
         }
         row[canal.nome] = v;
@@ -441,7 +471,7 @@ export function processProdutos(input: ProdutosInput): EngineResult {
     }
 
     for (const [out, nome] of NOMES_286.custo) row[out] = num(g286(nome));
-    if (!fora && !((num(row.custo_real) ?? 0) > 0)) chk.custoZeroAtivo += 1;
+    if (!fora && !((num(row.custo_real) ?? 0) > 0)) hit('custoZeroAtivo', e);
     if (
       [
         'est_total',
@@ -451,7 +481,7 @@ export function processProdutos(input: ProdutosInput): EngineResult {
         'est_disponivel',
       ].some((c) => ((row[c] as number | null) ?? 0) < 0)
     )
-      chk.estNeg += 1;
+      hit('estNeg', e);
 
     if (m11) {
       row.pm_preco_com_st = num(t11.get(m11, 'PRECO'));
@@ -509,34 +539,44 @@ export function processProdutos(input: ProdutosInput): EngineResult {
   addAudit('P05', 'INFO', 'Itens encontrados no 322', chk.n322);
   addAudit('P06', 'INFO', 'Itens encontrados no 8011', chk.n8011);
   addAudit('P07', 'INFO', 'Itens encontrados no sortimento', chk.nSort);
-  const warn = (c: string, msg: string, n: number) => {
-    if (n) addAudit(c, 'AVISO', msg, n);
+  const warn = (c: string, msg: string, name: keyof typeof chk) => {
+    const n = chk[name];
+    if (n)
+      addAudit(
+        c,
+        'AVISO',
+        msg,
+        n,
+        [...new Set(hits[name] ?? [])]
+          .slice(0, 200)
+          .map((key) => ({ key, info: 'EAN do item' })),
+      );
   };
   warn(
     'P11',
     'Lista: item com mais de uma linha e nenhuma com SKU igual ao Cód. Fabricante',
-    chk.skuSemEscolha,
+    'skuSemEscolha',
   );
   warn(
     'P12',
     'Lista: código Winthor diferente do código do 286',
-    chk.listaEanCpDif,
+    'listaEanCpDif',
   );
   warn(
     'P13',
     'Unidades por caixa do 286 diferentes da lista de preço',
-    chk.unDifLista,
+    'unDifLista',
   );
-  warn('P14', 'Unidades por caixa do 286 diferentes do 8013', chk.unDif8013);
-  warn('P15', 'EAN do 8011 diferente do EAN do 286', chk.ean8011Dif);
-  warn('P16', 'Sortimento: valor 5 tratado como 1', chk.sortCinco);
+  warn('P14', 'Unidades por caixa do 286 diferentes do 8013', 'unDif8013');
+  warn('P15', 'EAN do 8011 diferente do EAN do 286', 'ean8011Dif');
+  warn('P16', 'Sortimento: valor 5 tratado como 1', 'sortCinco');
   warn(
     'P17',
     'Sortimento: valor de canal fora de 0, 1, 2 ou 5 (ignorado)',
-    chk.sortInvalido,
+    'sortInvalido',
   );
-  warn('P18', 'Item ativo com custo real zerado ou vazio', chk.custoZeroAtivo);
-  warn('P19', 'Item com estoque negativo', chk.estNeg);
+  warn('P18', 'Item ativo com custo real zerado ou vazio', 'custoZeroAtivo');
+  warn('P19', 'Item com estoque negativo', 'estNeg');
 
   return { engine: 'produtos', columns, rows, audit };
 }
