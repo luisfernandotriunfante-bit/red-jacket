@@ -30,6 +30,11 @@ create index if not exists engine_base_rows_run_idx
 alter table public.engine_runs enable row level security;
 alter table public.engine_base_rows enable row level security;
 
+-- Permissões de tabela (o RLS abaixo só filtra o que o papel já pode acessar).
+grant usage on schema public to authenticated;
+grant select, insert, delete on public.engine_base_rows to authenticated;
+grant select, insert on public.engine_runs to authenticated;
+
 -- Leitura e escrita só para quem está autenticado.
 -- Quando existir o cadastro de funções (Equipe), restrinja a escrita ao administrador.
 create policy "engine_runs_select" on public.engine_runs
