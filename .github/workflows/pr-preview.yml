@@ -92,4 +92,4 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           URL: ${{ steps.deploy.outputs.preview_url }}
-        run: gh pr comment 48 --body "Prévia atualizada: $URL"
+        run: 'gh pr comment 48 --body "Prévia atualizada: $URL"'
