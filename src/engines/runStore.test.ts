@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   getRunState,
   overallProgress,
+  setFailed,
   setProgress,
   startBatch,
   setBusy,
@@ -33,5 +34,16 @@ describe('runStore', () => {
     expect(overallProgress()).toBe(75);
     setProgress('b', 100);
     expect(overallProgress()).toBe(100);
+  });
+
+  it('motor que falhou conta como encerrado no geral e fica marcado', () => {
+    startBatch(['a', 'b']);
+    setProgress('a', 100);
+    setProgress('b', 60);
+    setFailed('b');
+    expect(getRunState().failed.b).toBe(true);
+    expect(overallProgress()).toBe(100);
+    startBatch(['a']);
+    expect(getRunState().failed.b).toBeUndefined();
   });
 });

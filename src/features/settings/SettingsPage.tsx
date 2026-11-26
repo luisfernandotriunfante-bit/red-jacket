@@ -21,6 +21,7 @@ import {
   pendingFiles,
   setBusy,
   setMessage,
+  setFailed,
   setProgress,
   setResults,
   setRuns,
@@ -298,9 +299,12 @@ function Engines() {
   const allSlots = engines.flatMap((engine) => engine.slots);
   // Progresso e resultados vivem fora da tela: a atualização segue se a pessoa trocar de página.
   const runState = useRunState();
-  const { message, busy, results, runs, progress, batch } = runState;
+  const { message, busy, results, runs, progress, batch, failed } = runState;
   const overall = overallProgress(runState);
-  const finished = batch.filter((id) => (progress[id] ?? 0) >= 100).length;
+  const finished = batch.filter(
+    (id) => failed[id] || (progress[id] ?? 0) >= 100,
+  ).length;
+  const failures = batch.filter((id) => failed[id]).length;
   const [uploads, setUploads] = useState<
     Record<string, { name: string; updatedAt: string } | undefined>
   >({});
@@ -506,6 +510,7 @@ function Engines() {
         [engine.id]: { id: runId, sources },
       }));
       const summary = `${result.rows.length} linhas gravadas · ${errors} erro(s) · ${warnings} aviso(s)`;
+      setProgress(engine.id, 100);
       setResults((current) => ({ ...current, [engine.id]: summary }));
       return `Motor ${engine.name} processado: ${summary}.`;
     } catch (error) {
@@ -515,10 +520,10 @@ function Engines() {
           : error instanceof Error
             ? error.message
             : 'falha desconhecida';
+      setFailed(engine.id);
       setResults((current) => ({ ...current, [engine.id]: reason }));
       return `Motor ${engine.name} não foi atualizado. ${reason}`;
     } finally {
-      setProgress(engine.id, 100);
       setBusy(null);
     }
   };
@@ -613,6 +618,7 @@ function Engines() {
             <span>ANDAMENTO GERAL</span>
             <strong>
               {overall}% · {finished} de {batch.length} motor(es)
+              {failures > 0 ? ` · ${failures} com erro` : ''}
             </strong>
           </div>
           <div className={styles.progressTrack}>
@@ -782,11 +788,13 @@ function Engines() {
                 >
                   <div className={styles.progressLabel}>
                     <span>
-                      {busy === engine.id
-                        ? 'PROCESSANDO'
-                        : (progress[engine.id] ?? 0) >= 100
-                          ? 'CONCLUÍDO'
-                          : 'NA FILA'}
+                      {failed[engine.id]
+                        ? 'FALHOU'
+                        : busy === engine.id
+                          ? 'PROCESSANDO'
+                          : (progress[engine.id] ?? 0) >= 100
+                            ? 'CONCLUÍDO'
+                            : 'NA FILA'}
                     </span>
                     <strong>{progress[engine.id]}%</strong>
                   </div>
