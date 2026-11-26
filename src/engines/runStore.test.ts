@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   getRunState,
+  overallProgress,
+  setProgress,
+  startBatch,
   setBusy,
   setMessage,
   setResults,
@@ -21,5 +24,14 @@ describe('runStore', () => {
     expect(s.runs.movimentacoes?.id).toBe('r1');
     setBusy(null);
     expect(getRunState().busy).toBeNull();
+  });
+
+  it('calcula o andamento geral como média dos motores', () => {
+    startBatch(['a', 'b']);
+    setProgress('a', 100);
+    setProgress('b', 50);
+    expect(overallProgress()).toBe(75);
+    setProgress('b', 100);
+    expect(overallProgress()).toBe(100);
   });
 });

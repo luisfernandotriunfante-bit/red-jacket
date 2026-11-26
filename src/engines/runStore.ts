@@ -15,6 +15,10 @@ type RunState = {
   busy: string | null;
   results: Record<string, string | undefined>;
   runs: Record<string, RunSummary>;
+  /** Andamento (0 a 100) de cada motor da atualização atual. */
+  progress: Record<string, number>;
+  /** Motores da atualização atual, na ordem em que rodam. */
+  batch: string[];
 };
 
 let state: RunState = {
@@ -22,6 +26,8 @@ let state: RunState = {
   busy: null,
   results: {},
   runs: {},
+  progress: {},
+  batch: [],
 };
 const listeners = new Set<() => void>();
 
@@ -68,3 +74,30 @@ export const setResults = (
 export const setRuns = (
   update: (current: Record<string, RunSummary>) => Record<string, RunSummary>,
 ) => emit({ ...state, runs: update(state.runs) });
+
+/** Começa uma atualização: zera o andamento dos motores que vão rodar. */
+export const startBatch = (ids: string[]) =>
+  emit({
+    ...state,
+    batch: ids,
+    progress: Object.fromEntries(ids.map((id) => [id, 0])),
+  });
+
+export const setProgress = (id: string, percent: number) =>
+  emit({
+    ...state,
+    progress: {
+      ...state.progress,
+      [id]: Math.max(0, Math.min(100, Math.round(percent))),
+    },
+  });
+
+/** Andamento geral: média dos motores da atualização atual. */
+export const overallProgress = (current: RunState = state) => {
+  if (current.batch.length === 0) return 0;
+  const total = current.batch.reduce(
+    (sum, id) => sum + (current.progress[id] ?? 0),
+    0,
+  );
+  return Math.round(total / current.batch.length);
+};

@@ -17,11 +17,14 @@ import { EngineBlockError, type BaseRow } from '../../engines/core/types';
 import { runners } from '../../engines/registry';
 import {
   getRunState,
+  overallProgress,
   pendingFiles,
   setBusy,
   setMessage,
+  setProgress,
   setResults,
   setRuns,
+  startBatch,
   useRunState,
 } from '../../engines/runStore';
 import {
@@ -294,7 +297,10 @@ function Engines() {
   const inputs = useRef<Record<string, HTMLInputElement | null>>({});
   const allSlots = engines.flatMap((engine) => engine.slots);
   // Progresso e resultados vivem fora da tela: a atualização segue se a pessoa trocar de página.
-  const { message, busy, results, runs } = useRunState();
+  const runState = useRunState();
+  const { message, busy, results, runs, progress, batch } = runState;
+  const overall = overallProgress(runState);
+  const finished = batch.filter((id) => (progress[id] ?? 0) >= 100).length;
   const [uploads, setUploads] = useState<
     Record<string, { name: string; updatedAt: string } | undefined>
   >({});
@@ -427,6 +433,7 @@ function Engines() {
       return `${engine.name}: arquivos recebidos; o processamento deste motor ainda não foi ligado.`;
     }
     setBusy(engine.id);
+    setProgress(engine.id, 2);
     try {
       const bases: Record<string, BaseRow[]> = {};
       const usedBases: { slot: string; fileName: string }[] = [];
@@ -439,6 +446,7 @@ function Engines() {
         }));
         bases[dep] = await loadBaseRows(dep);
       }
+      setProgress(engine.id, 10);
       setResults((current) => ({
         ...current,
         [engine.id]: 'Lendo e calculando os arquivos…',
@@ -454,11 +462,14 @@ function Engines() {
         }));
         all[slot.id] = await loadSourceFile(engine.id, slot.id, saved.name);
       }
+      setProgress(engine.id, 25);
       setResults((current) => ({
         ...current,
         [engine.id]: 'Lendo e calculando os arquivos…',
       }));
+      setProgress(engine.id, 30);
       const result = await runner.run(all, bases);
+      setProgress(engine.id, 45);
       setResults((current) => ({
         ...current,
         [engine.id]: 'Gravando a base no Supabase…',
@@ -480,10 +491,14 @@ function Engines() {
           result,
           runner.keyColumn,
           sources,
-          (progress) =>
-            setResults((current) => ({ ...current, [engine.id]: progress })),
+          (text, fraction) => {
+            setResults((current) => ({ ...current, [engine.id]: text }));
+            if (fraction !== undefined)
+              setProgress(engine.id, 45 + fraction * 50);
+          },
         );
       } else {
+        setProgress(engine.id, 60);
         runId = await saveEngineBase(result, runner.keyColumn, sources);
       }
       setRuns((current) => ({
@@ -503,6 +518,7 @@ function Engines() {
       setResults((current) => ({ ...current, [engine.id]: reason }));
       return `Motor ${engine.name} não foi atualizado. ${reason}`;
     } finally {
+      setProgress(engine.id, 100);
       setBusy(null);
     }
   };
@@ -540,6 +556,7 @@ function Engines() {
       ordered.push(item);
     };
     targets.forEach(place);
+    startBatch(ordered.map((item) => item.id));
     const messages: string[] = [];
     for (const item of ordered) {
       setMessage(`Processando ${item.name}…`);
@@ -583,6 +600,29 @@ function Engines() {
         <Gauge size={14} />
         <span>{message}</span>
       </div>
+      {batch.length > 0 && (
+        <div
+          className={styles.overallProgress}
+          role="progressbar"
+          aria-label="Andamento geral dos motores"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={overall}
+        >
+          <div className={styles.progressLabel}>
+            <span>ANDAMENTO GERAL</span>
+            <strong>
+              {overall}% · {finished} de {batch.length} motor(es)
+            </strong>
+          </div>
+          <div className={styles.progressTrack}>
+            <div
+              className={styles.progressFill}
+              style={{ width: `${overall}%` }}
+            />
+          </div>
+        </div>
+      )}
 
       <div className={styles.engineGrid}>
         {engines.map((engine, engineIndex) => {
@@ -731,6 +771,33 @@ function Engines() {
                   );
                 })}
               </div>
+              {progress[engine.id] !== undefined && (
+                <div
+                  className={styles.engineProgress}
+                  role="progressbar"
+                  aria-label={`Andamento de ${engine.name}`}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={progress[engine.id]}
+                >
+                  <div className={styles.progressLabel}>
+                    <span>
+                      {busy === engine.id
+                        ? 'PROCESSANDO'
+                        : (progress[engine.id] ?? 0) >= 100
+                          ? 'CONCLUÍDO'
+                          : 'NA FILA'}
+                    </span>
+                    <strong>{progress[engine.id]}%</strong>
+                  </div>
+                  <div className={styles.progressTrack}>
+                    <div
+                      className={styles.progressFill}
+                      style={{ width: `${progress[engine.id]}%` }}
+                    />
+                  </div>
+                </div>
+              )}
               <footer className={styles.engineConsoleFooter}>
                 {results[engine.id] && (
                   <div className={styles.engineMessage}>

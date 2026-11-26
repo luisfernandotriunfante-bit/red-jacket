@@ -123,6 +123,39 @@
 .engineGlobalMessage svg {
   color: var(--engine-blue);
 }
+.overallProgress {
+  margin-bottom: 1rem;
+}
+.engineProgress {
+  padding: 0.75rem 1.3rem 0;
+  background: var(--engine-surface);
+}
+.progressLabel {
+  margin-bottom: 0.35rem;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  color: var(--engine-muted);
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+}
+.progressLabel strong {
+  color: var(--engine-red);
+  font-size: 0.68rem;
+}
+.progressTrack {
+  height: 0.4rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--engine-line);
+}
+.progressFill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--engine-red);
+  transition: width 0.4s ease;
+}
 .engineGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
