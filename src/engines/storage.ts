@@ -199,14 +199,20 @@ async function sendChunks(
   });
   if (done.error) throw new Error(done.error.message);
   onProgress('Limpando a versão anterior…', 0.96);
-  for (;;) {
-    const purge = await client.rpc('purge_engine_rows', {
-      p_engine: result.engine,
-      p_keep: runId,
-      p_limit: 20000,
-    });
-    if (purge.error) throw new Error(purge.error.message);
-    if (Number(purge.data) === 0) break;
+  // A base nova já está vigente. Se a limpeza da versão antiga falhar (tempo do banco),
+  // não é erro: as linhas soltas saem na próxima atualização.
+  try {
+    for (;;) {
+      const purge = await client.rpc('purge_engine_rows', {
+        p_engine: result.engine,
+        p_keep: runId,
+        p_limit: 5000,
+      });
+      if (purge.error) break;
+      if (Number(purge.data) === 0) break;
+    }
+  } catch {
+    // segue: a base nova foi gravada e conferida
   }
 }
 
