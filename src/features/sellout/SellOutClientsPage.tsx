@@ -21,6 +21,7 @@ type ClientResult = {
   seller: string;
   profile: string;
   range: string;
+  network: string;
   billed: number;
   pipeline: number;
   returns: number;
@@ -155,6 +156,9 @@ const demo: ClientResult[] = [
   seller: String(item[3]),
   profile: String(item[4]),
   range: String(item[5]),
+  network: ['Independente', 'Rede regional', 'Rede regional', 'Independente'][
+    index % 4
+  ]!,
   billed: Number(item[6]),
   pipeline: Number(item[7]),
   returns: Number(item[8]),
@@ -214,6 +218,7 @@ function buildResults(
         '—',
       profile: text(client ?? row, 'perfil'),
       range: text(client ?? row, 'faixa'),
+      network: text(client ?? row, 'rede'),
       billed: 0,
       pipeline: 0,
       returns: 0,
@@ -243,6 +248,10 @@ export function SellOutClientsPage() {
   const [rows, setRows] = useState<ClientResult[]>([]);
   const [query, setQuery] = useState('');
   const [profile, setProfile] = useState('TODOS');
+  const [range, setRange] = useState('TODAS');
+  const [network, setNetwork] = useState('TODAS');
+  const [city, setCity] = useState('TODAS');
+  const [seller, setSeller] = useState('TODOS');
   const [riskOnly, setRiskOnly] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
 
@@ -265,6 +274,29 @@ export function SellOutClientsPage() {
     'TODOS',
     ...new Set(data.map((client) => client.profile).filter(Boolean)),
   ];
+  const ranges = [
+    'TODAS',
+    ...new Set(data.map((client) => client.range).filter(Boolean)),
+  ];
+  const networks = [
+    'TODAS',
+    ...new Set(data.map((client) => client.network).filter(Boolean)),
+  ];
+  const cities = [
+    'TODAS',
+    ...new Set(data.map((client) => client.city).filter(Boolean)),
+  ];
+  const sellers = [
+    'TODOS',
+    ...new Set(data.map((client) => client.seller).filter(Boolean)),
+  ];
+  const hasFilters =
+    profile !== 'TODOS' ||
+    range !== 'TODAS' ||
+    network !== 'TODAS' ||
+    city !== 'TODAS' ||
+    seller !== 'TODOS' ||
+    riskOnly;
   const filtered = useMemo(
     () =>
       data.filter((client) => {
@@ -280,10 +312,14 @@ export function SellOutClientsPage() {
         return (
           matches &&
           (profile === 'TODOS' || client.profile === profile) &&
+          (range === 'TODAS' || client.range === range) &&
+          (network === 'TODAS' || client.network === network) &&
+          (city === 'TODAS' || client.city === city) &&
+          (seller === 'TODOS' || client.seller === seller) &&
           (!riskOnly || variation < -0.1)
         );
       }),
-    [data, profile, query, riskOnly],
+    [city, data, network, profile, query, range, riskOnly, seller],
   );
   const billed = data.reduce((sum, client) => sum + client.billed, 0);
   const pipeline = data.reduce((sum, client) => sum + client.pipeline, 0);
@@ -343,21 +379,57 @@ export function SellOutClientsPage() {
           />
         </label>
         <div className={styles.filters}>
-          {profiles.map((item) => (
-            <button
-              key={item}
-              className={profile === item ? styles.active : ''}
-              onClick={() => setProfile(item)}
-            >
-              {item}
-            </button>
-          ))}
+          <FilterSelect
+            label="FAIXA"
+            value={range}
+            options={ranges}
+            onChange={setRange}
+          />
+          <FilterSelect
+            label="PERFIL"
+            value={profile}
+            options={profiles}
+            onChange={setProfile}
+          />
+          <FilterSelect
+            label="REDE"
+            value={network}
+            options={networks}
+            onChange={setNetwork}
+          />
+          <FilterSelect
+            label="CIDADE"
+            value={city}
+            options={cities}
+            onChange={setCity}
+          />
+          <FilterSelect
+            label="VENDEDOR"
+            value={seller}
+            options={sellers}
+            onChange={setSeller}
+          />
           <button
             className={riskOnly ? styles.riskActive : ''}
             onClick={() => setRiskOnly((value) => !value)}
           >
             EM RISCO
           </button>
+          {hasFilters && (
+            <button
+              className={styles.clear}
+              onClick={() => {
+                setProfile('TODOS');
+                setRange('TODAS');
+                setNetwork('TODAS');
+                setCity('TODAS');
+                setSeller('TODOS');
+                setRiskOnly(false);
+              }}
+            >
+              LIMPAR
+            </button>
+          )}
         </div>
       </div>
 
@@ -410,6 +482,38 @@ export function SellOutClientsPage() {
         </div>
       </article>
     </section>
+  );
+}
+
+function FilterSelect({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  options: string[];
+  onChange: (value: string) => void;
+}) {
+  const empty = value === 'TODOS' || value === 'TODAS';
+  return (
+    <label
+      className={`${styles.filterSelect} ${!empty ? styles.selectedFilter : ''}`}
+    >
+      <span>{label}</span>
+      <select
+        aria-label={`Filtrar por ${label.toLocaleLowerCase('pt-BR')}`}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      >
+        {options.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }
 

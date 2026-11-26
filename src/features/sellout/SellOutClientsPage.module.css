@@ -73,13 +73,13 @@
   border: 1px solid var(--stroke);
   border-radius: 1.15rem;
 }
-.toolbar label {
+.toolbar > label {
   min-width: 18rem;
   display: flex;
   align-items: center;
   gap: 0.55rem;
 }
-.toolbar label svg {
+.toolbar > label svg {
   width: 1rem;
   color: var(--muted);
 }
@@ -108,15 +108,50 @@
   font-weight: 750;
   cursor: pointer;
 }
-.filters .active {
-  color: #fff;
-  background: var(--blue);
-  border-color: var(--blue);
-}
 .filters .riskActive {
   color: #fff;
   background: var(--red);
   border-color: var(--red);
+}
+.filterSelect {
+  min-width: 0 !important;
+  padding: 0.25rem 0.62rem !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.3rem !important;
+  border: 1px solid var(--stroke);
+  border-radius: 999px;
+}
+.filterSelect span {
+  color: var(--muted);
+  font-size: 0.51rem;
+  font-weight: 750;
+}
+.filterSelect select {
+  max-width: 7rem;
+  padding: 0;
+  color: var(--text);
+  background: transparent;
+  border: 0;
+  outline: 0;
+  font-size: 0.56rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+.filterSelect option {
+  color: var(--text);
+  background: var(--panel);
+}
+.selectedFilter {
+  border-color: var(--blue) !important;
+}
+.selectedFilter span,
+.selectedFilter select {
+  color: var(--blue);
+}
+.filters .clear {
+  color: var(--red);
+  border-color: transparent;
 }
 .panel {
   margin-top: 0.8rem;
@@ -280,7 +315,7 @@
     align-items: stretch;
     flex-direction: column;
   }
-  .toolbar label {
+  .toolbar > label {
     min-width: 0;
   }
   .filters {
