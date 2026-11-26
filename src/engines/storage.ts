@@ -145,7 +145,7 @@ export async function saveEngineBaseChunked(
   result: EngineResult,
   keyColumn: string,
   sources: SourceInfo[],
-  onProgress: (message: string) => void = () => undefined,
+  onProgress: (message: string, fraction?: number) => void = () => undefined,
 ): Promise<string> {
   const client = requireClient();
   const rows = keyedRows(result, keyColumn);
@@ -170,19 +170,26 @@ async function sendChunks(
   rows: { key: string; data: BaseRow }[],
   result: EngineResult,
   sources: SourceInfo[],
-  onProgress: (message: string) => void,
+  onProgress: (message: string, fraction?: number) => void,
 ): Promise<void> {
   for (let from = 0; from < rows.length; from += CHUNK_ROWS) {
+    const sent = Math.min(from + CHUNK_ROWS, rows.length);
     onProgress(
-      `Gravando a base no Supabase… ${Math.min(from + CHUNK_ROWS, rows.length)} de ${rows.length} linhas`,
+      `Gravando a base no Supabase… ${sent} de ${rows.length} linhas`,
+      (sent / rows.length) * 0.9,
     );
-    const part = await client.rpc('append_engine_rows', {
-      p_run: runId,
-      p_rows: rows.slice(from, from + CHUNK_ROWS),
-    });
-    if (part.error) throw new Error(part.error.message);
+    // Falha momentânea (rede, tempo do banco): tenta de novo; o lote é idempotente.
+    for (let attempt = 1; ; attempt += 1) {
+      const part = await client.rpc('append_engine_rows', {
+        p_run: runId,
+        p_rows: rows.slice(from, from + CHUNK_ROWS),
+      });
+      if (!part.error) break;
+      if (attempt >= 3) throw new Error(part.error.message);
+      await new Promise((resolve) => setTimeout(resolve, attempt * 1500));
+    }
   }
-  onProgress('Conferindo a gravação…');
+  onProgress('Conferindo a gravação…', 0.92);
   const done = await client.rpc('finalize_engine_run', {
     p_run: runId,
     p_columns: result.columns,
@@ -191,7 +198,7 @@ async function sendChunks(
     p_row_count: rows.length,
   });
   if (done.error) throw new Error(done.error.message);
-  onProgress('Limpando a versão anterior…');
+  onProgress('Limpando a versão anterior…', 0.96);
   for (;;) {
     const purge = await client.rpc('purge_engine_rows', {
       p_engine: result.engine,
