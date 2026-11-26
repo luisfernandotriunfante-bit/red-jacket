@@ -1,0 +1,435 @@
+.page {
+  --blue: #3d82f7;
+  --red: #ff2638;
+  --panel: #fff;
+  --card: #f3f3f3;
+  --soft: #f8f8f8;
+  --stroke: #d8d8d8;
+  width: min(100%, 94rem);
+  margin: 0 auto;
+  padding: 1rem clamp(1rem, 2.4vw, 2.5rem) 5rem;
+}
+.preview {
+  margin-bottom: 0.75rem;
+  color: var(--muted);
+  font-size: 0.58rem;
+  font-weight: 750;
+  letter-spacing: 0.1em;
+  text-align: right;
+}
+.heroGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+.heroCard {
+  min-height: 17rem;
+  padding: 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  border: 1px solid var(--stroke);
+  border-radius: 1.35rem;
+  box-shadow: 0 16px 42px #0003;
+}
+.heroCard header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--red);
+  font-size: 0.72rem;
+  font-weight: 750;
+  letter-spacing: 0.1em;
+}
+.heroCard header svg {
+  width: 1rem;
+}
+.heroBody {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  flex: 1;
+}
+.ring {
+  --value: 0deg;
+  width: 7.6rem;
+  aspect-ratio: 1;
+  padding: 0.7rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--blue) var(--value),
+    var(--red) 0 calc(var(--value) + 22deg),
+    #d2d2d2 0
+  );
+}
+.ring:before {
+  content: '';
+  grid-area: 1/1;
+  width: 100%;
+  height: 100%;
+  background: var(--card);
+  border-radius: 50%;
+}
+.ring > div {
+  grid-area: 1/1;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+}
+.ring strong {
+  font-size: 1.35rem;
+}
+.ring span {
+  color: var(--muted);
+  font-size: 0.52rem;
+  font-weight: 700;
+}
+.heroNumbers {
+  display: grid;
+  gap: 1rem;
+}
+.heroNumbers span {
+  display: grid;
+  gap: 0.18rem;
+  color: var(--muted);
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+}
+.heroNumbers strong {
+  color: var(--text);
+  font-size: 0.95rem;
+  letter-spacing: -0.03em;
+}
+.heroCard footer {
+  padding-top: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--stroke);
+  color: var(--muted);
+  font-size: 0.66rem;
+}
+.heroCard footer strong {
+  display: block;
+  margin-top: 0.12rem;
+  color: var(--text);
+  font-size: 0.8rem;
+}
+.good,
+.attention,
+.critical {
+  padding: 0.33rem 0.65rem;
+  border: 1px solid;
+  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 750;
+  white-space: nowrap;
+}
+.good {
+  color: var(--blue);
+}
+.attention,
+.critical {
+  color: var(--red);
+}
+.critical {
+  background: #ff263812;
+}
+.centerMetric {
+  flex: 1;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+}
+.centerMetric strong {
+  font-size: 3.2rem;
+  line-height: 1;
+}
+.centerMetric small {
+  color: var(--muted);
+  font-size: 1rem;
+}
+.centerMetric span {
+  margin-top: 0.4rem;
+  color: var(--muted);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+}
+.teamDots {
+  display: flex;
+  justify-content: center;
+  gap: 0.45rem;
+  margin-bottom: 1rem;
+}
+.teamDots i {
+  width: 0.55rem;
+  height: 0.55rem;
+  padding: 0;
+  border: 0;
+  background: currentColor;
+  border-radius: 50%;
+}
+.viewBar {
+  margin-top: 1.25rem;
+  padding: 1rem 1.15rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--panel);
+  border: 1px solid var(--stroke);
+  border-radius: 1.2rem;
+}
+.viewBar h1 {
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.viewBar span {
+  color: var(--muted);
+  font-size: 0.65rem;
+}
+.switcher {
+  padding: 0.18rem;
+  display: flex;
+  background: var(--card);
+  border: 1px solid var(--stroke);
+  border-radius: 999px;
+}
+.switcher button {
+  padding: 0.45rem 0.8rem;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+.switcher .active {
+  color: #fff;
+  background: var(--red);
+}
+.teamList {
+  margin-top: 0.8rem;
+  display: grid;
+  gap: 0.65rem;
+}
+.teamCard {
+  overflow: hidden;
+  background: var(--panel);
+  border: 1px solid var(--stroke);
+  border-radius: 1.15rem;
+}
+.teamHeader {
+  width: 100%;
+  min-height: 5.3rem;
+  padding: 0.8rem 1rem;
+  display: grid;
+  grid-template-columns:
+    7rem minmax(10rem, 1.3fr) repeat(2, minmax(7rem, 0.7fr))
+    minmax(9rem, 1fr) auto auto;
+  align-items: center;
+  gap: 1rem;
+  color: var(--text);
+  background: transparent;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+}
+.teamCode {
+  color: var(--red);
+  font-size: 0.62rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+}
+.teamName,
+.teamMetric {
+  display: grid;
+  gap: 0.17rem;
+}
+.teamName strong {
+  font-size: 0.82rem;
+}
+.teamName small,
+.teamMetric small {
+  color: var(--muted);
+  font-size: 0.58rem;
+}
+.teamMetric strong {
+  font-size: 0.77rem;
+}
+.teamProgress {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+.teamProgress i,
+.inlineProgress i {
+  height: 0.25rem;
+  display: block;
+  overflow: hidden;
+  background: #d2d2d2;
+  border-radius: 999px;
+}
+.teamProgress i {
+  flex: 1;
+}
+.teamProgress em,
+.inlineProgress em {
+  height: 100%;
+  display: block;
+  background: var(--blue);
+  border-radius: inherit;
+}
+.teamProgress strong {
+  font-size: 0.72rem;
+}
+.teamHeader > svg {
+  width: 1rem;
+  color: var(--muted);
+}
+.tableWrap {
+  overflow: auto;
+  border-top: 1px solid var(--stroke);
+}
+.tableWrap.ranking {
+  margin-top: 0.8rem;
+  background: var(--panel);
+  border: 1px solid var(--stroke);
+  border-radius: 1.15rem;
+}
+.tableWrap table {
+  width: 100%;
+  border-collapse: collapse;
+  white-space: nowrap;
+}
+.tableWrap th,
+.tableWrap td {
+  padding: 0.7rem 0.85rem;
+  text-align: right;
+  border-bottom: 1px solid var(--stroke);
+}
+.tableWrap th:first-child,
+.tableWrap td:first-child {
+  text-align: left;
+}
+.tableWrap th {
+  color: var(--muted);
+  font-size: 0.54rem;
+  letter-spacing: 0.06em;
+}
+.tableWrap td {
+  font-size: 0.67rem;
+}
+.tableWrap td > strong,
+.tableWrap td > small {
+  display: block;
+}
+.tableWrap td > small {
+  margin-top: 0.15rem;
+  color: var(--muted);
+  font-size: 0.55rem;
+}
+.inlineProgress {
+  min-width: 6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.inlineProgress i {
+  width: 4rem;
+}
+.inlineProgress b {
+  font-size: 0.65rem;
+}
+.up,
+.down {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-weight: 750;
+}
+.up {
+  color: var(--blue);
+}
+.down {
+  color: var(--red);
+}
+.up svg,
+.down svg {
+  width: 0.8rem;
+}
+.position {
+  color: var(--red);
+}
+.position svg {
+  vertical-align: middle;
+}
+:global(:root[data-theme='dark']) .page {
+  --panel: #0d0d0d;
+  --card: #191919;
+  --soft: #151515;
+  --stroke: #303030;
+}
+.page :global(*) {
+  box-sizing: border-box;
+}
+@media (max-width: 1100px) {
+  .heroGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .heroCard:last-child {
+    grid-column: span 2;
+  }
+  .teamHeader {
+    grid-template-columns: 6rem 1fr repeat(2, 7rem) auto auto;
+  }
+  .teamProgress {
+    display: none;
+  }
+}
+@media (max-width: 720px) {
+  .page {
+    padding-inline: 0.75rem;
+  }
+  .heroGrid {
+    grid-template-columns: 1fr;
+  }
+  .heroCard:last-child {
+    grid-column: auto;
+  }
+  .viewBar {
+    align-items: flex-start;
+    gap: 0.75rem;
+    flex-direction: column;
+  }
+  .teamHeader {
+    grid-template-columns: 1fr auto;
+  }
+  .teamCode,
+  .teamName {
+    grid-column: 1;
+  }
+  .teamMetric,
+  .teamProgress {
+    display: none;
+  }
+  .teamHeader > b {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .teamHeader > svg {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  .tableWrap {
+    border-top: 1px solid var(--stroke);
+  }
+  .preview {
+    text-align: left;
+    line-height: 1.5;
+  }
+}

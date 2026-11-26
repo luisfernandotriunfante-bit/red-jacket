@@ -8,6 +8,7 @@ import { useAuth } from '../features/auth/useAuth';
 import { SettingsPage } from '../features/settings/SettingsPage';
 import { ProfilePage } from '../features/profile/ProfilePage';
 import { SellOutSummaryPage } from '../features/sellout/SellOutSummaryPage';
+import { SellOutManagementPage } from '../features/sellout/SellOutManagementPage';
 import { navigation } from './navigation';
 
 export function App() {
@@ -26,7 +27,10 @@ export function App() {
             element={<Navigate to="/sell-out/resumo" replace />}
           />
           <Route path="/sell-out/resumo" element={<SellOutSummaryPage />} />
-          <Route path="/sell-out/gerencial" element={<BlankWorkspace />} />
+          <Route
+            path="/sell-out/gerencial"
+            element={<SellOutManagementPage />}
+          />
           <Route path="/sell-out/clientes" element={<BlankWorkspace />} />
           <Route path="/perfil" element={<ProfilePage />} />
           <Route
