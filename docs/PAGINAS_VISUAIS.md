@@ -19,8 +19,8 @@ Para cada página:
 | Área          | Página                                    | Painel antigo               | Painel atual                            | Próxima ação                                  |
 | ------------- | ----------------------------------------- | --------------------------- | --------------------------------------- | --------------------------------------------- |
 | Sell out      | Resumo                                    | Implementada                | Implementada e redesenhada              | Preservar como padrão visual                  |
-| Sell out      | Gerencial                                 | Implementada                | Casca vazia                             | Primeira página em análise                    |
-| Sell out      | Clientes                                  | Implementada                | Casca vazia                             | Analisar após Gerencial                       |
+| Sell out      | Gerencial                                 | Implementada                | Implementada na PR #48                  | Aprovada visualmente                          |
+| Sell out      | Clientes                                  | Implementada                | Implementada na PR #48                  | Em validação visual                           |
 | Estoque       | Estoque                                   | Implementada                | Casca vazia                             | Analisar e redesenhar                         |
 | Clientes      | Carteira, cadastro, pirâmide e sortimento | Implementadas como subáreas | Casca vazia                             | Reorganizar a navegação antes de implementar  |
 | Campanhas     | Campanhas                                 | Implementada                | Casca vazia                             | Analisar e redesenhar                         |

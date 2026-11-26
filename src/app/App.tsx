@@ -9,6 +9,7 @@ import { SettingsPage } from '../features/settings/SettingsPage';
 import { ProfilePage } from '../features/profile/ProfilePage';
 import { SellOutSummaryPage } from '../features/sellout/SellOutSummaryPage';
 import { SellOutManagementPage } from '../features/sellout/SellOutManagementPage';
+import { SellOutClientsPage } from '../features/sellout/SellOutClientsPage';
 import { navigation } from './navigation';
 
 export function App() {
@@ -31,7 +32,7 @@ export function App() {
             path="/sell-out/gerencial"
             element={<SellOutManagementPage />}
           />
-          <Route path="/sell-out/clientes" element={<BlankWorkspace />} />
+          <Route path="/sell-out/clientes" element={<SellOutClientsPage />} />
           <Route path="/perfil" element={<ProfilePage />} />
           <Route
             path="/configuracoes"
