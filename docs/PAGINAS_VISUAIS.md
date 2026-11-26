@@ -16,19 +16,19 @@ Para cada página:
 
 ## Estado das páginas
 
-| Área | Página | Painel antigo | Painel atual | Próxima ação |
-| --- | --- | --- | --- | --- |
-| Sell out | Resumo | Implementada | Implementada e redesenhada | Preservar como padrão visual |
-| Sell out | Gerencial | Implementada | Casca vazia | Primeira página em análise |
-| Sell out | Clientes | Implementada | Casca vazia | Analisar após Gerencial |
-| Estoque | Estoque | Implementada | Casca vazia | Analisar e redesenhar |
-| Clientes | Carteira, cadastro, pirâmide e sortimento | Implementadas como subáreas | Casca vazia | Reorganizar a navegação antes de implementar |
-| Campanhas | Campanhas | Implementada | Casca vazia | Analisar e redesenhar |
-| Configurações | Motores | Implementada | Implementada e funcional | Preservar e evoluir somente quando necessário |
-| Configurações | Auditoria | Implementada | Implementada | Preservar e validar integrações futuras |
-| Configurações | Equipe | Cadastro antigo de RCAs | Implementada com equipes e supervisores | Painel atual é a referência |
-| Configurações | Ajustes comerciais | Controles dispersos | Implementada parcialmente | Completar após as páginas operacionais |
-| Configurações | Competências | Implementada | Estrutura inicial | Completar após as páginas operacionais |
+| Área          | Página                                    | Painel antigo               | Painel atual                            | Próxima ação                                  |
+| ------------- | ----------------------------------------- | --------------------------- | --------------------------------------- | --------------------------------------------- |
+| Sell out      | Resumo                                    | Implementada                | Implementada e redesenhada              | Preservar como padrão visual                  |
+| Sell out      | Gerencial                                 | Implementada                | Casca vazia                             | Primeira página em análise                    |
+| Sell out      | Clientes                                  | Implementada                | Casca vazia                             | Analisar após Gerencial                       |
+| Estoque       | Estoque                                   | Implementada                | Casca vazia                             | Analisar e redesenhar                         |
+| Clientes      | Carteira, cadastro, pirâmide e sortimento | Implementadas como subáreas | Casca vazia                             | Reorganizar a navegação antes de implementar  |
+| Campanhas     | Campanhas                                 | Implementada                | Casca vazia                             | Analisar e redesenhar                         |
+| Configurações | Motores                                   | Implementada                | Implementada e funcional                | Preservar e evoluir somente quando necessário |
+| Configurações | Auditoria                                 | Implementada                | Implementada                            | Preservar e validar integrações futuras       |
+| Configurações | Equipe                                    | Cadastro antigo de RCAs     | Implementada com equipes e supervisores | Painel atual é a referência                   |
+| Configurações | Ajustes comerciais                        | Controles dispersos         | Implementada parcialmente               | Completar após as páginas operacionais        |
+| Configurações | Competências                              | Implementada                | Estrutura inicial                       | Completar após as páginas operacionais        |
 
 ## Regra de publicação
 
