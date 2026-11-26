@@ -31,7 +31,6 @@ import {
 import {
   loadBaseRows,
   loadLastRun,
-  saveEngineBase,
   saveEngineBaseChunked,
   listSourceFiles,
   loadSlotPeriods,
@@ -489,22 +488,17 @@ function Engines() {
         })),
         ...usedBases,
       ];
-      let runId: string;
-      if (runner.chunked) {
-        runId = await saveEngineBaseChunked(
-          result,
-          runner.keyColumn,
-          sources,
-          (text, fraction) => {
-            setResults((current) => ({ ...current, [engine.id]: text }));
-            if (fraction !== undefined)
-              setProgress(engine.id, 45 + fraction * 50);
-          },
-        );
-      } else {
-        setProgress(engine.id, 60);
-        runId = await saveEngineBase(result, runner.keyColumn, sources);
-      }
+      // Todos os motores gravam em lotes: uma chamada única estoura o tempo do banco nas bases maiores.
+      const runId = await saveEngineBaseChunked(
+        result,
+        runner.keyColumn,
+        sources,
+        (text, fraction) => {
+          setResults((current) => ({ ...current, [engine.id]: text }));
+          if (fraction !== undefined)
+            setProgress(engine.id, 45 + fraction * 50);
+        },
+      );
       setRuns((current) => ({
         ...current,
         [engine.id]: { id: runId, sources },
