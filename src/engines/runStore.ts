@@ -19,6 +19,8 @@ type RunState = {
   progress: Record<string, number>;
   /** Motores da atualização atual, na ordem em que rodam. */
   batch: string[];
+  /** Motores que falharam na atualização atual. */
+  failed: Record<string, boolean>;
 };
 
 let state: RunState = {
@@ -28,6 +30,7 @@ let state: RunState = {
   runs: {},
   progress: {},
   batch: [],
+  failed: {},
 };
 const listeners = new Set<() => void>();
 
@@ -81,7 +84,11 @@ export const startBatch = (ids: string[]) =>
     ...state,
     batch: ids,
     progress: Object.fromEntries(ids.map((id) => [id, 0])),
+    failed: {},
   });
+
+export const setFailed = (id: string) =>
+  emit({ ...state, failed: { ...state.failed, [id]: true } });
 
 export const setProgress = (id: string, percent: number) =>
   emit({
@@ -96,7 +103,7 @@ export const setProgress = (id: string, percent: number) =>
 export const overallProgress = (current: RunState = state) => {
   if (current.batch.length === 0) return 0;
   const total = current.batch.reduce(
-    (sum, id) => sum + (current.progress[id] ?? 0),
+    (sum, id) => sum + (current.failed[id] ? 100 : (current.progress[id] ?? 0)),
     0,
   );
   return Math.round(total / current.batch.length);
