@@ -16,6 +16,15 @@ import { Navigate, useParams } from 'react-router-dom';
 import { EngineBlockError, type BaseRow } from '../../engines/core/types';
 import { runners } from '../../engines/registry';
 import {
+  getRunState,
+  pendingFiles,
+  setBusy,
+  setMessage,
+  setResults,
+  setRuns,
+  useRunState,
+} from '../../engines/runStore';
+import {
   loadBaseRows,
   loadLastRun,
   saveEngineBase,
@@ -284,28 +293,17 @@ function Engines() {
   const changeSite = canChangeSite(roleInfo?.role);
   const inputs = useRef<Record<string, HTMLInputElement | null>>({});
   const allSlots = engines.flatMap((engine) => engine.slots);
-  const [message, setMessage] = useState(
-    'Aguardando os arquivos obrigatórios.',
-  );
+  // Progresso e resultados vivem fora da tela: a atualização segue se a pessoa trocar de página.
+  const { message, busy, results, runs } = useRunState();
   const [uploads, setUploads] = useState<
     Record<string, { name: string; updatedAt: string } | undefined>
   >({});
-  const files = useRef<Record<string, File>>({});
-  const [busy, setBusy] = useState<string | null>(null);
-  const [results, setResults] = useState<Record<string, string | undefined>>(
-    {},
-  );
+  const files = useRef(pendingFiles);
   const [updatePeriods, setUpdatePeriods] = useState<Record<string, number>>(
     () => Object.fromEntries(allSlots.map((slot) => [slot.id, slot.period])),
   );
   const [referenceTime, setReferenceTime] = useState(() => Date.now());
   // Último processamento de cada motor (id e fontes), para avisar quando uma base da qual ele depende mudou.
-  const [runs, setRuns] = useState<
-    Record<
-      string,
-      { id: string; sources: { slot: string; fileName: string }[] }
-    >
-  >({});
   const staleDeps = (engineId: string): string[] => {
     const own = runs[engineId];
     if (!own) return [];
@@ -343,7 +341,8 @@ function Engines() {
       for (const engineId of Object.keys(runners)) {
         try {
           const run = await loadLastRun(engineId);
-          if (!run || !active) continue;
+          // Se há uma atualização em andamento, o progresso dela vale mais que o banco.
+          if (!run || !active || getRunState().busy !== null) continue;
           setRuns((current) => ({
             ...current,
             [engineId]: { id: run.id, sources: run.sources },
