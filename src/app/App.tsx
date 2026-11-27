@@ -7,6 +7,7 @@ import { PasswordSetupPage } from '../features/auth/PasswordSetupPage';
 import { useAuth } from '../features/auth/useAuth';
 import { SettingsPage } from '../features/settings/SettingsPage';
 import { ProfilePage } from '../features/profile/ProfilePage';
+import { StockPage } from '../features/stock/StockPage';
 import { SellOutSummaryPage } from '../features/sellout/SellOutSummaryPage';
 import { SellOutManagementPage } from '../features/sellout/SellOutManagementPage';
 import { SellOutClientsPage } from '../features/sellout/SellOutClientsPage';
@@ -33,6 +34,7 @@ export function App() {
             element={<SellOutManagementPage />}
           />
           <Route path="/sell-out/clientes" element={<SellOutClientsPage />} />
+          <Route path="/estoque" element={<StockPage />} />
           <Route path="/perfil" element={<ProfilePage />} />
           <Route
             path="/configuracoes"
@@ -44,6 +46,7 @@ export function App() {
               ({ rootPath }) =>
                 rootPath !== '/sell-out' && rootPath !== '/configuracoes',
             )
+            .filter(({ path }) => path !== '/estoque')
             .map(({ path }) => (
               <Route key={path} path={path} element={<BlankWorkspace />} />
             ))}

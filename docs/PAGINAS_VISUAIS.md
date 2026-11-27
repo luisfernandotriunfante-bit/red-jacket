@@ -20,8 +20,8 @@ Para cada página:
 | ------------- | ----------------------------------------- | --------------------------- | --------------------------------------- | --------------------------------------------- |
 | Sell out      | Resumo                                    | Implementada                | Implementada e redesenhada              | Preservar como padrão visual                  |
 | Sell out      | Gerencial                                 | Implementada                | Implementada na PR #48                  | Aprovada visualmente                          |
-| Sell out      | Clientes                                  | Implementada                | Implementada na PR #48                  | Em validação visual                           |
-| Estoque       | Estoque                                   | Implementada                | Casca vazia                             | Analisar e redesenhar                         |
+| Sell out      | Clientes                                  | Implementada                | Implementada na PR #48                  | Aprovada visualmente                          |
+| Estoque       | Estoque                                   | Implementada                | Implementada na PR #48                  | Em validação visual                           |
 | Clientes      | Carteira, cadastro, pirâmide e sortimento | Implementadas como subáreas | Casca vazia                             | Reorganizar a navegação antes de implementar  |
 | Campanhas     | Campanhas                                 | Implementada                | Casca vazia                             | Analisar e redesenhar                         |
 | Configurações | Motores                                   | Implementada                | Implementada e funcional                | Preservar e evoluir somente quando necessário |
