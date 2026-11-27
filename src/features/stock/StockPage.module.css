@@ -16,6 +16,37 @@
   letter-spacing: 0.1em;
   text-align: right;
 }
+.stockTabs {
+  min-height: 3.7rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  border-bottom: 1px solid var(--stroke);
+}
+.stockTabs button {
+  height: 2.25rem;
+  padding: 0 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--muted);
+  font-size: 0.56rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.stockTabs button svg {
+  width: 0.82rem;
+}
+.stockTabs button.activeTab {
+  color: var(--red);
+  border-color: var(--red);
+}
 .hero {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -342,6 +373,103 @@
   min-width: 0.25rem;
   height: 100%;
 }
+.balancePanel,
+.workspace {
+  margin-top: 0.85rem;
+  overflow: hidden;
+  background: var(--panel);
+  border: 1px solid var(--stroke);
+  border-radius: 1.25rem;
+  box-shadow: 0 18px 52px #0002;
+}
+.balancePanel > header,
+.workspace > header {
+  min-height: 4.4rem;
+  padding: 0.9rem 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--stroke);
+}
+.balancePanel header div {
+  display: grid;
+  gap: 0.15rem;
+}
+.balancePanel h2,
+.workspace h2 {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+}
+.balancePanel header span,
+.workspace header span {
+  color: var(--muted);
+  font-size: 0.55rem;
+}
+.balancePanel header > b {
+  color: var(--red);
+  font-size: 0.52rem;
+  letter-spacing: 0.08em;
+}
+.balanceRows {
+  padding: 0.35rem 1rem 1rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 1.6rem;
+}
+.balanceRows > div {
+  padding: 0.85rem 0.2rem;
+  border-bottom: 1px solid var(--stroke);
+}
+.balanceLabel,
+.balanceMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.balanceLabel strong {
+  font-size: 0.61rem;
+}
+.balanceLabel span {
+  color: var(--blue);
+  font-size: 0.47rem;
+  font-weight: 750;
+}
+.balanceLabel span.risk {
+  color: var(--red);
+}
+.dualRail {
+  height: 0.34rem;
+  margin-top: 0.65rem;
+  position: relative;
+  background: var(--stroke);
+  border-radius: 999px;
+}
+.dualRail i {
+  height: 100%;
+  display: block;
+  background: var(--blue);
+  border-radius: inherit;
+}
+.dualRail em {
+  width: 0.12rem;
+  height: 0.78rem;
+  position: absolute;
+  top: 50%;
+  background: var(--red);
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+}
+.balanceMeta {
+  margin-top: 0.45rem;
+  justify-content: flex-start;
+  gap: 1rem;
+  color: var(--muted);
+  font-size: 0.46rem;
+}
+.balanceMeta b {
+  color: inherit;
+}
 .tone1 {
   background: #3d82f7;
 }
@@ -367,6 +495,27 @@
   background: var(--panel);
   border: 1px solid var(--stroke);
   border-radius: 1.1rem;
+}
+.valueToggle {
+  padding: 0.2rem;
+  display: flex;
+  background: var(--card);
+  border: 1px solid var(--stroke);
+  border-radius: 999px;
+}
+.valueToggle button {
+  padding: 0.36rem 0.6rem;
+  color: var(--muted);
+  font-size: 0.5rem;
+  font-weight: 750;
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.valueToggle button.selectedMode {
+  color: #fff;
+  background: var(--blue);
 }
 .toolbar > label {
   min-width: 18rem;
@@ -505,6 +654,40 @@
   width: 0.8rem;
   color: var(--muted);
 }
+.tableWrap td:last-child {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.25rem;
+}
+.focusButton {
+  width: 1.65rem;
+  height: 1.65rem;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--stroke);
+  border-radius: 50%;
+  cursor: pointer;
+}
+.focusButton.focused {
+  color: var(--red);
+  border-color: var(--red);
+}
+.quantity {
+  display: grid;
+  gap: 0.1rem;
+}
+.quantity strong {
+  font-size: 0.62rem;
+}
+.quantity strong small,
+.quantity span {
+  color: var(--muted);
+  font-size: 0.45rem;
+  font-weight: 650;
+}
 .detailRow > td {
   padding: 0 !important;
   background: var(--card);
@@ -514,6 +697,197 @@
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 0.65rem;
+}
+.productSheet {
+  padding: 0.55rem 1rem 1rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.8rem;
+  white-space: normal;
+}
+.productSheet section {
+  overflow: hidden;
+  background: var(--panel);
+  border: 1px solid var(--stroke);
+  border-radius: 1rem;
+}
+.productSheet h3 {
+  padding: 0.7rem 0.9rem;
+  color: var(--red);
+  font-size: 0.52rem;
+  letter-spacing: 0.08em;
+  border-bottom: 1px solid var(--stroke);
+}
+.productSheet .detail {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.workspace > header > div {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+.workspace > header svg {
+  width: 1rem;
+  color: var(--red);
+}
+.workspace > header button,
+.emptyState button {
+  padding: 0.5rem 0.85rem;
+  color: var(--red);
+  font-size: 0.52rem;
+  font-weight: 750;
+  background: transparent;
+  border: 1px solid var(--red);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.emptyState {
+  min-height: 22rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+.emptyState svg {
+  width: 2rem;
+  color: var(--muted);
+}
+.emptyState strong {
+  font-size: 0.82rem;
+}
+.emptyState span {
+  color: var(--muted);
+  font-size: 0.58rem;
+}
+.focusGrid {
+  padding: 1rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+.focusGrid > div {
+  padding: 0.9rem;
+  display: grid;
+  gap: 0.4rem;
+  background: var(--card);
+  border: 1px solid var(--stroke);
+  border-radius: 1rem;
+}
+.focusGrid > div > div,
+.focusGrid footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.focusGrid span,
+.focusGrid small,
+.focusGrid label {
+  color: var(--muted);
+  font-size: 0.5rem;
+}
+.focusGrid > div > div button {
+  color: var(--red);
+  font-size: 0.45rem;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.focusGrid strong {
+  overflow: hidden;
+  font-size: 0.68rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.focusGrid label {
+  margin-top: 0.45rem;
+  display: grid;
+  gap: 0.25rem;
+}
+.focusGrid select {
+  padding: 0.45rem 0.55rem;
+  color: inherit;
+  background: var(--panel);
+  border: 1px solid var(--stroke);
+  border-radius: 0.65rem;
+  font-size: 0.52rem;
+}
+.focusGrid footer {
+  margin-top: 0.4rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--stroke);
+}
+.focusGrid footer b {
+  font-size: 0.68rem;
+}
+.noteMetrics {
+  padding: 1rem 1rem 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.7rem;
+}
+.noteSearch {
+  margin: 0.8rem 1rem;
+  padding: 0.65rem 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--card);
+  border: 1px solid var(--stroke);
+  border-radius: 999px;
+}
+.noteSearch svg {
+  width: 0.9rem;
+  color: var(--muted);
+}
+.noteSearch input {
+  width: 100%;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  font-size: 0.6rem;
+}
+.noteList {
+  max-height: 34rem;
+  margin: 0 1rem 1rem;
+  overflow: auto;
+  border: 1px solid var(--stroke);
+  border-radius: 1rem;
+}
+.noteList > div {
+  min-width: 54rem;
+  padding: 0.7rem 0.8rem;
+  display: grid;
+  grid-template-columns: 5rem 7rem minmax(15rem, 1fr) 6rem 7rem 8rem;
+  align-items: center;
+  gap: 0.6rem;
+  border-bottom: 1px solid var(--stroke);
+  font-size: 0.56rem;
+}
+.noteList > div > div {
+  display: grid;
+  gap: 0.12rem;
+}
+.noteList small {
+  color: var(--muted);
+}
+.received,
+.pending {
+  width: fit-content;
+  padding: 0.25rem 0.4rem;
+  font-size: 0.45rem;
+  font-weight: 750;
+  border-radius: 999px;
+}
+.received {
+  color: var(--blue);
+  background: #3d82f714;
+}
+.pending {
+  color: var(--red);
+  background: #ff263814;
 }
 .detail > div {
   padding-left: 0.75rem;
@@ -559,6 +933,12 @@
   .detail {
     grid-template-columns: repeat(3, 1fr);
   }
+  .productSheet {
+    grid-template-columns: 1fr;
+  }
+  .focusGrid {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 @media (max-width: 650px) {
   .page {
@@ -590,6 +970,21 @@
     display: none;
   }
   .detail {
+    grid-template-columns: 1fr 1fr;
+  }
+  .stockTabs {
+    justify-content: flex-start;
+    overflow-x: auto;
+  }
+  .stockTabs button {
+    flex: 0 0 auto;
+  }
+  .balanceRows,
+  .focusGrid,
+  .noteMetrics {
+    grid-template-columns: 1fr;
+  }
+  .productSheet .detail {
     grid-template-columns: 1fr 1fr;
   }
 }
