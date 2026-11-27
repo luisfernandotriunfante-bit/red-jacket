@@ -8,7 +8,13 @@ import {
   Truck,
   WalletCards,
 } from 'lucide-react';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from 'react';
 import type { BaseRow } from '../../engines/core/types';
 import { loadBaseRows } from '../../engines/storage';
 import styles from './StockPage.module.css';
@@ -304,6 +310,13 @@ export function StockPage() {
   const coverage = weightedTurn
     ? ranked.reduce((s, i) => s + i.available, 0) / weightedTurn
     : 0;
+  const projectedCost = stockCost + transitValue;
+  const currentShare = projectedCost ? (stockCost / projectedCost) * 100 : 0;
+  const transitShare = projectedCost ? (transitValue / projectedCost) * 100 : 0;
+  const grossPotential = saleValue - stockCost;
+  const marginPotential = saleValue ? (grossPotential / saleValue) * 100 : 0;
+  const reservedUnits = ranked.reduce((s, i) => s + i.reserved, 0);
+  const availableSkus = ranked.filter((i) => i.available > 0).length;
   const categories = [...new Set(ranked.map((i) => i.category))]
     .map((name) => {
       const list = ranked.filter((i) => i.category === name);
@@ -332,36 +345,130 @@ export function StockPage() {
         </div>
       )}
       <div className={styles.hero}>
-        <Metric
-          icon={<WalletCards />}
-          label="ESTOQUE A CUSTO"
-          value={compact(stockCost)}
-          detail={`Projetado ${compact(stockCost + transitValue)}`}
-        />
-        <Metric
-          icon={<Boxes />}
-          label="ESTOQUE À VENDA"
-          value={compact(saleValue)}
-          detail={`${ranked.filter((i) => i.price > 0).length} SKUs com preço`}
-        />
-        <Metric
-          icon={<Truck />}
-          label="CARTEIRA EM TRÂNSITO"
-          value={compact(transitValue)}
-          detail={`${ranked.filter((i) => i.inTransit > 0).length} SKUs a receber`}
-        />
-        <Metric
-          icon={<PackageCheck />}
-          label="COBERTURA MÉDIA"
-          value={`${coverage.toFixed(0)} dias`}
-          detail="estoque disponível ÷ giro"
-        />
-        <Metric
+        <article className={styles.primaryMetric}>
+          <header>
+            <WalletCards />
+            <span>POSIÇÃO DO ESTOQUE</span>
+          </header>
+          <div className={styles.metricBody}>
+            <div
+              className={styles.stockRing}
+              style={
+                { '--current': `${currentShare * 3.6}deg` } as CSSProperties
+              }
+            >
+              <div>
+                <strong>{currentShare.toFixed(0)}%</strong>
+                <span>DISPONÍVEL</span>
+              </div>
+            </div>
+            <div className={styles.metricValue}>
+              <small>CUSTO ATUAL</small>
+              <strong>{compact(stockCost)}</strong>
+              <span>Projetado em {compact(projectedCost)}</span>
+            </div>
+          </div>
+          <footer>
+            <div>
+              <span>EM TRÂNSITO</span>
+              <strong>{compact(transitValue)}</strong>
+            </div>
+            <b>{transitShare.toFixed(0)}% da posição</b>
+          </footer>
+        </article>
+        <article className={styles.primaryMetric}>
+          <header>
+            <Boxes />
+            <span>POTENCIAL DE VENDA</span>
+          </header>
+          <div className={styles.metricBody}>
+            <div
+              className={styles.stockRing}
+              style={
+                {
+                  '--current': `${Math.min(marginPotential, 100) * 3.6}deg`,
+                } as CSSProperties
+              }
+            >
+              <div>
+                <strong>{marginPotential.toFixed(1)}%</strong>
+                <span>MARGEM</span>
+              </div>
+            </div>
+            <div className={styles.metricValue}>
+              <small>ESTOQUE À VENDA</small>
+              <strong>{compact(saleValue)}</strong>
+              <span>{compact(grossPotential)} de margem bruta</span>
+            </div>
+          </div>
+          <footer>
+            <div>
+              <span>SKUS PRECIFICADOS</span>
+              <strong>{ranked.filter((i) => i.price > 0).length}</strong>
+            </div>
+            <b>Base comercial</b>
+          </footer>
+        </article>
+        <article className={styles.primaryMetric}>
+          <header>
+            <PackageCheck />
+            <span>COBERTURA MÉDIA</span>
+          </header>
+          <div className={styles.coverageBody}>
+            <div>
+              <small>POSIÇÃO ATUAL</small>
+              <strong>
+                {coverage.toFixed(0)} <em>dias</em>
+              </strong>
+              <span>Disponível em relação ao giro</span>
+            </div>
+            <div className={styles.coverageScale}>
+              <i style={{ left: `${Math.min(coverage / 60, 1) * 100}%` }} />
+              <span>0</span>
+              <span>30</span>
+              <span>60+</span>
+            </div>
+          </div>
+          <footer>
+            <div>
+              <span>FAIXA SAUDÁVEL</span>
+              <strong>25–35 dias</strong>
+            </div>
+            <b className={coverage < 25 || coverage > 35 ? styles.alert : ''}>
+              {coverage < 25
+                ? 'Atenção ao abastecimento'
+                : coverage > 35
+                  ? 'Capital elevado'
+                  : 'Estoque saudável'}
+            </b>
+          </footer>
+        </article>
+      </div>
+      <div className={styles.secondaryMetrics}>
+        <MiniMetric
           icon={<AlertTriangle />}
           label="RUPTURAS"
           value={String(ruptures)}
-          detail="SKUs com venda e sem saldo"
+          detail="com venda e sem saldo"
           critical
+        />
+        <MiniMetric
+          icon={<Boxes />}
+          label="SKUS DISPONÍVEIS"
+          value={String(availableSkus)}
+          detail={`${ranked.length} itens monitorados`}
+        />
+        <MiniMetric
+          icon={<PackageCheck />}
+          label="RESERVADO"
+          value={reservedUnits.toLocaleString('pt-BR')}
+          detail="unidades comprometidas"
+        />
+        <MiniMetric
+          icon={<Truck />}
+          label="A RECEBER"
+          value={compact(transitValue)}
+          detail={`${ranked.filter((i) => i.inTransit > 0).length} SKUs em trânsito`}
         />
       </div>
       <article className={styles.composition}>
@@ -372,22 +479,40 @@ export function StockPage() {
           </div>
           <strong>{compact(stockCost)}</strong>
         </header>
+        <div
+          className={styles.compositionBar}
+          aria-label="Participação por categoria"
+        >
+          {categories.map((item, index) => (
+            <i
+              key={item.name}
+              className={styles[`tone${index + 1}`]}
+              style={{
+                width: `${stockCost ? (item.value / stockCost) * 100 : 0}%`,
+              }}
+            />
+          ))}
+        </div>
         <div className={styles.categoryGrid}>
           {categories.map((item, index) => (
             <div key={item.name}>
-              <span>0{index + 1}</span>
-              <strong>{item.name}</strong>
-              <b>{compact(item.value)}</b>
-              <small>
-                {item.coverage.toFixed(0)} dias · {item.ruptures} rupturas
-              </small>
-              <i>
-                <em
-                  style={{
-                    width: `${stockCost ? (item.value / stockCost) * 100 : 0}%`,
-                  }}
-                />
-              </i>
+              <div
+                className={`${styles.categoryMarker} ${styles[`tone${index + 1}`]}`}
+              >
+                0{index + 1}
+              </div>
+              <span>{item.name}</span>
+              <strong>{compact(item.value)}</strong>
+              <b>
+                {stockCost
+                  ? ((item.value / stockCost) * 100).toFixed(1)
+                  : '0,0'}
+                %
+              </b>
+              <small>{item.coverage.toFixed(0)} dias de cobertura</small>
+              <em className={item.ruptures ? styles.risk : ''}>
+                {item.ruptures ? `${item.ruptures} rupturas` : 'Sem ruptura'}
+              </em>
             </div>
           ))}
         </div>
@@ -483,7 +608,7 @@ export function StockPage() {
     </section>
   );
 }
-function Metric({
+function MiniMetric({
   icon,
   label,
   value,
@@ -497,7 +622,9 @@ function Metric({
   critical?: boolean;
 }) {
   return (
-    <article className={`${styles.metric} ${critical ? styles.critical : ''}`}>
+    <article
+      className={`${styles.miniMetric} ${critical ? styles.critical : ''}`}
+    >
       <div>
         {icon}
         <span>{label}</span>

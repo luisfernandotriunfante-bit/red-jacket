@@ -18,48 +18,215 @@
 }
 .hero {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+.primaryMetric {
+  min-width: 0;
+  min-height: 15rem;
+  padding: 1.1rem 1.2rem 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  border: 1px solid var(--stroke);
+  border-radius: 1.35rem;
+  box-shadow: 0 18px 44px #0002;
+}
+.primaryMetric header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--red);
+}
+.primaryMetric header svg {
+  width: 1rem;
+}
+.primaryMetric header span {
+  font-size: 0.57rem;
+  font-weight: 750;
+  letter-spacing: 0.09em;
+}
+.metricBody {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(1rem, 2vw, 2rem);
+}
+.stockRing {
+  width: 7.2rem;
+  aspect-ratio: 1;
+  flex: 0 0 auto;
+  padding: 0.58rem;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--blue) 0 var(--current),
+    var(--red) var(--current) 360deg
+  );
+  box-shadow: 0 0 0 0.42rem color-mix(in srgb, var(--stroke) 55%, transparent);
+  transform: rotate(-25deg);
+}
+.stockRing > div {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  background: var(--card);
+  border-radius: 50%;
+  transform: rotate(25deg);
+}
+.stockRing strong {
+  font-size: 1.22rem;
+  letter-spacing: -0.05em;
+}
+.stockRing span,
+.metricValue small,
+.coverageBody small {
+  color: var(--muted);
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+.metricValue {
+  min-width: 0;
+  display: grid;
+  gap: 0.2rem;
+}
+.metricValue strong {
+  font-size: clamp(1.35rem, 2vw, 1.8rem);
+  letter-spacing: -0.06em;
+}
+.metricValue span,
+.coverageBody span {
+  color: var(--muted);
+  font-size: 0.58rem;
+}
+.primaryMetric footer {
+  min-height: 3.55rem;
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  border-top: 1px solid var(--stroke);
+}
+.primaryMetric footer div {
+  display: grid;
+  gap: 0.12rem;
+}
+.primaryMetric footer span {
+  color: var(--muted);
+  font-size: 0.48rem;
+  letter-spacing: 0.07em;
+}
+.primaryMetric footer strong {
+  font-size: 0.7rem;
+}
+.primaryMetric footer b {
+  padding: 0.38rem 0.65rem;
+  color: var(--blue);
+  font-size: 0.52rem;
+  font-weight: 700;
+  border: 1px solid color-mix(in srgb, var(--blue) 65%, transparent);
+  border-radius: 999px;
+}
+.primaryMetric footer b.alert {
+  color: var(--red);
+  border-color: var(--red);
+}
+.coverageBody {
+  flex: 1;
+  padding: 1.7rem 0 1rem;
+  display: grid;
+  align-content: center;
+  gap: 1.3rem;
+}
+.coverageBody > div:first-child {
+  display: grid;
+  gap: 0.15rem;
+}
+.coverageBody strong {
+  font-size: 2.35rem;
+  letter-spacing: -0.07em;
+}
+.coverageBody strong em {
+  font-size: 0.8rem;
+  font-style: normal;
+  letter-spacing: 0;
+}
+.coverageScale {
+  height: 0.3rem;
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  background: linear-gradient(
+    90deg,
+    var(--red),
+    var(--blue) 42%,
+    var(--blue) 58%,
+    var(--red)
+  );
+  border-radius: 999px;
+}
+.coverageScale i {
+  width: 0.68rem;
+  height: 0.68rem;
+  position: absolute;
+  top: 50%;
+  background: var(--panel);
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px #0005;
+  transform: translate(-50%, -50%);
+}
+.coverageScale span {
+  margin-top: 0.55rem;
+  font-size: 0.47rem;
+}
+.secondaryMetrics {
+  margin-top: 0.8rem;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.7rem;
 }
-.metric {
-  min-height: 8.4rem;
-  padding: 1rem;
+.miniMetric {
+  min-height: 6.6rem;
+  padding: 0.9rem 1rem;
   display: flex;
   flex-direction: column;
   justify-content: center;
   background: var(--card);
   border: 1px solid var(--stroke);
-  border-radius: 1.2rem;
-  box-shadow: 0 14px 38px #0002;
+  border-radius: 1.15rem;
 }
-.metric > div {
+.miniMetric > div {
   display: flex;
   align-items: center;
   gap: 0.4rem;
   color: var(--red);
 }
-.metric svg {
-  width: 0.9rem;
+.miniMetric svg {
+  width: 0.85rem;
 }
-.metric span {
-  font-size: 0.57rem;
+.miniMetric span {
+  font-size: 0.52rem;
   font-weight: 750;
   letter-spacing: 0.07em;
 }
-.metric > strong {
-  margin-top: 0.65rem;
-  font-size: 1.35rem;
+.miniMetric > strong {
+  margin-top: 0.45rem;
+  font-size: 1.2rem;
   letter-spacing: -0.04em;
 }
-.metric small {
-  margin-top: 0.25rem;
+.miniMetric small {
+  margin-top: 0.12rem;
   color: var(--muted);
-  font-size: 0.59rem;
+  font-size: 0.54rem;
 }
-.metric.critical {
-  box-shadow:
-    inset 0 0 0 1px #ff263833,
-    0 14px 38px #0002;
+.miniMetric.critical {
+  box-shadow: inset 0 0 0 1px #ff263833;
 }
 .composition,
 .panel {
@@ -100,56 +267,95 @@
   font-size: 0.88rem;
 }
 .categoryGrid {
-  padding: 0.85rem;
+  padding: 0 1rem 1rem;
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 0.6rem;
+  gap: 0;
 }
 .categoryGrid > div {
   min-width: 0;
-  padding: 0.8rem;
-  background: var(--card);
-  border: 1px solid var(--stroke);
-  border-radius: 1rem;
+  padding: 0.65rem 0.85rem;
+  border-right: 1px solid var(--stroke);
 }
-.categoryGrid span {
+.categoryGrid > div:last-child {
+  border-right: 0;
+}
+.categoryMarker {
+  width: 1.6rem;
+  height: 1.6rem;
+  margin-bottom: 0.55rem;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 0.48rem;
+  border-radius: 50%;
+}
+.categoryGrid > div > span {
   color: var(--muted);
-  font-size: 0.52rem;
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 .categoryGrid strong,
 .categoryGrid b,
-.categoryGrid small {
+.categoryGrid small,
+.categoryGrid em {
   display: block;
 }
 .categoryGrid strong {
-  margin-top: 0.3rem;
+  margin-top: 0.35rem;
   overflow: hidden;
-  font-size: 0.63rem;
+  font-size: 0.88rem;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .categoryGrid b {
-  margin-top: 0.75rem;
-  font-size: 0.95rem;
+  margin-top: 0.2rem;
+  color: var(--blue);
+  font-size: 0.62rem;
 }
 .categoryGrid small {
-  margin-top: 0.25rem;
+  margin-top: 0.5rem;
   color: var(--muted);
-  font-size: 0.55rem;
+  font-size: 0.5rem;
 }
-.categoryGrid i {
-  height: 0.22rem;
-  margin-top: 0.65rem;
-  display: block;
+.categoryGrid em {
+  margin-top: 0.18rem;
+  color: var(--blue);
+  font-size: 0.5rem;
+  font-style: normal;
+}
+.categoryGrid em.risk {
+  color: var(--red);
+}
+.compositionBar {
+  height: 0.55rem;
+  margin: 1rem 1rem 0.4rem;
+  display: flex;
+  gap: 0.16rem;
   overflow: hidden;
   background: var(--stroke);
   border-radius: 999px;
 }
-.categoryGrid em {
+.compositionBar i {
+  min-width: 0.25rem;
   height: 100%;
-  display: block;
-  background: var(--blue);
-  border-radius: inherit;
+}
+.tone1 {
+  background: #3d82f7;
+}
+.tone2 {
+  background: #3270dc;
+}
+.tone3 {
+  background: #285fbe;
+}
+.tone4 {
+  background: #1f4fa1;
+}
+.tone5 {
+  background: #173f84;
 }
 .toolbar {
   margin-top: 0.85rem;
@@ -329,7 +535,13 @@
 }
 @media (max-width: 1100px) {
   .hero {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: 1fr 1fr;
+  }
+  .primaryMetric:last-child {
+    grid-column: span 2;
+  }
+  .secondaryMetrics {
+    grid-template-columns: 1fr 1fr;
   }
   .categoryGrid {
     grid-template-columns: repeat(3, 1fr);
@@ -353,10 +565,16 @@
     padding-inline: 0.75rem;
   }
   .hero {
+    grid-template-columns: 1fr;
+  }
+  .primaryMetric:last-child {
+    grid-column: auto;
+  }
+  .secondaryMetrics {
     grid-template-columns: 1fr 1fr;
   }
-  .metric:last-child {
-    grid-column: span 2;
+  .metricBody {
+    justify-content: flex-start;
   }
   .categoryGrid {
     grid-template-columns: 1fr 1fr;
