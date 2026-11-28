@@ -34,6 +34,8 @@ type StockItem = {
   reserved: number;
   cost: number;
   price: number;
+  priceNoSt: number;
+  priceWithSt: number;
   sales: number;
   turnover: number;
   inTransit: number;
@@ -197,6 +199,8 @@ const demo: StockItem[] = [
   reserved: Number(item[6]),
   cost: Number(item[7]),
   price: Number(item[8]),
+  priceNoSt: Number(item[8]) * 0.92,
+  priceWithSt: Number(item[8]),
   sales: Number(item[9]),
   turnover: Number(item[10]),
   inTransit: Number(item[11]),
@@ -244,6 +248,11 @@ function buildStock(products: BaseRow[], purchases: BaseRow[]): StockItem[] {
       reserved: n(row, 'est_reservado'),
       cost: n(row, 'custo_fin'),
       price: n(row, 'pm_preco_com_st'),
+      priceNoSt:
+        n(row, 'pm_preco_sem_st') ||
+        n(row, 'preco_sem_st') ||
+        n(row, 'pm_preco_com_st'),
+      priceWithSt: n(row, 'pm_preco_com_st') || n(row, 'preco_com_st'),
       sales: n(row, 'venda_mes'),
       turnover,
       inTransit: incoming.qty,
@@ -298,6 +307,15 @@ export function StockPage() {
       return [];
     }
   });
+  const [focusLabels, setFocusLabels] = useState<Record<string, string>>(() => {
+    try {
+      return JSON.parse(
+        localStorage.getItem('red-jacket:focus-labels') ?? '{}',
+      ) as Record<string, string>;
+    } catch {
+      return {};
+    }
+  });
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState('TODOS');
   const [curve, setCurve] = useState('TODAS');
@@ -320,6 +338,12 @@ export function StockPage() {
   useEffect(() => {
     localStorage.setItem('red-jacket:focus-items', JSON.stringify(focusItems));
   }, [focusItems]);
+  useEffect(() => {
+    localStorage.setItem(
+      'red-jacket:focus-labels',
+      JSON.stringify(focusLabels),
+    );
+  }, [focusLabels]);
   const usingDemo = items.length === 0;
   const data = usingDemo ? demo : items;
   const ranked = useMemo(() => {
@@ -370,7 +394,7 @@ export function StockPage() {
     );
   });
   const stockCost = ranked.reduce((s, i) => s + i.available * i.cost, 0);
-  const saleValue = ranked.reduce((s, i) => s + i.available * i.price, 0);
+  const saleValue = ranked.reduce((s, i) => s + i.available * i.priceWithSt, 0);
   const transitValue = ranked.reduce((s, i) => s + i.transitValue, 0);
   const ruptures = ranked.filter((i) => i.available <= 0 && i.sales > 0).length;
   const weightedTurn = ranked.reduce((s, i) => s + i.turnover, 0);
@@ -475,7 +499,9 @@ export function StockPage() {
               <footer>
                 <div>
                   <span>SKUS PRECIFICADOS</span>
-                  <strong>{ranked.filter((i) => i.price > 0).length}</strong>
+                  <strong>
+                    {ranked.filter((i) => i.priceWithSt > 0).length}
+                  </strong>
                 </div>
                 <b>Base comercial</b>
               </footer>
@@ -654,7 +680,7 @@ export function StockPage() {
                     (s, i) =>
                       s +
                       i.available *
-                        (valueMode === 'CUSTO' ? i.costWithSt : i.price),
+                        (valueMode === 'CUSTO' ? i.costWithSt : i.priceWithSt),
                     0,
                   ),
                 )}
@@ -684,7 +710,8 @@ export function StockPage() {
                     <th>RESERVADO</th>
                     <th>ENTRADA</th>
                     <th>COBERTURA</th>
-                    <th>PREÇO</th>
+                    <th>PREÇO S/ ST</th>
+                    <th>PREÇO C/ ST</th>
                     <th>VALOR EM ESTOQUE</th>
                     <th />
                   </tr>
@@ -718,6 +745,10 @@ export function StockPage() {
       {view === 'FOCO' && (
         <FocusWorkspace
           items={ranked.filter((item) => focusItems.includes(item.id))}
+          labels={focusLabels}
+          onLabelChange={(id, label) =>
+            setFocusLabels((current) => ({ ...current, [id]: label }))
+          }
           onRemove={(id) =>
             setFocusItems((current) => current.filter((item) => item !== id))
           }
@@ -788,6 +819,8 @@ function ProductRows({
   valueMode,
   focused,
   onFocus,
+  focusLabel,
+  onFocusLabelChange,
 }: {
   item: StockItem;
   open: boolean;
@@ -795,6 +828,8 @@ function ProductRows({
   valueMode: 'CUSTO' | 'VENDA';
   focused: boolean;
   onFocus: () => void;
+  focusLabel?: string;
+  onFocusLabelChange?: (label: string) => void;
 }) {
   const risk =
     item.available <= 0
@@ -813,6 +848,20 @@ function ProductRows({
             {item.id} · {item.ean || 'EAN NÃO INFORMADO'} ·{' '}
             {item.subbrand || item.category}
           </small>
+          {onFocusLabelChange && (
+            <select
+              className={styles.inlineClassification}
+              value={focusLabel ?? 'A CLASSIFICAR'}
+              onClick={(event) => event.stopPropagation()}
+              onChange={(event) => onFocusLabelChange(event.target.value)}
+            >
+              <option>A CLASSIFICAR</option>
+              <option>LANÇAMENTO</option>
+              <option>PACK PROMOCIONAL</option>
+              <option>PRIORIDADE DE COMPRA</option>
+              <option>RISCO DE RUPTURA</option>
+            </select>
+          )}
         </td>
         <td>
           <b className={styles.curve}>{item.curve}</b>
@@ -840,14 +889,18 @@ function ProductRows({
           </span>
         </td>
         <td>
-          {money.format(valueMode === 'CUSTO' ? item.costWithSt : item.price)}
-          <small>{valueMode === 'CUSTO' ? 'COM ST' : 'VENDA'}</small>
+          {money.format(item.priceNoSt)}
+          <small>SEM ST</small>
+        </td>
+        <td>
+          {money.format(item.priceWithSt)}
+          <small>COM ST</small>
         </td>
         <td>
           <strong>
             {money.format(
               item.available *
-                (valueMode === 'CUSTO' ? item.costWithSt : item.price),
+                (valueMode === 'CUSTO' ? item.costWithSt : item.priceWithSt),
             )}
           </strong>
         </td>
@@ -871,7 +924,7 @@ function ProductRows({
       </tr>
       {open && (
         <tr className={styles.detailRow}>
-          <td colSpan={9}>
+          <td colSpan={10}>
             <div className={styles.productSheet}>
               <section>
                 <h3>POSIÇÃO OPERACIONAL</h3>
@@ -918,16 +971,20 @@ function ProductRows({
                     value={money.format(item.cost)}
                   />
                   <Detail
-                    label="PREÇO DE VENDA"
-                    value={money.format(item.price)}
+                    label="PREÇO SEM ST"
+                    value={money.format(item.priceNoSt)}
+                  />
+                  <Detail
+                    label="PREÇO COM ST"
+                    value={money.format(item.priceWithSt)}
                   />
                   <Detail
                     label="MARGEM DO ITEM"
-                    value={`${item.price ? (((item.price - item.costWithSt) / item.price) * 100).toFixed(1) : '0,0'}%`}
+                    value={`${item.priceWithSt ? (((item.priceWithSt - item.costWithSt) / item.priceWithSt) * 100).toFixed(1) : '0,0'}%`}
                   />
                   <Detail
                     label="ESTOQUE À VENDA"
-                    value={money.format(item.available * item.price)}
+                    value={money.format(item.available * item.priceWithSt)}
                   />
                 </div>
               </section>
@@ -1091,14 +1148,32 @@ function buildCompositionCells(
 
 function FocusWorkspace({
   items,
+  labels,
+  onLabelChange,
   onRemove,
   onGoProducts,
 }: {
   items: StockItem[];
+  labels: Record<string, string>;
+  onLabelChange: (id: string, label: string) => void;
   onRemove: (id: string) => void;
   onGoProducts: () => void;
 }) {
-  const [labels, setLabels] = useState<Record<string, string>>({});
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const groups = [
+    'A CLASSIFICAR',
+    'LANÇAMENTO',
+    'PACK PROMOCIONAL',
+    'PRIORIDADE DE COMPRA',
+    'RISCO DE RUPTURA',
+  ]
+    .map((label) => ({
+      label,
+      items: items.filter(
+        (item) => (labels[item.id] ?? 'A CLASSIFICAR') === label,
+      ),
+    }))
+    .filter((group) => group.items.length);
   return (
     <article className={styles.workspace}>
       <header>
@@ -1123,40 +1198,57 @@ function FocusWorkspace({
           <button onClick={onGoProducts}>ABRIR PRODUTOS</button>
         </div>
       ) : (
-        <div className={styles.focusGrid}>
-          {items.map((item) => (
-            <div key={item.id}>
-              <div>
-                <span>{item.category}</span>
-                <button onClick={() => onRemove(item.id)}>REMOVER</button>
+        <div className={styles.focusGroups}>
+          {groups.map((group) => (
+            <section className={styles.focusGroup} key={group.label}>
+              <header>
+                <div>
+                  <span>AGRUPAMENTO</span>
+                  <h3>{group.label}</h3>
+                </div>
+                <b>
+                  {group.items.length}{' '}
+                  {group.items.length === 1 ? 'ITEM' : 'ITENS'}
+                </b>
+              </header>
+              <div className={styles.tableWrap}>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>PRODUTO</th>
+                      <th>CURVA</th>
+                      <th>DISPONÍVEL</th>
+                      <th>RESERVADO</th>
+                      <th>ENTRADA</th>
+                      <th>COBERTURA</th>
+                      <th>PREÇO S/ ST</th>
+                      <th>PREÇO C/ ST</th>
+                      <th>VALOR EM ESTOQUE</th>
+                      <th />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {group.items.map((item) => (
+                      <ProductRows
+                        key={item.id}
+                        item={item}
+                        open={expanded === item.id}
+                        valueMode="VENDA"
+                        focused
+                        onFocus={() => onRemove(item.id)}
+                        focusLabel={labels[item.id] ?? 'A CLASSIFICAR'}
+                        onFocusLabelChange={(label) =>
+                          onLabelChange(item.id, label)
+                        }
+                        onToggle={() =>
+                          setExpanded(expanded === item.id ? null : item.id)
+                        }
+                      />
+                    ))}
+                  </tbody>
+                </table>
               </div>
-              <strong>{item.description}</strong>
-              <small>
-                {item.id} · {item.ean}
-              </small>
-              <label>
-                CLASSIFICAÇÃO
-                <select
-                  value={labels[item.id] ?? 'ITEM DE FOCO'}
-                  onChange={(event) =>
-                    setLabels((current) => ({
-                      ...current,
-                      [item.id]: event.target.value,
-                    }))
-                  }
-                >
-                  <option>ITEM DE FOCO</option>
-                  <option>LANÇAMENTO</option>
-                  <option>PACK PROMOCIONAL</option>
-                  <option>PRIORIDADE DE COMPRA</option>
-                  <option>RISCO DE RUPTURA</option>
-                </select>
-              </label>
-              <footer>
-                <span>{item.available.toLocaleString('pt-BR')} un.</span>
-                <b>{money.format(item.available * item.price)}</b>
-              </footer>
-            </div>
+            </section>
           ))}
         </div>
       )}

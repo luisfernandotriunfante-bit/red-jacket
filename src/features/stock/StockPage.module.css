@@ -395,16 +395,16 @@
   background: #3d82f7;
 }
 .waffleTone2 {
-  background: #2e68cc;
+  background: #00a7d8;
 }
 .waffleTone3 {
-  background: #214c9e;
+  background: #2453c8;
 }
 .waffleTone4 {
-  background: #17356f;
+  background: #8caad4;
 }
 .waffleTone5 {
-  background: #10254e;
+  background: #d5e3ff;
 }
 .compositionLegend {
   display: grid;
@@ -759,15 +759,25 @@
   color: var(--red);
   background: #ff263814;
 }
-.tableWrap td:last-child svg {
+.tableWrap tbody > tr:not(.detailRow) td:last-child svg {
   width: 0.8rem;
   color: var(--muted);
 }
-.tableWrap td:last-child {
+.tableWrap tbody > tr:not(.detailRow) td:last-child {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 0.25rem;
+}
+.inlineClassification {
+  margin-top: 0.35rem;
+  padding: 0.3rem 0.5rem;
+  color: var(--red);
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--red) 55%, transparent);
+  border-radius: 999px;
+  font-size: 0.46rem;
+  font-weight: 700;
 }
 .focusButton {
   width: 1.65rem;
@@ -874,6 +884,46 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.7rem;
+}
+.focusGroups {
+  padding: 1rem;
+  display: grid;
+  gap: 1rem;
+}
+.focusGroup {
+  overflow: hidden;
+  border: 1px solid var(--stroke);
+  border-radius: 1rem;
+}
+.focusGroup > header {
+  min-height: 3.8rem;
+  padding: 0.7rem 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--card);
+  border-bottom: 1px solid var(--stroke);
+}
+.focusGroup > header div {
+  display: grid;
+  gap: 0.12rem;
+}
+.focusGroup > header span {
+  color: var(--muted);
+  font-size: 0.46rem;
+  letter-spacing: 0.08em;
+}
+.focusGroup > header h3 {
+  color: var(--red);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+}
+.focusGroup > header b {
+  padding: 0.35rem 0.55rem;
+  color: var(--blue);
+  font-size: 0.5rem;
+  border: 1px solid var(--blue);
+  border-radius: 999px;
 }
 .focusGrid > div {
   padding: 0.9rem;
