@@ -7,7 +7,10 @@ import { PasswordSetupPage } from '../features/auth/PasswordSetupPage';
 import { useAuth } from '../features/auth/useAuth';
 import { SettingsPage } from '../features/settings/SettingsPage';
 import { ProfilePage } from '../features/profile/ProfilePage';
+import { StockPage } from '../features/stock/StockPage';
 import { SellOutSummaryPage } from '../features/sellout/SellOutSummaryPage';
+import { SellOutManagementPage } from '../features/sellout/SellOutManagementPage';
+import { SellOutClientsPage } from '../features/sellout/SellOutClientsPage';
 import { navigation } from './navigation';
 
 export function App() {
@@ -26,8 +29,16 @@ export function App() {
             element={<Navigate to="/sell-out/resumo" replace />}
           />
           <Route path="/sell-out/resumo" element={<SellOutSummaryPage />} />
-          <Route path="/sell-out/gerencial" element={<BlankWorkspace />} />
-          <Route path="/sell-out/clientes" element={<BlankWorkspace />} />
+          <Route
+            path="/sell-out/gerencial"
+            element={<SellOutManagementPage />}
+          />
+          <Route path="/sell-out/clientes" element={<SellOutClientsPage />} />
+          <Route
+            path="/estoque"
+            element={<Navigate to="/estoque/resumo" replace />}
+          />
+          <Route path="/estoque/:section" element={<StockPage />} />
           <Route path="/perfil" element={<ProfilePage />} />
           <Route
             path="/configuracoes"
@@ -37,7 +48,9 @@ export function App() {
           {navigation
             .filter(
               ({ rootPath }) =>
-                rootPath !== '/sell-out' && rootPath !== '/configuracoes',
+                rootPath !== '/sell-out' &&
+                rootPath !== '/estoque' &&
+                rootPath !== '/configuracoes',
             )
             .map(({ path }) => (
               <Route key={path} path={path} element={<BlankWorkspace />} />

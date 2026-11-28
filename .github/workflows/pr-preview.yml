@@ -1,0 +1,95 @@
+name: Prévia da PR visual
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    if: github.event.pull_request.number == 48 && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit
+      - run: npm run check
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pr48-dist
+          path: dist/
+          retention-days: 1
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: pr48-dist
+          path: dist
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/1005318744020/locations/global/workloadIdentityPools/github-red-jacket-preview/providers/github-actions
+          service_account: github-preview-deployer@red-jacket-3a488.iam.gserviceaccount.com
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/firebase.hosting
+      - id: deploy
+        name: Publicar canal isolado
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+          SITE_ID: red-jacket-3a488
+          CHANNEL_ID: pr48-preview
+          TTL: 2592000s
+        run: |
+          set -euo pipefail
+          BASE="https://firebasehosting.googleapis.com/v1beta1"
+          AUTH="Authorization: Bearer ${ACCESS_TOKEN}"
+          VERSION=$(curl -sf -H "$AUTH" -H "Content-Type: application/json" -X POST -d '{}' "$BASE/sites/$SITE_ID/versions")
+          VERSION_NAME=$(echo "$VERSION" | jq -r '.name')
+          WORK=$(mktemp -d)
+          FILES="{}"
+          cd dist
+          while IFS= read -r -d '' file; do
+            path="/${file#./}"
+            gz="$WORK/file.gz"
+            gzip -c "$file" > "$gz"
+            hash=$(sha256sum "$gz" | cut -d' ' -f1)
+            mv "$gz" "$WORK/$hash.gz"
+            FILES=$(echo "$FILES" | jq --arg p "$path" --arg h "$hash" '. + {($p): $h}')
+          done < <(find . -type f -print0)
+          cd ..
+          POP=$(jq -n --argjson files "$FILES" '{files: $files}' | curl -sf -H "$AUTH" -H "Content-Type: application/json" -X POST -d @- "$BASE/$VERSION_NAME:populateFiles")
+          UPLOAD_URL=$(echo "$POP" | jq -r '.uploadUrl')
+          for hash in $(echo "$POP" | jq -r '.uploadRequiredHashes[]?'); do
+            curl -sf -H "$AUTH" -H "Content-Type: application/octet-stream" --data-binary "@$WORK/$hash.gz" "$UPLOAD_URL/$hash" > /dev/null
+          done
+          curl -sf -H "$AUTH" -H "Content-Type: application/json" -X PATCH -d '{"status":"FINALIZED"}' "$BASE/$VERSION_NAME?update_mask=status" > /dev/null
+          CODE=$(curl -s -o /tmp/channel.json -w '%{http_code}' -H "$AUTH" -H "Content-Type: application/json" -X POST -d "{\"ttl\":\"$TTL\"}" "$BASE/sites/$SITE_ID/channels?channelId=$CHANNEL_ID")
+          if [ "$CODE" = "409" ] || [ "$CODE" = "400" ]; then
+            curl -sf -H "$AUTH" "$BASE/sites/$SITE_ID/channels/$CHANNEL_ID" > /tmp/channel.json
+          fi
+          URL=$(jq -r '.url' /tmp/channel.json)
+          curl -sf -H "$AUTH" -X POST "$BASE/sites/$SITE_ID/channels/$CHANNEL_ID/releases?versionName=$VERSION_NAME" > /dev/null
+          echo "preview_url=$URL" >> "$GITHUB_OUTPUT"
+      - name: Informar link na PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          URL: ${{ steps.deploy.outputs.preview_url }}
+        run: 'gh pr comment 48 --body "Prévia atualizada: $URL"'

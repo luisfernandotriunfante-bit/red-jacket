@@ -19,11 +19,16 @@ export const navigation = [
     ],
   },
   {
-    path: '/estoque',
+    path: '/estoque/resumo',
     rootPath: '/estoque',
     label: 'Estoque',
     icon: Boxes,
-    tabs: [],
+    tabs: [
+      { path: '/estoque/resumo', label: 'Resumo' },
+      { path: '/estoque/produtos', label: 'Produtos' },
+      { path: '/estoque/itens-de-foco', label: 'Itens de foco' },
+      { path: '/estoque/notas', label: 'Notas' },
+    ],
   },
   {
     path: '/clientes',
