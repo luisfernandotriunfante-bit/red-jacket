@@ -34,7 +34,11 @@ export function App() {
             element={<SellOutManagementPage />}
           />
           <Route path="/sell-out/clientes" element={<SellOutClientsPage />} />
-          <Route path="/estoque" element={<StockPage />} />
+          <Route
+            path="/estoque"
+            element={<Navigate to="/estoque/resumo" replace />}
+          />
+          <Route path="/estoque/:section" element={<StockPage />} />
           <Route path="/perfil" element={<ProfilePage />} />
           <Route
             path="/configuracoes"
@@ -44,9 +48,10 @@ export function App() {
           {navigation
             .filter(
               ({ rootPath }) =>
-                rootPath !== '/sell-out' && rootPath !== '/configuracoes',
+                rootPath !== '/sell-out' &&
+                rootPath !== '/estoque' &&
+                rootPath !== '/configuracoes',
             )
-            .filter(({ path }) => path !== '/estoque')
             .map(({ path }) => (
               <Route key={path} path={path} element={<BlankWorkspace />} />
             ))}

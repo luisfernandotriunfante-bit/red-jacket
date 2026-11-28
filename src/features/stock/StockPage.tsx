@@ -5,8 +5,6 @@ import {
   ChevronUp,
   CircleCheck,
   FileText,
-  LayoutDashboard,
-  ListFilter,
   PackageCheck,
   ReceiptText,
   Search,
@@ -14,6 +12,7 @@ import {
   Truck,
   WalletCards,
 } from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   useEffect,
   useMemo,
@@ -277,11 +276,18 @@ function buildStock(products: BaseRow[], purchases: BaseRow[]): StockItem[] {
 }
 
 export function StockPage() {
+  const { section = 'resumo' } = useParams();
+  const navigate = useNavigate();
+  const view =
+    section === 'produtos'
+      ? 'PRODUTOS'
+      : section === 'itens-de-foco'
+        ? 'FOCO'
+        : section === 'notas'
+          ? 'NOTAS'
+          : 'RESUMO';
   const [items, setItems] = useState<StockItem[]>([]);
   const [purchases, setPurchases] = useState<BaseRow[]>([]);
-  const [view, setView] = useState<'RESUMO' | 'PRODUTOS' | 'FOCO' | 'NOTAS'>(
-    'RESUMO',
-  );
   const [valueMode, setValueMode] = useState<'CUSTO' | 'VENDA'>('VENDA');
   const [focusItems, setFocusItems] = useState<string[]>(() => {
     try {
@@ -406,36 +412,6 @@ export function StockPage() {
           PRÉVIA VISUAL · OS VALORES SERÃO SUBSTITUÍDOS PELOS DADOS PROCESSADOS
         </div>
       )}
-      <nav className={styles.stockTabs} aria-label="Áreas de estoque">
-        <button
-          className={view === 'RESUMO' ? styles.activeTab : ''}
-          onClick={() => setView('RESUMO')}
-        >
-          <LayoutDashboard />
-          RESUMO
-        </button>
-        <button
-          className={view === 'PRODUTOS' ? styles.activeTab : ''}
-          onClick={() => setView('PRODUTOS')}
-        >
-          <ListFilter />
-          PRODUTOS
-        </button>
-        <button
-          className={view === 'FOCO' ? styles.activeTab : ''}
-          onClick={() => setView('FOCO')}
-        >
-          <Star />
-          ITENS DE FOCO
-        </button>
-        <button
-          className={view === 'NOTAS' ? styles.activeTab : ''}
-          onClick={() => setView('NOTAS')}
-        >
-          <ReceiptText />
-          NOTAS
-        </button>
-      </nav>
       {view === 'RESUMO' && (
         <>
           <div className={styles.hero}>
@@ -747,7 +723,7 @@ export function StockPage() {
           onRemove={(id) =>
             setFocusItems((current) => current.filter((item) => item !== id))
           }
-          onGoProducts={() => setView('PRODUTOS')}
+          onGoProducts={() => void navigate('/estoque/produtos')}
         />
       )}
       {view === 'NOTAS' && <NotesWorkspace rows={purchases} items={ranked} />}
