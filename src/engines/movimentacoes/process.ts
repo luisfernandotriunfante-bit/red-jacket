@@ -10,6 +10,15 @@ import {
   type Matrix,
 } from '../core/types';
 import { SPEC } from './spec';
+import {
+  COLUNAS_VENDEDOR,
+  auditoriaVendedores,
+  camposVendedor,
+  indexarVendedores,
+  resolverVendedor,
+  type RegistroVendedor,
+  type Vendedor,
+} from '../core/vendedores';
 
 /** `texto` pode ser uma função: o arquivo é decodificado só na hora e liberado em seguida (economiza memória). */
 export type Fonte379 = { nome: string; texto: string | (() => string) };
@@ -22,6 +31,8 @@ export type MovimentacoesInput = {
   novos: Fonte8022[];
   /** Classificação das operações do 379 ("operação" ou "operação|cfop" → classe). Padrão: OPERACOES_ANTIGAS. */
   operacoes?: Record<string, string>;
+  /** Vendedores cadastrados em Equipes: liga cada linha ao vendedor e à equipe atual. */
+  vendedores?: Vendedor[];
 };
 
 const MAX_RECORDS = 200;
@@ -1239,6 +1250,9 @@ export function processMovimentacoes(input: MovimentacoesInput): EngineResult {
         ] as const)
       : ([null, null, null] as const);
   let seq = 0;
+  const vendIndex = indexarVendedores(input.vendedores ?? []);
+  const registrosVend: RegistroVendedor[] = [];
+  const cacheVend = new Map<string, ReturnType<typeof resolverVendedor>>();
   for (const m of todos) {
     if (!NO_MOTOR.has(m.classe)) continue;
     seq += 1;
@@ -1246,6 +1260,19 @@ export function processMovimentacoes(input: MovimentacoesInput): EngineResult {
     const signed = (v: Num): Num => (v === null ? null : Math.abs(v) * sgn);
     const [ay, am, ad] = dataParts(m.data);
     const [ey, em, ed] = dataParts(m.emissao);
+    const chaveVend = `${m.vendNovo ?? ''}|${m.vendAntigo ?? ''}`;
+    let resolvido = cacheVend.get(chaveVend);
+    if (!resolvido) {
+      resolvido = resolverVendedor(vendIndex, m.vendNovo, m.vendAntigo);
+      cacheVend.set(chaveVend, resolvido);
+    }
+    registrosVend.push({
+      codigo: m.vendNovo ?? m.vendAntigo ?? null,
+      origem: resolvido.origem,
+      vendedor: resolvido.vendedor,
+      data: m.data,
+      valor: Math.abs(m.valorOficial ?? 0),
+    });
     rows.push({
       id_movimento: `M${String(seq).padStart(7, '0')}`,
       sistema_origem: m.sistema,
@@ -1286,10 +1313,17 @@ export function processMovimentacoes(input: MovimentacoesInput): EngineResult {
       operacao_antiga: m.opAntiga,
       cfop: m.cfop,
       tipo_novo: m.tipoNovo,
+      ...camposVendedor(resolvido),
     });
   }
+  audit.push(...auditoriaVendedores(registrosVend, vendIndex));
 
   const ordem = { ERRO: 0, AVISO: 1, INFO: 2 } as const;
   audit.sort((a, b) => ordem[a.severity] - ordem[b.severity]);
-  return { engine: 'movimentacoes', columns: SPEC, rows, audit };
+  return {
+    engine: 'movimentacoes',
+    columns: [...SPEC, ...COLUNAS_VENDEDOR],
+    rows,
+    audit,
+  };
 }

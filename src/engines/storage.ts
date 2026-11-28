@@ -1,4 +1,5 @@
 import { supabase } from '../features/auth/supabase';
+import type { Vendedor } from './core/vendedores';
 import type { AuditItem, BaseRow, EngineResult } from './core/types';
 
 export type SourceInfo = { slot: string; fileName: string };
@@ -427,6 +428,53 @@ export async function loadOperacoesMovimentacoes(): Promise<
     }
   }
   return map;
+}
+
+/** Vendedores cadastrados em Equipes (com equipe atual e códigos antigos extras). */
+export async function loadVendedores(): Promise<Vendedor[]> {
+  const client = requireClient();
+  const [teams, sellers, extras] = await Promise.all([
+    client
+      .from('commercial_teams')
+      .select('id, supervisor_code, supervisor_name'),
+    client
+      .from('commercial_sellers')
+      .select('id, team_id, name, old_rca_code, new_seller_code, active'),
+    client.from('commercial_seller_old_codes').select('code, seller_id'),
+  ]);
+  for (const r of [teams, sellers, extras])
+    if (r.error) throw new Error(r.error.message);
+  const rows = (x: unknown) =>
+    Array.isArray(x) ? (x as Record<string, unknown>[]) : [];
+  const equipe = new Map(
+    rows(teams.data).map((t) => [
+      String(t.id),
+      { cod: String(t.supervisor_code), nome: String(t.supervisor_name) },
+    ]),
+  );
+  const extrasPor = new Map<string, string[]>();
+  for (const e of rows(extras.data)) {
+    const k = String(e.seller_id);
+    extrasPor.set(k, [...(extrasPor.get(k) ?? []), String(e.code)]);
+  }
+  return rows(sellers.data).map((s) => {
+    const t = equipe.get(String(s.team_id));
+    const antigos = [
+      ...(typeof s.old_rca_code === 'string' && s.old_rca_code
+        ? [s.old_rca_code]
+        : []),
+      ...(extrasPor.get(String(s.id)) ?? []),
+    ];
+    return {
+      id: String(s.id),
+      nome: String(s.name),
+      equipeCod: t?.cod ?? '',
+      equipeNome: t?.nome ?? '',
+      ativo: s.active !== false,
+      codNovo: String(s.new_seller_code),
+      codsAntigos: antigos,
+    };
+  });
 }
 
 export type OperacaoMovimentacao = {
