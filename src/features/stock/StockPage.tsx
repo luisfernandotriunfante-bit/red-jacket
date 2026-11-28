@@ -400,6 +400,7 @@ export function StockPage() {
     })
     .sort((a, b) => b.value - a.value)
     .slice(0, 5);
+  const compositionCells = buildCompositionCells(categories, stockCost);
   const hasFilters =
     status !== 'TODOS' ||
     curve !== 'TODAS' ||
@@ -551,33 +552,41 @@ export function StockPage() {
               </div>
               <strong>{compact(stockCost)}</strong>
             </header>
-            <div className={styles.categoryGrid}>
-              {categories.map((item, index) => {
-                const share = stockCost ? (item.value / stockCost) * 100 : 0;
-                return (
-                  <div
-                    key={item.name}
-                    className={styles[`categoryTone${index + 1}`]}
-                    style={{
-                      flexGrow: Math.max(share, 8),
-                      flexBasis: `${Math.max(share, 18)}%`,
-                    }}
-                  >
-                    <div className={styles.categoryMarker}>0{index + 1}</div>
-                    <span>{item.name}</span>
-                    <b>{share.toFixed(1)}%</b>
-                    <strong>{compact(item.value)}</strong>
-                    <footer>
-                      <small>{item.coverage.toFixed(0)} dias</small>
+            <div className={styles.compositionVisual}>
+              <div
+                className={styles.waffle}
+                aria-label="Cada bloco representa um por cento do estoque"
+              >
+                {compositionCells.map((categoryIndex, cellIndex) => (
+                  <i
+                    key={cellIndex}
+                    className={styles[`waffleTone${categoryIndex + 1}`]}
+                  />
+                ))}
+              </div>
+              <div className={styles.compositionLegend}>
+                {categories.map((item, index) => {
+                  const share = stockCost ? (item.value / stockCost) * 100 : 0;
+                  return (
+                    <div key={item.name}>
+                      <i className={styles[`waffleTone${index + 1}`]} />
+                      <div>
+                        <span>{item.name}</span>
+                        <strong>{share.toFixed(1)}%</strong>
+                        <small>
+                          {compact(item.value)} · {item.coverage.toFixed(0)}{' '}
+                          dias
+                        </small>
+                      </div>
                       <em className={item.ruptures ? styles.risk : ''}>
                         {item.ruptures
                           ? `${item.ruptures} rupturas`
                           : 'Sem ruptura'}
                       </em>
-                    </footer>
-                  </div>
-                );
-              })}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </article>
           <StockBalance categories={categories} total={stockCost} />
@@ -1031,39 +1040,24 @@ function StockBalance({
                       : 'ALINHADO'}
                 </span>
               </div>
-              <div
-                className={styles.balanceVisual}
-                style={
-                  {
-                    '--actual': `${Math.min(actual, 100) * 3.6}deg`,
-                    '--plan': `${Math.min(plan, 100) * 3.6}deg`,
-                  } as CSSProperties
-                }
-              >
+              <div className={styles.balanceVisual}>
                 <div>
-                  <div>
-                    <strong>
-                      {gap > 0 ? '+' : ''}
-                      {gap.toFixed(1)}
-                    </strong>
-                    <span>PP</span>
-                  </div>
+                  <b style={{ height: `${Math.max(actual, 2)}%` }} />
+                  <strong>{actual.toFixed(1)}%</strong>
+                  <span>ESTOQUE</span>
+                </div>
+                <div>
+                  <b style={{ height: `${Math.max(plan, 2)}%` }} />
+                  <strong>{plan.toFixed(1)}%</strong>
+                  <span>PLANEJADO</span>
                 </div>
               </div>
               <div className={styles.balanceMeta}>
-                <span>
-                  ESTOQUE <b>{actual.toFixed(1)}%</b>
-                </span>
-                <span>
-                  PLANEJADO <b>{plan.toFixed(1)}%</b>
-                </span>
-                <span>
-                  DESVIO{' '}
-                  <b>
-                    {gap > 0 ? '+' : ''}
-                    {gap.toFixed(1)} pp
-                  </b>
-                </span>
+                <span>DESVIO</span>
+                <b>
+                  {gap > 0 ? '+' : ''}
+                  {gap.toFixed(1)} pp
+                </b>
               </div>
             </div>
           );
@@ -1071,6 +1065,28 @@ function StockBalance({
       </div>
     </article>
   );
+}
+
+function buildCompositionCells(
+  categories: Array<{ value: number }>,
+  total: number,
+) {
+  if (!categories.length || !total) return Array.from({ length: 100 }, () => 0);
+  const exact = categories.map((item) => (item.value / total) * 100);
+  const counts = exact.map(Math.floor);
+  let remaining = 100 - counts.reduce((sum, value) => sum + value, 0);
+  exact
+    .map((value, index) => ({ index, fraction: value - counts[index]! }))
+    .sort((a, b) => b.fraction - a.fraction)
+    .forEach(({ index }) => {
+      if (remaining > 0) {
+        counts[index] = (counts[index] ?? 0) + 1;
+        remaining -= 1;
+      }
+    });
+  return counts
+    .flatMap((count, index) => Array.from({ length: count }, () => index))
+    .slice(0, 100);
 }
 
 function FocusWorkspace({

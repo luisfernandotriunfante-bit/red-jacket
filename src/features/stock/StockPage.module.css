@@ -368,6 +368,95 @@
 .categoryTone5 {
   background: linear-gradient(135deg, rgb(31 79 161 / 14%), var(--card) 70%);
 }
+.compositionVisual {
+  padding: 1rem;
+  display: grid;
+  grid-template-columns: minmax(18rem, 0.8fr) minmax(24rem, 1.2fr);
+  gap: 1rem;
+}
+.waffle {
+  aspect-ratio: 1.5;
+  padding: 0.8rem;
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  grid-template-rows: repeat(10, 1fr);
+  gap: 0.25rem;
+  background: var(--card);
+  border: 1px solid var(--stroke);
+  border-radius: 1.1rem;
+}
+.waffle i {
+  min-width: 0;
+  min-height: 0;
+  border-radius: 0.18rem;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 8%);
+}
+.waffleTone1 {
+  background: #3d82f7;
+}
+.waffleTone2 {
+  background: #2e68cc;
+}
+.waffleTone3 {
+  background: #214c9e;
+}
+.waffleTone4 {
+  background: #17356f;
+}
+.waffleTone5 {
+  background: #10254e;
+}
+.compositionLegend {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.55rem;
+}
+.compositionLegend > div {
+  min-width: 0;
+  padding: 0.75rem;
+  display: grid;
+  grid-template-columns: 0.65rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.6rem;
+  background: var(--card);
+  border: 1px solid var(--stroke);
+  border-radius: 0.9rem;
+}
+.compositionLegend > div > i {
+  width: 0.65rem;
+  height: 2.4rem;
+  border-radius: 999px;
+}
+.compositionLegend > div > div {
+  min-width: 0;
+  display: grid;
+  gap: 0.14rem;
+}
+.compositionLegend span {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.48rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+.compositionLegend strong {
+  font-size: 1.15rem;
+}
+.compositionLegend small {
+  color: var(--muted);
+  font-size: 0.48rem;
+}
+.compositionLegend em {
+  color: var(--blue);
+  font-size: 0.48rem;
+  font-style: normal;
+  white-space: nowrap;
+}
+.compositionLegend em.risk {
+  color: var(--red);
+}
 .balancePanel,
 .workspace {
   margin-top: 0.85rem;
@@ -437,63 +526,58 @@
   color: var(--red);
 }
 .balanceVisual {
-  width: 6.8rem;
-  aspect-ratio: 1;
-  margin: 1rem auto;
-  padding: 0.42rem;
-  background: conic-gradient(
-    var(--blue) 0 var(--actual),
-    var(--stroke) var(--actual)
+  height: 9rem;
+  margin-top: 0.8rem;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 0.65rem;
+  background: radial-gradient(
+    circle at 50% 100%,
+    rgb(61 130 247 / 8%),
+    transparent 65%
   );
-  border-radius: 50%;
-  transform: rotate(-35deg);
 }
 .balanceVisual > div {
-  width: 100%;
-  height: 100%;
-  padding: 0.42rem;
-  background: conic-gradient(
-    var(--red) 0 var(--plan),
-    var(--panel) var(--plan)
-  );
-  border-radius: 50%;
-}
-.balanceVisual > div > div {
-  width: 100%;
+  width: 3.1rem;
   height: 100%;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
   flex-direction: column;
-  background: var(--card);
-  border-radius: 50%;
-  transform: rotate(35deg);
+  gap: 0.22rem;
+}
+.balanceVisual > div > b {
+  width: 100%;
+  max-height: 82%;
+  min-height: 0.35rem;
+  margin-top: auto;
+  background: linear-gradient(180deg, #66a0ff, var(--blue));
+  border-radius: 0.8rem 0.8rem 0.25rem 0.25rem;
+  box-shadow: 0 0 1.5rem rgb(61 130 247 / 16%);
+}
+.balanceVisual > div:nth-child(2) > b {
+  background: linear-gradient(180deg, #ff5a68, var(--red));
+  box-shadow: 0 0 1.5rem rgb(255 38 56 / 14%);
 }
 .balanceVisual strong {
-  font-size: 1rem;
-  letter-spacing: -0.05em;
+  font-size: 0.64rem;
 }
 .balanceVisual span {
   color: var(--muted);
-  font-size: 0.45rem;
+  font-size: 0.42rem;
+  font-weight: 700;
 }
 .balanceMeta {
   padding-top: 0.65rem;
   justify-content: space-between;
-  gap: 0.45rem;
   color: var(--muted);
-  font-size: 0.46rem;
+  font-size: 0.48rem;
   border-top: 1px solid var(--stroke);
 }
-.balanceMeta span {
-  display: grid;
-  gap: 0.12rem;
-}
-.balanceMeta span:last-child {
-  display: none;
-}
 .balanceMeta b {
-  color: inherit;
+  color: var(--text);
+  font-size: 0.62rem;
 }
 .tone1 {
   background: #3d82f7;
@@ -945,6 +1029,9 @@
   .balanceRows {
     grid-template-columns: 1fr 1fr;
   }
+  .compositionVisual {
+    grid-template-columns: 1fr;
+  }
   .toolbar {
     align-items: stretch;
     flex-direction: column;
@@ -983,6 +1070,12 @@
   }
   .categoryGrid > div {
     flex-basis: 100% !important;
+  }
+  .compositionLegend {
+    grid-template-columns: 1fr;
+  }
+  .waffle {
+    aspect-ratio: 1;
   }
   .preview {
     text-align: left;
