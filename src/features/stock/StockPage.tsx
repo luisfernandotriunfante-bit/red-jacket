@@ -551,44 +551,33 @@ export function StockPage() {
               </div>
               <strong>{compact(stockCost)}</strong>
             </header>
-            <div
-              className={styles.compositionBar}
-              aria-label="Participação por categoria"
-            >
-              {categories.map((item, index) => (
-                <i
-                  key={item.name}
-                  className={styles[`tone${index + 1}`]}
-                  style={{
-                    width: `${stockCost ? (item.value / stockCost) * 100 : 0}%`,
-                  }}
-                />
-              ))}
-            </div>
             <div className={styles.categoryGrid}>
-              {categories.map((item, index) => (
-                <div key={item.name}>
+              {categories.map((item, index) => {
+                const share = stockCost ? (item.value / stockCost) * 100 : 0;
+                return (
                   <div
-                    className={`${styles.categoryMarker} ${styles[`tone${index + 1}`]}`}
+                    key={item.name}
+                    className={styles[`categoryTone${index + 1}`]}
+                    style={{
+                      flexGrow: Math.max(share, 8),
+                      flexBasis: `${Math.max(share, 18)}%`,
+                    }}
                   >
-                    0{index + 1}
+                    <div className={styles.categoryMarker}>0{index + 1}</div>
+                    <span>{item.name}</span>
+                    <b>{share.toFixed(1)}%</b>
+                    <strong>{compact(item.value)}</strong>
+                    <footer>
+                      <small>{item.coverage.toFixed(0)} dias</small>
+                      <em className={item.ruptures ? styles.risk : ''}>
+                        {item.ruptures
+                          ? `${item.ruptures} rupturas`
+                          : 'Sem ruptura'}
+                      </em>
+                    </footer>
                   </div>
-                  <span>{item.name}</span>
-                  <strong>{compact(item.value)}</strong>
-                  <b>
-                    {stockCost
-                      ? ((item.value / stockCost) * 100).toFixed(1)
-                      : '0,0'}
-                    %
-                  </b>
-                  <small>{item.coverage.toFixed(0)} dias de cobertura</small>
-                  <em className={item.ruptures ? styles.risk : ''}>
-                    {item.ruptures
-                      ? `${item.ruptures} rupturas`
-                      : 'Sem ruptura'}
-                  </em>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </article>
           <StockBalance categories={categories} total={stockCost} />
@@ -1042,9 +1031,24 @@ function StockBalance({
                       : 'ALINHADO'}
                 </span>
               </div>
-              <div className={styles.dualRail}>
-                <i style={{ width: `${Math.min(actual, 100)}%` }} />
-                <em style={{ left: `${Math.min(plan, 100)}%` }} />
+              <div
+                className={styles.balanceVisual}
+                style={
+                  {
+                    '--actual': `${Math.min(actual, 100) * 3.6}deg`,
+                    '--plan': `${Math.min(plan, 100) * 3.6}deg`,
+                  } as CSSProperties
+                }
+              >
+                <div>
+                  <div>
+                    <strong>
+                      {gap > 0 ? '+' : ''}
+                      {gap.toFixed(1)}
+                    </strong>
+                    <span>PP</span>
+                  </div>
+                </div>
               </div>
               <div className={styles.balanceMeta}>
                 <span>

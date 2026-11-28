@@ -267,18 +267,33 @@
   font-size: 0.88rem;
 }
 .categoryGrid {
-  padding: 0 1rem 1rem;
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 0;
+  padding: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
 }
 .categoryGrid > div {
   min-width: 0;
-  padding: 0.65rem 0.85rem;
-  border-right: 1px solid var(--stroke);
+  min-height: 9.5rem;
+  padding: 1rem;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--blue) 35%, var(--stroke));
+  border-radius: 1.15rem;
+  isolation: isolate;
 }
-.categoryGrid > div:last-child {
-  border-right: 0;
+.categoryGrid > div::after {
+  content: '';
+  width: 9rem;
+  height: 9rem;
+  position: absolute;
+  right: -3rem;
+  bottom: -4rem;
+  z-index: -1;
+  border: 1.5rem solid rgb(61 130 247 / 10%);
+  border-radius: 50%;
 }
 .categoryMarker {
   width: 1.6rem;
@@ -286,8 +301,9 @@
   margin-bottom: 0.55rem;
   display: grid;
   place-items: center;
-  color: #fff;
+  color: var(--blue);
   font-size: 0.48rem;
+  border: 1px solid color-mix(in srgb, var(--blue) 70%, transparent);
   border-radius: 50%;
 }
 .categoryGrid > div > span {
@@ -304,24 +320,34 @@
   display: block;
 }
 .categoryGrid strong {
-  margin-top: 0.35rem;
+  margin-top: 0.25rem;
   overflow: hidden;
   font-size: 0.88rem;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .categoryGrid b {
-  margin-top: 0.2rem;
-  color: var(--blue);
-  font-size: 0.62rem;
+  position: absolute;
+  top: 0.85rem;
+  right: 0.95rem;
+  color: color-mix(in srgb, var(--blue) 20%, transparent);
+  font-size: clamp(2rem, 4vw, 3.3rem);
+  letter-spacing: -0.08em;
+}
+.categoryGrid footer {
+  margin-top: auto;
+  padding-top: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  border-top: 1px solid rgb(255 255 255 / 9%);
 }
 .categoryGrid small {
-  margin-top: 0.5rem;
   color: var(--muted);
   font-size: 0.5rem;
 }
 .categoryGrid em {
-  margin-top: 0.18rem;
   color: var(--blue);
   font-size: 0.5rem;
   font-style: normal;
@@ -329,18 +355,18 @@
 .categoryGrid em.risk {
   color: var(--red);
 }
-.compositionBar {
-  height: 0.55rem;
-  margin: 1rem 1rem 0.4rem;
-  display: flex;
-  gap: 0.16rem;
-  overflow: hidden;
-  background: var(--stroke);
-  border-radius: 999px;
+.categoryTone1 {
+  background: linear-gradient(135deg, rgb(61 130 247 / 22%), var(--card) 70%);
 }
-.compositionBar i {
-  min-width: 0.25rem;
-  height: 100%;
+.categoryTone2 {
+  background: linear-gradient(135deg, rgb(50 112 220 / 18%), var(--card) 70%);
+}
+.categoryTone3 {
+  background: linear-gradient(135deg, rgb(40 95 190 / 16%), var(--card) 70%);
+}
+.categoryTone4,
+.categoryTone5 {
+  background: linear-gradient(135deg, rgb(31 79 161 / 14%), var(--card) 70%);
 }
 .balancePanel,
 .workspace {
@@ -380,14 +406,17 @@
   letter-spacing: 0.08em;
 }
 .balanceRows {
-  padding: 0.35rem 1rem 1rem;
+  padding: 1rem;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0 1.6rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.7rem;
 }
 .balanceRows > div {
-  padding: 0.85rem 0.2rem;
-  border-bottom: 1px solid var(--stroke);
+  min-width: 0;
+  padding: 0.9rem;
+  background: var(--card);
+  border: 1px solid var(--stroke);
+  border-radius: 1.1rem;
 }
 .balanceLabel,
 .balanceMeta {
@@ -407,34 +436,61 @@
 .balanceLabel span.risk {
   color: var(--red);
 }
-.dualRail {
-  height: 0.34rem;
-  margin-top: 0.65rem;
-  position: relative;
-  background: var(--stroke);
-  border-radius: 999px;
+.balanceVisual {
+  width: 6.8rem;
+  aspect-ratio: 1;
+  margin: 1rem auto;
+  padding: 0.42rem;
+  background: conic-gradient(
+    var(--blue) 0 var(--actual),
+    var(--stroke) var(--actual)
+  );
+  border-radius: 50%;
+  transform: rotate(-35deg);
 }
-.dualRail i {
+.balanceVisual > div {
+  width: 100%;
   height: 100%;
-  display: block;
-  background: var(--blue);
-  border-radius: inherit;
+  padding: 0.42rem;
+  background: conic-gradient(
+    var(--red) 0 var(--plan),
+    var(--panel) var(--plan)
+  );
+  border-radius: 50%;
 }
-.dualRail em {
-  width: 0.12rem;
-  height: 0.78rem;
-  position: absolute;
-  top: 50%;
-  background: var(--red);
-  border-radius: 999px;
-  transform: translate(-50%, -50%);
+.balanceVisual > div > div {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  background: var(--card);
+  border-radius: 50%;
+  transform: rotate(35deg);
+}
+.balanceVisual strong {
+  font-size: 1rem;
+  letter-spacing: -0.05em;
+}
+.balanceVisual span {
+  color: var(--muted);
+  font-size: 0.45rem;
 }
 .balanceMeta {
-  margin-top: 0.45rem;
-  justify-content: flex-start;
-  gap: 1rem;
+  padding-top: 0.65rem;
+  justify-content: space-between;
+  gap: 0.45rem;
   color: var(--muted);
   font-size: 0.46rem;
+  border-top: 1px solid var(--stroke);
+}
+.balanceMeta span {
+  display: grid;
+  gap: 0.12rem;
+}
+.balanceMeta span:last-child {
+  display: none;
 }
 .balanceMeta b {
   color: inherit;
@@ -886,8 +942,8 @@
   .secondaryMetrics {
     grid-template-columns: 1fr 1fr;
   }
-  .categoryGrid {
-    grid-template-columns: repeat(3, 1fr);
+  .balanceRows {
+    grid-template-columns: 1fr 1fr;
   }
   .toolbar {
     align-items: stretch;
@@ -925,11 +981,8 @@
   .metricBody {
     justify-content: flex-start;
   }
-  .categoryGrid {
-    grid-template-columns: 1fr 1fr;
-  }
-  .categoryGrid > div:last-child {
-    display: none;
+  .categoryGrid > div {
+    flex-basis: 100% !important;
   }
   .preview {
     text-align: left;
