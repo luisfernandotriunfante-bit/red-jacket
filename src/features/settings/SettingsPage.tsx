@@ -489,7 +489,7 @@ function Engines() {
         ...usedBases,
       ];
       // Todos os motores gravam em lotes: uma chamada única estoura o tempo do banco nas bases maiores.
-      const runId = await saveEngineBaseChunked(
+      const { runId, cleanupWarning } = await saveEngineBaseChunked(
         result,
         runner.keyColumn,
         sources,
@@ -503,7 +503,7 @@ function Engines() {
         ...current,
         [engine.id]: { id: runId, sources },
       }));
-      const summary = `${result.rows.length} linhas gravadas · ${errors} erro(s) · ${warnings} aviso(s)`;
+      const summary = `${result.rows.length} linhas gravadas · ${errors} erro(s) · ${warnings} aviso(s)${cleanupWarning ? ` · limpeza da versão anterior pendente (${cleanupWarning})` : ''}`;
       setProgress(engine.id, 100);
       setResults((current) => ({ ...current, [engine.id]: summary }));
       return `Motor ${engine.name} processado: ${summary}.`;

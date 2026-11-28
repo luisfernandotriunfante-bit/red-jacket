@@ -146,7 +146,7 @@ export async function saveEngineBaseChunked(
   keyColumn: string,
   sources: SourceInfo[],
   onProgress: (message: string, fraction?: number) => void = () => undefined,
-): Promise<string> {
+): Promise<{ runId: string; cleanupWarning?: string }> {
   const client = requireClient();
   const rows = keyedRows(result, keyColumn);
   const begin = await client.rpc('begin_engine_run', {
@@ -155,13 +155,20 @@ export async function saveEngineBaseChunked(
   if (begin.error) throw new Error(begin.error.message);
   const runId = String(begin.data);
   try {
-    await sendChunks(client, runId, rows, result, sources, onProgress);
+    const cleanupWarning = await sendChunks(
+      client,
+      runId,
+      rows,
+      result,
+      sources,
+      onProgress,
+    );
+    return { runId, cleanupWarning };
   } catch (error) {
     // gravação interrompida: descarta a versão incompleta (a vigente não é tocada)
     await client.rpc('abort_engine_run', { p_run: runId });
     throw error;
   }
-  return runId;
 }
 
 async function sendChunks(
@@ -171,7 +178,7 @@ async function sendChunks(
   result: EngineResult,
   sources: SourceInfo[],
   onProgress: (message: string, fraction?: number) => void,
-): Promise<void> {
+): Promise<string | undefined> {
   for (let from = 0; from < rows.length; from += CHUNK_ROWS) {
     const sent = Math.min(from + CHUNK_ROWS, rows.length);
     onProgress(
@@ -199,20 +206,30 @@ async function sendChunks(
   });
   if (done.error) throw new Error(done.error.message);
   onProgress('Limpando a versão anterior…', 0.96);
-  // A base nova já está vigente. Se a limpeza da versão antiga falhar (tempo do banco),
-  // não é erro: as linhas soltas saem na próxima atualização.
+  return purgeOldRows(client, result.engine, runId);
+}
+
+/**
+ * Apaga as linhas de versões que não são a vigente, em lotes pequenos. Não é erro fatal:
+ * a base nova já está valendo; devolve um aviso se algo ficar para trás.
+ */
+async function purgeOldRows(
+  client: ReturnType<typeof requireClient>,
+  engine: string,
+  keep: string,
+): Promise<string | undefined> {
   try {
     for (;;) {
       const purge = await client.rpc('purge_engine_rows', {
-        p_engine: result.engine,
-        p_keep: runId,
+        p_engine: engine,
+        p_keep: keep,
         p_limit: 5000,
       });
-      if (purge.error) break;
-      if (Number(purge.data) === 0) break;
+      if (purge.error) return purge.error.message;
+      if (Number(purge.data) === 0) return undefined;
     }
-  } catch {
-    // segue: a base nova foi gravada e conferida
+  } catch (error) {
+    return error instanceof Error ? error.message : 'erro desconhecido';
   }
 }
 
