@@ -8,7 +8,8 @@ import { processClientes } from './clientes/process';
 import { processCompras } from './compras/process';
 import { processCortes } from './cortes/process';
 import { processRoteiro } from './roteiro/process';
-import { loadOperacoesMovimentacoes } from './storage';
+import { enriquecerComVendedor } from './core/vendedores';
+import { loadOperacoesMovimentacoes, loadVendedores } from './storage';
 import { processProdutos } from './produtos/process';
 import {
   decodeLatin1,
@@ -90,7 +91,7 @@ export const runners: Record<string, EngineRunner> = {
         await bytes(need(files, 'carteira-clientes')),
       );
       const piramide = readWorkbook(await bytes(need(files, 'piramide')));
-      return processClientes(
+      const base = processClientes(
         {
           cadastro1203: cadastro.sheetWith(['Código', 'CPF/CNPJ', 'Nome']),
           carteira: carteira.sheet(),
@@ -104,6 +105,13 @@ export const runners: Record<string, EngineRunner> = {
           carteira: 'relatorio_carteira_clientes.xls',
           piramide: 'piramide (aba Pirâmide ativa)',
         },
+      );
+      // RCA "2" = venda das indústrias (sem vendedor)
+      return enriquecerComVendedor(
+        base,
+        await loadVendedores(),
+        'cod_rca_1203',
+        ['2'],
       );
     },
   },
@@ -139,10 +147,11 @@ export const runners: Record<string, EngineRunner> = {
     needs: ['clientes'],
     run: async (files, bases) => {
       const wb = readWorkbook(await bytes(need(files, 'roteiro-consolidado')));
-      return processRoteiro({
+      const base = processRoteiro({
         matrix: wb.sheet(),
         clientes: bases.clientes ?? [],
       });
+      return enriquecerComVendedor(base, await loadVendedores(), 'cod_rca');
     },
   },
   movimentacoes: {
@@ -172,6 +181,7 @@ export const runners: Record<string, EngineRunner> = {
         antigos,
         novos,
         operacoes: await loadOperacoesMovimentacoes(),
+        vendedores: await loadVendedores(),
       });
     },
   },
